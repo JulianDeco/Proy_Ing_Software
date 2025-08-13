@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Módulo Académico{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-mortarboard"></i> Módulo Académico</h1>
+    <div class="dropdown">
+        <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+            <i class="bi bi-plus-circle"></i> Nuevo
+        </button>
+        <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="#"><i class="bi bi-person-plus"></i> Alumno</a></li>
+            <li><a class="dropdown-item" href="#"><i class="bi bi-journal-plus"></i> Inscripción</a></li>
+            <li><a class="dropdown-item" href="#"><i class="bi bi-clipboard-plus"></i> Evaluación</a></li>
+        </ul>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- Resumen Académico -->
+    <div class="col-md-8 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-graph-up"></i> Resumen Académico</h5>
+                <select class="form-select form-select-sm" style="width: auto;">
+                    <option>Ciclo 2023</option>
+                    <option>Ciclo 2022</option>
+                </select>
+            </div>
+            <div class="card-body">
+                <div class="row text-center mb-4">
+                    <div class="col-md-3 border-end">
+                        <h3 class="mb-0">1,245</h3>
+                        <small class="text-muted">Alumnos (RF03)</small>
+                    </div>
+                    <div class="col-md-3 border-end">
+                        <h3 class="mb-0">98%</h3>
+                        <small class="text-muted">Asistencia Promedio (RF05)</small>
+                    </div>
+                    <div class="col-md-3 border-end">
+                        <h3 class="mb-0">8.7</h3>
+                        <small class="text-muted">Promedio General (RF06)</small>
+                    </div>
+                    <div class="col-md-3">
+                        <h3 class="mb-0">42</h3>
+                        <small class="text-muted">Cursos Activos</small>
+                    </div>
+                </div>
+                <div class="chart-container" style="height: 250px;">
+                    <!-- Gráfico de rendimiento académico -->
+                    <img src="{% static 'img/performance-chart.png' %}" class="img-fluid" alt="Rendimiento académico">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inscripciones Recientes -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-journal-check"></i> Inscripciones Recientes (RF04)</h5>
+                <a href="#" class="btn btn-sm btn-outline-primary">Ver todas</a>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">Juan Pérez</h6>
+                            <small class="text-muted">5° B - 12/10/2023</small>
+                        </div>
+                        <span class="badge bg-success">Completada</span>
+                    </li>
+                    <!-- Más inscripciones... -->
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pestañas de Gestión Académica -->
+<ul class="nav nav-tabs mb-3" id="academicTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="students-tab" data-bs-toggle="tab" data-bs-target="#students" type="button">
+            <i class="bi bi-people-fill"></i> Alumnos (RF03)
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="attendance-tab" data-bs-toggle="tab" data-bs-target="#attendance" type="button">
+            <i class="bi bi-clipboard-check"></i> Asistencias (RF05)
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="grades-tab" data-bs-toggle="tab" data-bs-target="#grades" type="button">
+            <i class="bi bi-journal-bookmark"></i> Calificaciones (RF06)
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="academicTabsContent">
+    <!-- Pestaña Alumnos -->
+    <div class="tab-pane fade show active" id="students" role="tabpanel">
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Listado de Alumnos</h5>
+                <div class="d-flex">
+                    <input type="text" class="form-control form-control-sm me-2" placeholder="Buscar alumno...">
+                    <select class="form-select form-select-sm" style="width: 120px;">
+                        <option>Todos</option>
+                        <option>Activos</option>
+                        <option>Inactivos</option>
+                    </select>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Alumno</th>
+                                <th>Grado</th>
+                                <th>Contacto</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>A-2023-001</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="{% static 'img/student1.jpg' %}" class="rounded-circle me-2" width="32">
+                                        <span>María Rodríguez</span>
+                                    </div>
+                                </td>
+                                <td>4° A</td>
+                                <td>m.rodriguez@mail.com</td>
+                                <td><span class="badge bg-success">Activo</span></td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary" title="Historial">
+                                            <i class="bi bi-clock-history"></i>
+                                        </button>
+                                        <button class="btn btn-outline-secondary" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <!-- Más alumnos... -->
+                        </tbody>
+                    </table>
+                </div>
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" tabindex="-1">Anterior</a>
+                        </li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item">
+                            <a class="page-link" href="#">Siguiente</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pestaña Asistencias -->
+    <div class="tab-pane fade" id="attendance" role="tabpanel">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0">Registro de Asistencias</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label">Seleccione fecha</label>
+                        <input type="date" class="form-control">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Seleccione grado</label>
+                        <select class="form-select">
+                            <option>4° A</option>
+                            <option>4° B</option>
+                            <!-- Más grados... -->
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button class="btn btn-primary">Cargar Lista</button>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Alumno</th>
+                                <th class="text-center">Asistencia</th>
+                                <th>Observaciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>María Rodríguez</td>
+                                <td class="text-center">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="attendance1" id="present1" checked>
+                                        <label class="form-check-label" for="present1">Presente</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="attendance1" id="absent1">
+                                        <label class="form-check-label" for="absent1">Ausente</label>
+                                    </div>
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control form-control-sm" placeholder="Justificación...">
+                                </td>
+                            </tr>
+                            <!-- Más alumnos... -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-end mt-3">
+                    <button class="btn btn-success">Guardar Asistencias</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pestaña Calificaciones -->
+    <div class="tab-pane fade" id="grades" role="tabpanel">
+        <!-- Contenido similar para calificaciones... -->
+    </div>
+</div>
+{% endblock %}

@@ -1,3 +1,4 @@
 from django.shortcuts import render
 
-# Create your views here.
+def home_administracion(request):
+    return render(request, 'administracion/administracion.html')

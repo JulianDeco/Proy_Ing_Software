@@ -1,3 +1,4 @@
 from django.shortcuts import render
 
-# Create your views here.
+def home_institucional(request):
+    return render(request, 'institucional/institucional.html')

@@ -1,0 +1,342 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Panel del Profesor{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-person-video3"></i> Panel del Profesor</h1>
+    <div class="dropdown">
+        <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+            <i class="bi bi-calendar-week"></i> Semana 15
+        </button>
+        <ul class="dropdown-menu">
+            <li><h6 class="dropdown-header">Seleccionar semana</h6></li>
+            <li><a class="dropdown-item" href="#">Semana 14</a></li>
+            <li><a class="dropdown-item active" href="#">Semana 15</a></li>
+            <li><a class="dropdown-item" href="#">Semana 16</a></li>
+        </ul>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- Resumen Rápido -->
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 border-start border-primary border-4">
+            <div class="card-body">
+                <h5 class="card-title text-primary">Resumen</h5>
+                <div class="d-flex align-items-center mb-3">
+                    <div class="me-3 bg-primary bg-opacity-10 p-3 rounded">
+                        <i class="bi bi-journal-bookmark text-primary fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-0">Cursos a cargo</h6>
+                        <h3 class="mb-0">5</h3>
+                    </div>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between">
+                    <div class="text-center">
+                        <h6 class="mb-0">Clases hoy</h6>
+                        <h4 class="mb-0 text-success">3</h4>
+                    </div>
+                    <div class="text-center">
+                        <h6 class="mb-0">Tareas pendientes</h6>
+                        <h4 class="mb-0 text-warning">12</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Horario del Día -->
+    <div class="col-md-8 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Horario - Hoy</h5>
+                <div class="btn-group">
+                    <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-chevron-left"></i></button>
+                    <button class="btn btn-sm btn-outline-secondary active">Lunes 15/10</button>
+                    <button class="btn btn-sm btn-outline-secondary"><i class="bi bi-chevron-right"></i></button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Hora</th>
+                                <th>Curso</th>
+                                <th>Grupo</th>
+                                <th>Aula</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>08:00 - 10:00</td>
+                                <td>Matemáticas</td>
+                                <td>4° A</td>
+                                <td>Aula 12</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-clipboard-check"></i> Asistencia
+                                    </button>
+                                </td>
+                            </tr>
+                            <!-- Más horarios... -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pestañas Principales -->
+<ul class="nav nav-tabs mb-4" id="teacherTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="courses-tab" data-bs-toggle="tab" data-bs-target="#courses" type="button">
+            <i class="bi bi-journal-bookmark"></i> Mis Cursos
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="attendance-tab" data-bs-toggle="tab" data-bs-target="#attendance" type="button">
+            <i class="bi bi-clipboard-check"></i> Asistencias
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="grades-tab" data-bs-toggle="tab" data-bs-target="#grades" type="button">
+            <i class="bi bi-journal-check"></i> Calificaciones
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tasks-tab" data-bs-toggle="tab" data-bs-target="#tasks" type="button">
+            <i class="bi bi-list-task"></i> Tareas
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="teacherTabsContent">
+    <!-- Pestaña Mis Cursos -->
+    <div class="tab-pane fade show active" id="courses" role="tabpanel">
+        <div class="row">
+            {% for course in teacher_courses %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-white">
+                        <h5 class="mb-0">{{ course.name }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-3">
+                            <span class="badge bg-primary">{{ course.grade }}</span>
+                            <span class="text-muted">{{ course.students_count }} alumnos</span>
+                        </div>
+                        <p class="card-text">{{ course.description|truncatewords:15 }}</p>
+                        <div class="progress mb-3" style="height: 8px;">
+                            <div class="progress-bar bg-success" style="width: {{ course.completion }}%"></div>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <a href="#" class="btn btn-sm btn-outline-primary">Ver Detalles</a>
+                            <small class="text-muted">{{ course.lessons }} clases</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Pestaña Asistencias -->
+    <div class="tab-pane fade" id="attendance" role="tabpanel">
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Registro de Asistencias</h5>
+                <div class="d-flex">
+                    <select class="form-select form-select-sm me-2" style="width: 150px;">
+                        <option>4° A</option>
+                        <option>4° B</option>
+                    </select>
+                    <input type="date" class="form-control form-control-sm" style="width: 150px;">
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Alumno</th>
+                                <th class="text-center">Estado</th>
+                                <th>Observaciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for student in attendance_list %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <img src="{% static 'img/student' %}{{ forloop.counter }}.jpg" 
+                                             class="rounded-circle me-2" width="32" height="32">
+                                        <span>{{ student.name }}</span>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <select class="form-select form-select-sm">
+                                        <option value="present" selected>Presente</option>
+                                        <option value="absent">Ausente</option>
+                                        <option value="late">Tardanza</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="text" class="form-control form-control-sm" 
+                                           placeholder="Justificación...">
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-end mt-3">
+                    <button class="btn btn-primary">Guardar Asistencias</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pestaña Calificaciones -->
+    <div class="tab-pane fade" id="grades" role="tabpanel">
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Registro de Calificaciones</h5>
+                <div class="d-flex">
+                    <select class="form-select form-select-sm me-2">
+                        <option>Matemáticas - 4° A</option>
+                        <option>Ciencias - 4° A</option>
+                    </select>
+                    <select class="form-select form-select-sm" style="width: 150px;">
+                        <option>Primer Trimestre</option>
+                        <option>Segundo Trimestre</option>
+                    </select>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th rowspan="2">Alumno</th>
+                                <th colspan="3" class="text-center">Evaluaciones</th>
+                                <th rowspan="2">Promedio</th>
+                            </tr>
+                            <tr>
+                                <th class="text-center">E1 (30%)</th>
+                                <th class="text-center">E2 (30%)</th>
+                                <th class="text-center">E3 (40%)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for grade in gradebook %}
+                            <tr>
+                                <td>{{ grade.student }}</td>
+                                <td class="text-center">
+                                    <input type="number" class="form-control form-control-sm d-inline-block" 
+                                           style="width: 70px;" value="{{ grade.e1 }}">
+                                </td>
+                                <td class="text-center">
+                                    <input type="number" class="form-control form-control-sm d-inline-block" 
+                                           style="width: 70px;" value="{{ grade.e2 }}">
+                                </td>
+                                <td class="text-center">
+                                    <input type="number" class="form-control form-control-sm d-inline-block" 
+                                           style="width: 70px;" value="{{ grade.e3 }}">
+                                </td>
+                                <td class="text-center fw-bold">{{ grade.average }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-end mt-3">
+                    <button class="btn btn-primary me-2">Calcular Promedios</button>
+                    <button class="btn btn-success">Guardar Cambios</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pestaña Tareas -->
+    <div class="tab-pane fade" id="tasks" role="tabpanel">
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Nueva Tarea</h5>
+                    </div>
+                    <div class="card-body">
+                        <form>
+                            <div class="mb-3">
+                                <label class="form-label">Curso</label>
+                                <select class="form-select">
+                                    <option>Matemáticas - 4° A</option>
+                                    <option>Ciencias - 4° A</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Título</label>
+                                <input type="text" class="form-control" placeholder="Ej: Ejercicios de álgebra">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Descripción</label>
+                                <textarea class="form-control" rows="3"></textarea>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Fecha de Entrega</label>
+                                    <input type="date" class="form-control">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Archivo Adjunto</label>
+                                    <input type="file" class="form-control">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">Publicar Tarea</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Tareas Pendientes</h5>
+                        <span class="badge bg-primary">{{ pending_tasks.count }}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group list-group-flush">
+                            {% for task in pending_tasks %}
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between">
+                                    <h6 class="mb-1">{{ task.title }}</h6>
+                                    <small class="text-muted">{{ task.due_date|date:"d/m/Y" }}</small>
+                                </div>
+                                <small class="text-muted d-block mb-2">{{ task.course }}</small>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="badge bg-info">{{ task.submissions }} entregas</span>
+                                    <div>
+                                        <button class="btn btn-sm btn-outline-primary me-1">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-secondary">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
