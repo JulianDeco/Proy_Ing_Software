@@ -1,8 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
-from academico.models import Materia
-
 class Usuario(AbstractUser):
     persona = models.OneToOneField('Persona', on_delete=models.CASCADE, null=True, blank=True)
     habilitado = models.BooleanField(default=True)

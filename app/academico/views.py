@@ -1,3 +1,6 @@
 from django.shortcuts import render
+from .models import Materia
 
-# Create your views here.
+def lista_materias(request):
+    materias = Materia.objects.all()
+    return render(request, 'academico/materia_list.html', {'materias': materias})

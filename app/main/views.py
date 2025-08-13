@@ -1,4 +1,6 @@
 from django.http import HttpResponse
 
-def vista_prueba(request):
-    return HttpResponse("Hola desde la vista de prueba en institucional.")
+from django.shortcuts import render
+
+def home(request):
+    return render(request, 'main/index.html')

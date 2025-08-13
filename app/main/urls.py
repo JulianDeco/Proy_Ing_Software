@@ -1,14 +1,14 @@
 from django.contrib import admin
 from django.urls import include, path
 
-from main.views import vista_prueba
+from main.views import home
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     
-    path('prueba/', vista_prueba),
+    path('', home, name='home'),
     
-    path('institucional/', include('institucional.urls')),
+    # path('institucional/', include('institucional.urls')),
     path('academico/', include('academico.urls')),
-    path('administracion/', include('administracion.urls')),
+    # path('administracion/', include('administracion.urls')),
 ]

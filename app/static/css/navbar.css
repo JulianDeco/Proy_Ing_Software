@@ -1,0 +1,36 @@
+.navbar-brand {
+    font-weight: 600;
+    font-size: 1.25rem;
+}
+
+.nav-module {
+    font-weight: 500;
+}
+
+.navbar-dark.bg-primary {
+    background-color: #0d6efd !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.nav-link {
+    padding: 0.5rem 1rem;
+}
+
+.navbar-text {
+    padding-right: 0.5rem;
+}
+
+.dropdown-menu {
+    border: none;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.dropdown-item {
+    padding: 0.5rem 1.5rem;
+}
+
+.dropdown-item i {
+    margin-right: 0.5rem;
+    width: 1.25em;
+    text-align: center;
+}

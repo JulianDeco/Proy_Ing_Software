@@ -1,3 +1,13 @@
 from django.contrib import admin
 
-# Register your models here.
+from academico.models import Comision, Materia
+
+@admin.register(Materia)
+class MateriaAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'codigo', 'plan_estudio')
+    search_fields = ('nombre', 'codigo', 'plan_estudio__nombre')
+
+@admin.register(Comision)
+class ComisionAdmin(admin.ModelAdmin):
+    list_display = ('codigo', 'materia', 'horario', 'turno')
+    search_fields = ('codigo', 'materia__nombre')

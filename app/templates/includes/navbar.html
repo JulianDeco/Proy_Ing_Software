@@ -1,0 +1,53 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+    <div class="container">
+        <a class="navbar-brand" href="{% url 'home' %}">
+            <i class="bi bi-building"></i> Sistema Educativo
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item dropdown nav-module">
+                    <a class="nav-link dropdown-toggle" href="#" id="institucionDropdown" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-building"></i> INSTITUCIÓN
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-info-circle"></i> Información</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-people"></i> Personal</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-calendar-event"></i> Eventos</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item dropdown nav-module">
+                    <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-gear"></i> ADMINISTRACIÓN
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-cash-coin"></i> Finanzas</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-file-earmark-text"></i> Documentación</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-clipboard-data"></i> Reportes</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item dropdown nav-module">
+                    <a class="nav-link dropdown-toggle" href="#" id="academicoDropdown" role="button" data-bs-toggle="dropdown">
+                        <i class="bi bi-book"></i> ACADÉMICO
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-mortarboard"></i> Estudiantes</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-person-video3"></i> Profesores</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-journal-bookmark"></i> Cursos</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-calendar-check"></i> Calendario</a></li>
+                    </ul>
+                </li>
+            </ul>
+            <div class="d-flex">
+                <span class="navbar-text me-3">
+                    <i class="bi bi-person-circle"></i> Usuario Admin
+                </span>
+                <a href="#" class="btn btn-outline-light">
+                    <i class="bi bi-box-arrow-right"></i> Salir
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>

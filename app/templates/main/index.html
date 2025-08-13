@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Inicio - Sistema Educativo{% endblock %}
+
+{% block content %}
+<div class="text-center mb-5">
+    <h1 class="display-4">Bienvenido al Sistema Educativo</h1>
+    <p class="lead">Seleccione el módulo que desea administrar</p>
+</div>
+
+<div class="row g-4">
+    <!-- Módulo Institución -->
+    <div class="col-md-4">
+        <div class="card module-card h-100 border-primary">
+            <div class="card-body text-center">
+                <i class="bi bi-building display-1 text-primary mb-3"></i>
+                <h2 class="card-title">INSTITUCIÓN</h2>
+                <p class="card-text">
+                    Gestión de información institucional, personal y eventos.
+                </p>
+                <a href="#" class="btn btn-primary stretched-link">Acceder</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Módulo Administración -->
+    <div class="col-md-4">
+        <div class="card module-card h-100 border-success">
+            <div class="card-body text-center">
+                <i class="bi bi-gear display-1 text-success mb-3"></i>
+                <h2 class="card-title">ADMINISTRACIÓN</h2>
+                <p class="card-text">
+                    Control financiero, documentación y reportes institucionales.
+                </p>
+                <a href="#" class="btn btn-success stretched-link">Acceder</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Módulo Académico -->
+    <div class="col-md-4">
+        <div class="card module-card h-100 border-info">
+            <div class="card-body text-center">
+                <i class="bi bi-book display-1 text-info mb-3"></i>
+                <h2 class="card-title">ACADÉMICO</h2>
+                <p class="card-text">
+                    Gestión de estudiantes, profesores, cursos y calendario académico.
+                </p>
+                <a href="#" class="btn btn-info stretched-link">Acceder</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <h4 class="alert-heading"><i class="bi bi-info-circle-fill"></i> Sistema en línea</h4>
+            <p>Último acceso: {% now "DATETIME_FORMAT" %}</p>
+            <hr>
+            <p class="mb-0">Versión 2.1.0 - Actualizado el 15/10/2023</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
