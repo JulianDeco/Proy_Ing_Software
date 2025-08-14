@@ -169,120 +169,31 @@
     </div>
 </div>
 
-<!-- Modal para Nuevo Usuario -->
 <div class="modal fade" id="newusuarioModal" tabindex="-1" aria-labelledby="newusuarioModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="newusuarioModalLabel"><i class="bi bi-person-plus"></i> Crear Nuevo Usuario</h5>
+                <h5 class="modal-title" id="newusuarioModalLabel">
+                    <i class="bi bi-person-plus"></i> Acción requerida
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="usuarioForm" method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="id_first_name" class="form-label">Nombres</label>
-                                <input type="text" class="form-control" id="id_first_name" name="first_name" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="id_last_name" class="form-label">Apellidos</label>
-                                <input type="text" class="form-control" id="id_last_name" name="last_name" required>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="id_email" class="form-label">Correo Electrónico</label>
-                                <input type="email" class="form-control" id="id_email" name="email" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="id_usuarioname" class="form-label">Nombre de Usuario</label>
-                                <input type="text" class="form-control" id="id_usuarioname" name="usuarioname" required>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="id_role" class="form-label">Rol</label>
-                                <select class="form-select" id="id_role" name="role" required>
-                                    <option value="">Seleccionar rol...</option>
-                                    <option value="admin">Administrador</option>
-                                    <option value="teacher">Profesor</option>
-                                    <option value="student">Estudiante</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="id_is_active" class="form-label">Estado</label>
-                                <select class="form-select" id="id_is_active" name="is_active" required>
-                                    <option value="1">Activo</option>
-                                    <option value="0">Inactivo</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="id_password1" class="form-label">Contraseña</label>
-                                <input type="password" class="form-control" id="id_password1" name="password1" required>
-                                <div class="form-text">Mínimo 8 caracteres</div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="id_password2" class="form-label">Confirmar Contraseña</label>
-                                <input type="password" class="form-control" id="id_password2" name="password2" required>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label for="id_profile_picture" class="form-label">Foto de Perfil</label>
-                        <input type="file" class="form-control" id="id_profile_picture" name="profile_picture">
-                    </div>
-                </div>
-                <div class="modal-footer">
+            <div class="modal-body text-center">
+                <p>Serás redirigido a la interfaz de administración para {% if usuario %}editar{% else %}crear{% endif %} este usuario.</p>
+                <div class="d-flex justify-content-center mt-4">
+                    <a href="/admin/auth/user/add/" id="adminUserLink" class="btn btn-primary me-2">
+                        <i class="bi bi-box-arrow-up-right"></i> Continuar
+                    </a>
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar Usuario</button>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
 </div>
 
-<!-- Modal para Confirmación -->
-<div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="confirmModalTitle">Confirmar Acción</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="confirmModalBody">
-                ¿Está seguro que desea realizar esta acción?
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-danger" id="confirmActionBtn">Confirmar</button>
-            </div>
-        </div>
-    </div>
-</div>
 {% load static %}
 <script src="{% static 'js/institucional/buscador_usuarios.js' %}"></script>
+<script src="{% static 'js/institucional/redireccion_acciones.js' %}"></script>
 
 {% endblock %}
 

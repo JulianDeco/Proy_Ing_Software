@@ -1,3 +1,4 @@
+from datetime import timedelta
 from time import localtime
 from django.http import JsonResponse
 from django.shortcuts import render
@@ -5,6 +6,7 @@ from django.contrib.admin.models import LogEntry
 from django.contrib.auth.models import Group
 from django.db.models import Q
 
+from institucional.forms import UsuarioForm
 from institucional.models import Usuario
 
 def home_institucional(request):
@@ -17,7 +19,7 @@ def home_institucional(request):
     }
     return render(request, 'institucional/institucional.html', context)
 
-def nuevos_usuarios(request):
+def mas_usuarios(request):
     user_objects = Usuario.objects.all()
     grupos = Group.objects.all()
     print(user_objects[0].groups.all())
@@ -63,7 +65,7 @@ def filtro_usuarios(request):
             'email': u.email,
             'group': first_group,
             'is_active': u.habilitado,
-            'last_login': u.last_login.strftime("%d/%m/%Y %H:%M") if u.last_login else None,
+            'last_login': (u.last_login-timedelta(hours=3)).strftime("%d/%m/%Y %H:%M") if u.last_login else None,
             'profile_picture': getattr(u, 'profile_picture', None) and u.profile_picture.url or None,
         })
 
