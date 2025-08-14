@@ -42,7 +42,12 @@
             </ul>
             <div class="d-flex">
                 <span class="navbar-text me-3">
-                    <i class="bi bi-person-circle"></i> Usuario Admin
+                    <i class="bi bi-person-circle"></i> Usuario 
+                        {% if request.user.username == None %}
+                        {% else %}
+                            {{request.user.username}}
+                        {%endif%}
+
                 </span>
                 <a href="{% url 'logout' %}" class="btn btn-outline-light">
                     <i class="bi bi-box-arrow-right"></i> Salir
