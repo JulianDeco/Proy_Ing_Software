@@ -114,7 +114,7 @@ LOGIN_REDIRECT_URL = 'redirect_login'
 
 LANGUAGE_CODE = 'es-ar'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/Argentina/Buenos_Aires'
 
 USE_I18N = True
 

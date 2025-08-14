@@ -22,7 +22,7 @@
     <div class="col-md-6 mb-4">
         <div class="card h-100">
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0"><i class="bi bi-people"></i> Gestión de Usuarios (RF01, RF12)</h5>
+                <h5 class="mb-0"><i class="bi bi-people"></i> Gestión de Usuarios</h5>
                 <a href="#" class="btn btn-sm btn-outline-primary">Ver todos</a>
             </div>
             <div class="card-body">
@@ -37,20 +37,29 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <img src="{% static 'img/avatar-admin.png' %}" class="rounded-circle me-2" width="30">
-                                        <span>admin@escuela.edu</span>
-                                    </div>
-                                </td>
-                                <td>Administrador</td>
-                                <td><span class="badge bg-success">Activo</span></td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></button>
-                                </td>
-                            </tr>
-                            <!-- Más usuarios... -->
+                            {% for usuario in usuarios %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="{% static 'img/default_profile.jpg' %}" class="rounded-circle me-2" width="30">
+                                            <span>{{ usuario.email }}</span>
+                                        </div>
+                                    </td>
+                                    <td>{% if usuario.is_staff %}
+                                            Administrador
+                                        {% else %}
+                                            Usuario
+                                        {% endif %}
+                                    </td>
+                                    <td><span class="badge bg-success">{{ usuario.habilitado }}</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></button>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <li>No hay usuarios</li>
+                            {% endfor %}
+                            
                         </tbody>
                     </table>
                 </div>
@@ -58,7 +67,6 @@
         </div>
     </div>
 
-    <!-- Calendario Académico -->
     <div class="col-md-6 mb-4">
         <div class="card h-100">
             <div class="card-header bg-white">
@@ -76,7 +84,6 @@
                             </div>
                             <span class="badge bg-info">Institucional</span>
                         </li>
-                        <!-- Más eventos... -->
                     </ul>
                 </div>
             </div>
@@ -84,7 +91,6 @@
     </div>
 </div>
 
-<!-- Auditoría del Sistema -->
 <div class="card mb-4">
     <div class="card-header bg-white d-flex justify-content-between align-items-center">
         <h5 class="mb-0"><i class="bi bi-clipboard2-pulse"></i> Auditoría del Sistema (RF15)</h5>
@@ -96,26 +102,40 @@
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-sm table-hover">
-                <thead>
-                    <tr>
-                        <th>Fecha/Hora</th>
-                        <th>Usuario</th>
-                        <th>Acción</th>
-                        <th>Detalle</th>
-                        <th>IP</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>10/10/2023 09:15</td>
-                        <td>admin@escuela.edu</td>
-                        <td><span class="badge bg-warning text-dark">Modificación</span></td>
-                        <td>Actualizó datos de usuario #125</td>
-                        <td>192.168.1.1</td>
-                    </tr>
-                    <!-- Más registros... -->
-                </tbody>
-            </table>
+            <thead>
+                <tr>
+                    <th>Fecha/Hora</th>
+                    <th>Usuario</th>
+                    <th>Acción</th>
+                    <th>Detalle</th>
+                    <th>IP</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>{{ log.action_time|date:"d/m/Y H:i" }}</td>
+                    <td>{{ log.user.email }}</td>
+                    <td>
+                        {% if log.action_flag == 1 %}
+                            <span class="badge bg-success text-dark">Creación</span>
+                        {% elif log.action_flag == 2 %}
+                            <span class="badge bg-warning text-dark">Modificación</span>
+                        {% elif log.action_flag == 3 %}
+                            <span class="badge bg-danger text-white">Eliminación</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ log.content_type }}: {{ log.object_repr }}</td>
+                    <td>{{ log.ip_address|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5">No hay registros</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
         </div>
         <nav aria-label="Page navigation">
             <ul class="pagination justify-content-center">
@@ -134,7 +154,6 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- FullCalendar JS -->
 <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js'></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -153,7 +172,6 @@
                     end: '2023-10-15T18:00:00',
                     color: '#0d6efd'
                 },
-                // Más eventos...
             ]
         });
         calendar.render();
