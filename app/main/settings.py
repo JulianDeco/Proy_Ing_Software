@@ -30,7 +30,6 @@ ALLOWED_HOSTS = []
 
 
 AUTH_USER_MODEL = 'institucional.Usuario'
-
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -108,12 +107,12 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
+LOGIN_REDIRECT_URL = 'redirect_login'
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'es-ar'
 
 TIME_ZONE = 'UTC'
 

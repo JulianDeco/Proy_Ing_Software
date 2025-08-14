@@ -2,19 +2,31 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 class Usuario(AbstractUser):
-    persona = models.OneToOneField('Persona', on_delete=models.CASCADE, null=True, blank=True)
+    username = None
+    email = models.EmailField(unique=True)
     habilitado = models.BooleanField(default=True)
 
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
     class Meta:
         db_table = 'institucional_usuarios'
         verbose_name = 'Usuario'
         verbose_name_plural = 'Usuarios'
+        
+    def __str__(self):
+        return self.email
+
 
 class Persona(models.Model):
     dni = models.CharField(max_length=20, unique=True)
     nombre = models.CharField(max_length=100)
     apellido = models.CharField(max_length=100)
-    roles = models.ManyToManyField('Rol', related_name='personas')
+    usuario = models.OneToOneField(
+        'Usuario', on_delete=models.SET_NULL, 
+        null=True, blank=True,
+        related_name='persona'
+    )
 
     class Meta:
         db_table = 'institucional_personas'
