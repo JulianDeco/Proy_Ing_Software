@@ -11,13 +11,13 @@ class UsuarioAdmin(BaseUserAdmin):
     
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
-        ('Permisos', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
+        ('Permisos', {'fields': ('is_active', 'is_staff', 'groups', 'user_permissions')}),
     )
 
     add_fieldsets = (
         (None, {
             'classes': ('wide',),
-            'fields': ('email', 'password1', 'password2', 'habilitado', 'is_staff', 'is_superuser'),
+            'fields': ('email', 'password1', 'password2', 'habilitado', 'is_staff',),
         }),
     )
     
