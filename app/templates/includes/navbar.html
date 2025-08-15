@@ -42,12 +42,12 @@
             </ul>
             <div class="d-flex">
                 <span class="navbar-text me-3">
-                    <i class="bi bi-person-circle"></i> Usuario 
-                        {% if request.user.username == None %}
+                    <i class="bi bi-person-circle"></i> Hola, <b>
+                        {% if request.user.email == None %}
                         {% else %}
-                            {{request.user.username}}
+                            {{request.user.email}}
                         {%endif%}
-
+                        </b> 
                 </span>
                 <a href="{% url 'logout' %}" class="btn btn-outline-light">
                     <i class="bi bi-box-arrow-right"></i> Salir

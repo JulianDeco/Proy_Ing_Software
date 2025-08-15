@@ -37,6 +37,24 @@ argon2 = ["argon2-cffi (>=19.1.0)"]
 bcrypt = ["bcrypt"]
 
 [[package]]
+name = "django-admin-logs"
+version = "1.4.0"
+description = "View, delete or disable Django admin log entries."
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "django_admin_logs-1.4.0-py3-none-any.whl", hash = "sha256:cef527b5405d362f192083ab8d856b556c45028c7b388d29692079313dc4f932"},
+    {file = "django_admin_logs-1.4.0.tar.gz", hash = "sha256:1b3d59f72e36d3d2376c62b5b7966f516f85fe0a70a2a826e112f91bdcfca8d5"},
+]
+
+[package.dependencies]
+Django = ">=4.2"
+
+[package.extras]
+dev = ["Django", "black", "build", "coverage", "pre-commit", "pytest", "pytest-cov", "pytest-django", "ruff", "tox", "twine"]
+
+[[package]]
 name = "django-jazzmin"
 version = "3.0.1"
 description = "Drop-in theme for django admin, that utilises AdminLTE 3 & Bootstrap 4 to make yo' admin look jazzy"
@@ -83,4 +101,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12"
-content-hash = "e7aa8b6b7e212993504ed344f3b95c8127e95032fa9c49fba802abd4c714fa6d"
+content-hash = "a4f644c9f590d996c5987e17c1d648e95be306ba4df57f1a1d42b959e27371e7"
