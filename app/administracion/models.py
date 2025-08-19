@@ -10,6 +10,9 @@ class PlanEstudio(models.Model):
         db_table = 'administracion_planes_estudio'
         verbose_name = 'Plan de Estudio'
         verbose_name_plural = 'Planes de Estudio'
+        
+    def __str__(self):
+        return f"{self.nombre} ({self.codigo})"
 
 
 class Reporte(models.Model):

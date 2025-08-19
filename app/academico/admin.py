@@ -9,5 +9,5 @@ class MateriaAdmin(admin.ModelAdmin):
 
 @admin.register(Comision)
 class ComisionAdmin(admin.ModelAdmin):
-    list_display = ('codigo', 'materia', 'horario', 'turno')
+    list_display = ('codigo', 'materia', 'horario_inicio', 'horario_fin', 'turno')
     search_fields = ('codigo', 'materia__nombre')

@@ -27,6 +27,7 @@ class Persona(models.Model):
         null=True, blank=True,
         related_name='persona'
     )
+    es_alumno = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'institucional_personas'
