@@ -1,3 +1,4 @@
+import datetime
 from django.db import models
 
 from administracion.models import PlanEstudio
@@ -65,3 +66,17 @@ class Alumno(Persona):
         
     def __str__(self):
         return f"{self.dni} - {self.estado}"
+    
+class InscripcionesAlumnosComisiones(models.Model):
+    alumno = models.ForeignKey(Alumno, on_delete=models.CASCADE)
+    comision = models.ForeignKey(Comision, on_delete=models.CASCADE)
+    creado = models.DateTimeField(default=datetime.datetime.now())
+    
+    class Meta:
+        db_table = 'institucional_inscripciones_alumnos_comisiones'
+        verbose_name = 'Inscripcion del alumno en comisiones'
+        verbose_name_plural = 'Inscripiones de alumnos en comisiones'
+        
+    
+    def __str__(self):
+        return f"Alumno {self.alumno.dni} Inscripnto en {self.comision.codigo}"
