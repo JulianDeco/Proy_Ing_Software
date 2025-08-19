@@ -5,7 +5,6 @@ from django.core.exceptions import ValidationError
 from administracion.models import PlanEstudio
 from institucional.models import Persona
 
-# ------------------- MATERIA -------------------
 class Materia(models.Model):
     nombre = models.CharField(max_length=100)
     codigo = models.CharField(max_length=20)
@@ -21,32 +20,35 @@ class Materia(models.Model):
 
     def __str__(self):
         return f"{self.nombre} ({self.codigo})"
+class Turno(models.TextChoices):
+    MANANA = 'mañana', 'Mañana'
+    TARDE = 'tarde', 'Tarde'
+    NOCHE = 'noche', 'Noche'
 
-OPCIONES_TURNO = [
-    ('mañana', 'Mañana'),
-    ('tarde', 'Tarde'),
-    ('noche', 'Noche'),
-]
 
-OPCIONES_DIAS = [
-    (1, 'Lunes'),
-    (2, 'Martes'),
-    (3, 'Miércoles'),
-    (4, 'Jueves'),
-    (5, 'Viernes'),
-    (6, 'Sábado'),
-]
+class Dia(models.IntegerChoices):
+    LUNES = 1, 'Lunes'
+    MARTES = 2, 'Martes'
+    MIERCOLES = 3, 'Miércoles'
+    JUEVES = 4, 'Jueves'
+    VIERNES = 5, 'Viernes'
+    SABADO = 6, 'Sábado'
+class EstadoComision(models.TextChoices):
+    EN_CURSO = 'EN_CURSO', 'En curso'
+    FINALIZADA = 'FINALIZADA', 'Finalizada'
+
 
 class Comision(models.Model):
     codigo = models.CharField(max_length=20)
     horario_inicio = models.TimeField()
     horario_fin = models.TimeField()
-    dia_cursado = models.IntegerField(choices=OPCIONES_DIAS)
-    turno = models.CharField(max_length=50, choices=OPCIONES_TURNO)
+    dia_cursado = models.IntegerField(choices=Dia.choices)
+    turno = models.CharField(max_length=50, choices=Turno.choices)
     docente = models.ForeignKey('institucional.Persona', on_delete=models.SET_NULL, null=True)
     materia = models.ForeignKey(Materia, on_delete=models.CASCADE)
     aula = models.CharField(max_length=50, blank=True, null=True)
     cupo_maximo = models.PositiveIntegerField(default=30)
+    estado = models.CharField(max_length=20, choices=EstadoComision.choices)
 
     class Meta:
         db_table = 'academico_comisiones'
