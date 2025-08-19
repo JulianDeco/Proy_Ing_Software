@@ -88,7 +88,9 @@ class Alumno(Persona):
     def __str__(self):
         return f"{self.dni} - {self.nombre} {self.apellido}"
 
-
+class EstadoMateria(models.TextChoices):
+    REGULAR = 'REGULAR', 'Regular'
+    LIBRE = 'LIBRE', 'Libre'
 
 class InscripcionesAlumnosComisiones(models.Model):
     alumno = models.ForeignKey(Alumno, on_delete=models.CASCADE)
@@ -96,8 +98,8 @@ class InscripcionesAlumnosComisiones(models.Model):
     creado = models.DateTimeField(auto_now_add=True)
     estado_inscripcion = models.CharField(
         max_length=20,
-        choices=[('INSCRIPTO', 'Inscripto'), ('RETIRADO', 'Retirado'), ('FINALIZADO', 'Finalizado')],
-        default='INSCRIPTO'
+        choices=EstadoMateria.choices,
+        default='REGULAR'
     )
 
     class Meta:
@@ -109,4 +111,21 @@ class InscripcionesAlumnosComisiones(models.Model):
     def __str__(self):
         return f"Alumno {self.alumno.dni} inscripto en {self.comision.codigo}"
 
+class TipoCalificacion(models.TextChoices):
+    PARCIAL = 'PARCIAL', 'Parcial'
+    TRABAJO_PRACTICO = 'TP', 'Trabajo Práctico'
+    FINAL = 'FINAL', 'Final'
+    CONCEPTO = 'CONCEPTO', 'Concepto'
+    
+class Calificacion(models.Model):
+    alumno_comision = models.ForeignKey(InscripcionesAlumnosComisiones, on_delete=models.CASCADE, related_name='calificaciones')
+    tipo = models.CharField(max_length=20, choices=TipoCalificacion.choices)
+    nota = models.DecimalField(max_digits=4, decimal_places=2)
 
+    class Meta:
+        unique_together = ('alumno_comision', 'tipo')
+        verbose_name = 'Calificación'
+        verbose_name_plural = 'Calificaciones'
+
+    def __str__(self):
+        return f"{self.alumno_comision.alumno} - {self.tipo}: {self.nota}"
