@@ -1,6 +1,7 @@
 from django.db import models
 
 from administracion.models import PlanEstudio
+from institucional.models import Persona
 
 class Materia(models.Model):
     nombre = models.CharField(max_length=100)
@@ -48,3 +49,19 @@ class Comision(models.Model):
         
     def __str__(self):
         return f"{self.materia} - ({self.codigo}) - {self.turno}"
+    
+class EstadosAlumno(models.Model):
+    descripcion = models.CharField(max_length=100)
+    
+    def __str__(self):
+        return f"{self.descripcion}"
+class Alumno(Persona):
+    promedio = models.DecimalField(decimal_places= 2, max_digits=4,default=0)
+    estado = models.ForeignKey(EstadosAlumno, on_delete=models.SET_NULL, null=True)
+    class Meta:
+        db_table = 'institucional_alumnos'
+        verbose_name = 'Alumno'
+        verbose_name_plural = 'Alumnos'
+        
+    def __str__(self):
+        return f"{self.dni} - {self.estado}"
