@@ -65,7 +65,7 @@ class Alumno(Persona):
         verbose_name_plural = 'Alumnos'
         
     def __str__(self):
-        return f"{self.dni} - {self.estado}"
+        return f"{self.dni} - {self.nombre} {self.apellido}"
     
 class InscripcionesAlumnosComisiones(models.Model):
     alumno = models.ForeignKey(Alumno, on_delete=models.CASCADE)
@@ -79,4 +79,4 @@ class InscripcionesAlumnosComisiones(models.Model):
         
     
     def __str__(self):
-        return f"Alumno {self.alumno.dni} Inscripnto en {self.comision.codigo}"
+        return f"Alumno {self.alumno.dni} Inscripto en {self.comision.codigo}"

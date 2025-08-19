@@ -19,5 +19,5 @@ class EstadosAlumnoAdmin(admin.ModelAdmin):
     
 @admin.register(InscripcionesAlumnosComisiones)
 class InscripcionesAlumnosComisionesAdmin(admin.ModelAdmin):
-    list_display = ('alumno','comision','creado',)
+    list_display = ('alumno','comision',)
     search_fields = ('alumno','comision','creado',)
