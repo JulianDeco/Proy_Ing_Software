@@ -10,7 +10,6 @@ class Materia(models.Model):
     codigo = models.CharField(max_length=20)
     plan_estudio = models.ForeignKey(PlanEstudio, on_delete=models.CASCADE)
     descripcion = models.TextField(blank=True, null=True)
-    creditos = models.PositiveIntegerField(default=0)
 
     class Meta:
         db_table = 'academico_materias'
@@ -57,7 +56,7 @@ class Comision(models.Model):
         unique_together = ('codigo', 'materia', 'turno', 'dia_cursado')
 
     def __str__(self):
-        return f"{self.materia} - ({self.codigo}) - {self.turno}"
+        return f"{self.materia.nombre} - ({self.codigo}) - {self.turno} - {self.docente.nombre} {self.docente.apellido}"
 
     def clean(self):
         if self.horario_fin <= self.horario_inicio:
