@@ -4,6 +4,10 @@ from django.urls import include, path
 
 from main.views import LoginEmailView, home, logout_view, redirect_based_group
 
+admin.site.site_title = "Sitio de administración - Sistema de administración"
+admin.site.site_header = "Administración de sistema educativo"
+admin.site.index_title = "Sitio de administración"
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     
