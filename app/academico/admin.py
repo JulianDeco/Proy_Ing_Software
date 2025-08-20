@@ -28,6 +28,6 @@ class CalificacionAdmin(admin.ModelAdmin):
     search_fields = ('alumno_comision', 'tipo' ,'nota',)
 
 @admin.register(Asistencia)
-class CalificacionAdmin(admin.ModelAdmin):
-    list_display = ('alumno_comision', 'es_presente' ,'fecha_asistencia',)
-    search_fields = ('alumno_comision', 'es_presente' ,'fecha_asistencia',)
+class AsistenciaAdmin(admin.ModelAdmin):
+    list_display = ('alumno_comision', 'esta_presente' ,'fecha_asistencia',)
+    search_fields = ('alumno_comision', 'esta_presente' ,'fecha_asistencia',)
