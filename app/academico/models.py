@@ -110,7 +110,7 @@ class InscripcionesAlumnosComisiones(models.Model):
         unique_together = ('alumno', 'comision')
 
     def __str__(self):
-        return f"Alumno {self.alumno.dni} inscripto en {self.comision.codigo}"
+        return f"Alumno {self.alumno.dni} inscripto en {self.comision.materia.nombre}"
 
 class TipoCalificacion(models.TextChoices):
     PARCIAL = 'PARCIAL', 'Parcial'

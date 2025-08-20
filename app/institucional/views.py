@@ -5,10 +5,13 @@ from django.shortcuts import render
 from django.contrib.admin.models import LogEntry
 from django.contrib.auth.models import Group
 from django.db.models import Q
+from django.contrib.auth.decorators import login_required
+
 
 from institucional.forms import UsuarioForm
 from institucional.models import Usuario
 
+@login_required
 def home_institucional(request):
     logs = LogEntry.objects.all().order_by('-action_time')[:10]
     
@@ -24,6 +27,7 @@ def home_institucional(request):
     }
     return render(request, 'institucional/institucional.html', context)
 
+@login_required
 def mas_usuarios(request):
     user_objects = Usuario.objects.all()
     grupos = Group.objects.all()
@@ -40,6 +44,7 @@ def mas_usuarios(request):
     }
     return render(request, 'institucional/nuevos_usuarios.html', context)
 
+@login_required
 def filtro_usuarios(request):
     if request.method != 'GET':
         return JsonResponse({'error': 'Método no permitido'}, status=405)
