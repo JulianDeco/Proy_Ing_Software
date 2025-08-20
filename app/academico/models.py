@@ -86,6 +86,10 @@ class Alumno(Persona):
         verbose_name = 'Alumno'
         verbose_name_plural = 'Alumnos'
 
+    @property
+    def get_full_name(self):
+        return f"{self.nombre} {self.apellido}"
+
     def __str__(self):
         return f"{self.dni} - {self.nombre} {self.apellido}"
 
