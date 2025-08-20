@@ -16,7 +16,7 @@
                 <div class="col-md-6">
                     <h5>{{ comision.materia.nombre }}</h5>
                     <p class="mb-1"><strong>Código:</strong> {{ comision.codigo }}</p>
-                    <p class="mb-1"><strong>Docente:</strong> {{ comision.docente.get_full_name }}</p>
+                    <p class="mb-1"><strong>Docente:</strong> {{ comision.docente.get_full_name|default:"Sin asignar" }}</p>
                     <p class="mb-1"><strong>Aula:</strong> {{ comision.aula|default:"Sin asignar" }}</p>
                 </div>
                 <div class="col-md-6">

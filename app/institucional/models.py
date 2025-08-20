@@ -53,6 +53,10 @@ class Persona(models.Model):
         verbose_name = 'Persona'
         verbose_name_plural = 'Personas'
 
+    @property
+    def get_full_name(self):
+        return f'{self.nombre} {self.apellido}'
+
     def __str__(self):
         return f"{self.nombre} {self.apellido} ({self.dni})"
     
