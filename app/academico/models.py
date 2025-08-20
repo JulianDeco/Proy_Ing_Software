@@ -112,7 +112,7 @@ class InscripcionesAlumnosComisiones(models.Model):
         verbose_name = 'Inscripción del alumno en comisiones'
         verbose_name_plural = 'Inscripciones de alumnos en comisiones'
         unique_together = ('alumno', 'comision')
-
+    
     def __str__(self):
         return f"Alumno {self.alumno.dni} inscripto en {self.comision.materia.nombre}"
 

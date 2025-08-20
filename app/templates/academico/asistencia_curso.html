@@ -95,11 +95,14 @@
                                 </td>
                                 <td>
                                     <select class="form-select form-select-sm estado-asistencia" 
-                                            name="asistencia_{{ alumno_comision.id }}" required>
-                                        <option value="PRESENTE">Presente</option>
-                                        <option value="AUSENTE">Ausente</option>
-                                        <option value="TARDANZA">Tardanza</option>
-                                        <option value="JUSTIFICADO">Justificado</option>
+                                            name="asistencia_{{ alumno_comision.alumno.id }}" required>
+                                        {% if alumno_comision.alumno.presente|default:False == False %}
+                                            <option value="PRESENTE">Presente</option>
+                                            <option value="AUSENTE" selected>Ausente</option>
+                                        {% else %}
+                                            <option value="PRESENTE" selected>Presente</option>
+                                            <option value="AUSENTE">Ausente</option>
+                                        {% endif %}
                                     </select>
                                 </td>
                                 <td>
