@@ -1,228 +1,262 @@
-{% extends 'base.html' %}
-{% load static %}
-
-{% block title %}Registro de Asistencia - {{ comision.materia.nombre }}{% endblock %}
-
-{% block content %}
+{% extends 'base.html' %} {% load static %} {% block title %}Registro de
+Asistencia - {{ comision.materia.nombre }}{% endblock %} {% block content %}
 <div class="container-fluid py-4">
-    <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-            <h4 class="mb-0">
-                <i class="bi bi-calendar-check"></i> Registro de Asistencia
-            </h4>
-        </div>
-        <div class="card-body">
-            <div class="row">
-                <div class="col-md-6">
-                    <h5>{{ comision.materia.nombre }}</h5>
-                    <p class="mb-1"><strong>Código:</strong> {{ comision.codigo }}</p>
-                    <p class="mb-1"><strong>Docente:</strong> {{ comision.docente.get_full_name|default:"Sin asignar" }}</p>
-                    <p class="mb-1"><strong>Aula:</strong> {{ comision.aula|default:"Sin asignar" }}</p>
-                </div>
-                <div class="col-md-6">
-                    <p class="mb-1"><strong>Horario:</strong> {{ comision.horario_inicio|time:"H:i" }} - {{ comision.horario_fin|time:"H:i" }}</p>
-                    <p class="mb-1"><strong>Día:</strong> {{ comision.get_dia_cursado_display }}</p>
-                    <p class="mb-1"><strong>Turno:</strong> {{ comision.get_turno_display }}</p>
-                    <p class="mb-1"><strong>Estado:</strong> {{ comision.get_estado_display }}</p>
-                </div>
-            </div>
-        </div>
+  <div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+      <h4 class="mb-0">
+        <i class="bi bi-calendar-check"></i> Registro de Asistencia
+      </h4>
     </div>
-
-    <div class="card">
-        <div class="card-header bg-light">
-            <h5 class="mb-0">
-                <i class="bi bi-people-fill"></i> Lista de Alumnos
-                <span class="badge bg-primary">{{ alumnos_comision.count }} alumnos</span>
-            </h5>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-6">
+          <h5>{{ comision.materia.nombre }}</h5>
+          <p class="mb-1"><strong>Código:</strong> {{ comision.codigo }}</p>
+          <p class="mb-1">
+            <strong>Docente:</strong> {{
+            comision.docente.get_full_name|default:"Sin asignar" }}
+          </p>
+          <p class="mb-1">
+            <strong>Aula:</strong> {{ comision.aula|default:"Sin asignar" }}
+          </p>
         </div>
-        <div class="card-body">
-            <form id="asistenciaForm" method="post" action="{% url 'registrar_asistencia' comision.id %}">
-                {% csrf_token %}
-                
-                <div class="row mb-4">
-                    <div class="col-md-4">
-                        <label for="fecha_asistencia" class="form-label"><strong>Fecha de la clase:</strong></label>
-                        <input type="date" class="form-control" id="fecha_asistencia" name="fecha_asistencia" 
-                               value="{% now 'Y-m-d' %}" required>
+        <div class="col-md-6">
+          <p class="mb-1">
+            <strong>Horario:</strong> {{ comision.horario_inicio|time:"H:i" }} -
+            {{ comision.horario_fin|time:"H:i" }}
+          </p>
+          <p class="mb-1">
+            <strong>Día:</strong> {{ comision.get_dia_cursado_display }}
+          </p>
+          <p class="mb-1">
+            <strong>Turno:</strong> {{ comision.get_turno_display }}
+          </p>
+          <p class="mb-1">
+            <strong>Estado:</strong> {{ comision.get_estado_display }}
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header bg-light">
+      <h5 class="mb-0">
+        <i class="bi bi-people-fill"></i> Lista de Alumnos
+        <span class="badge bg-primary"
+          >{{ alumnos_comision.count }} alumnos</span
+        >
+      </h5>
+    </div>
+    <div class="card-body">
+      <form
+        id="asistenciaForm"
+        method="post"
+        action="{% url 'registrar_asistencia' comision.id %}"
+      >
+        {% csrf_token %}
+
+        <div class="row mb-4">
+          <div class="col-md-4">
+            <label for="fecha_asistencia" class="form-label"
+              ><strong>Fecha de la clase:</strong></label
+            >
+            <input
+              type="date"
+              class="form-control"
+              id="fecha_asistencia"
+              name="fecha_asistencia"
+              value="{% now 'Y-m-d' %}"
+              required
+            />
+          </div>
+          <div class="col-md-8 d-flex align-items-end">
+            <button type="submit" class="btn btn-success me-2">
+              <i class="bi bi-check-circle"></i> Guardar Asistencia
+            </button>
+            <button
+              type="button"
+              class="btn btn-outline-secondary"
+              id="marcarTodosPresentes"
+            >
+              <i class="bi bi-check-all"></i> Marcar todos presentes
+            </button>
+          </div>
+        </div>
+
+        <!-- Tabla de alumnos -->
+        <div class="table-responsive">
+          <table class="table table-hover table-striped">
+            <thead class="table-dark">
+              <tr>
+                <th width="50px">#</th>
+                <th>Alumno</th>
+                <th>DNI</th>
+                <th>Estado</th>
+                <th>Asistencia</th>
+                <th>Observaciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for alumno_comision in alumnos_comision %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>
+                  <div class="d-flex align-items-center">
+                    <img
+                      src="{% static '/img/default_profile.jpg' %}"
+                      class="rounded-circle me-2"
+                      width="32"
+                      height="32"
+                      alt="{{ alumno_comision.alumno.get_full_name }}"
+                    />
+                    <div>
+                      <strong
+                        >{{ alumno_comision.alumno.get_full_name }}</strong
+                      >
+                      <br />
+                      <small class="text-muted"
+                        >{{ alumno_comision.alumno.email|default:"Sin email"}}</small
+                      >
                     </div>
-                    <div class="col-md-8 d-flex align-items-end">
-                        <button type="submit" class="btn btn-success me-2">
-                            <i class="bi bi-check-circle"></i> Guardar Asistencia
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary" id="marcarTodosPresentes">
-                            <i class="bi bi-check-all"></i> Marcar todos presentes
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Tabla de alumnos -->
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped">
-                        <thead class="table-dark">
-                            <tr>
-                                <th width="50px">#</th>
-                                <th>Alumno</th>
-                                <th>Legajo</th>
-                                <th>Estado</th>
-                                <th>Asistencia</th>
-                                <th>Observaciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for alumno_comision in alumnos_comision %}
-                            <tr>
-                                <td>{{ forloop.counter }}</td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <img src="{% static '/img/default_profile.jpg' %}" 
-                                             class="rounded-circle me-2" width="32" height="32" 
-                                             alt="{{ alumno_comision.alumno.get_full_name }}">
-                                        <div>
-                                            <strong>{{ alumno_comision.alumno.get_full_name }}</strong>
-                                            <br>
-                                            <small class="text-muted">{{ alumno_comision.alumno.email|default:"Sin email" }}</small>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>{{ alumno_comision.alumno.legajo|default:"-" }}</td>
-                                <td>
-                                    <span class="badge 
-                                        {% if alumno_comision.estado_inscripcion == 'REGULAR' %}bg-success
-                                        {% else %}bg-warning text-dark{% endif %}">
-                                        {{ alumno_comision.get_estado_inscripcion_display }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <select class="form-select form-select-sm estado-asistencia" 
-                                            name="asistencia_{{ alumno_comision.alumno.id }}" required>
-                                        {% if alumno_comision.alumno.presente|default:False == False %}
-                                            <option value="PRESENTE">Presente</option>
-                                            <option value="AUSENTE" selected>Ausente</option>
-                                        {% else %}
-                                            <option value="PRESENTE" selected>Presente</option>
-                                            <option value="AUSENTE">Ausente</option>
-                                        {% endif %}
-                                    </select>
-                                </td>
-                                <td>
-                                    <input type="text" class="form-control form-control-sm" 
-                                           name="observacion_{{ alumno_comision.id }}" 
-                                           placeholder="Observaciones..." maxlength="100">
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="6" class="text-center py-4 text-muted">
-                                    <i class="bi bi-people display-4 d-block mb-2"></i>
-                                    No hay alumnos inscritos en esta comisión.
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </form>
+                  </div>
+                </td>
+                <td>{{ alumno_comision.alumno.dni|default:"-" }}</td>
+                <td>
+                  <span
+                    class="badge {% if alumno_comision.estado_inscripcion == 'REGULAR' %}bg-success {% else %}bg-warning text-dark{% endif %}"
+                  >
+                    {{ alumno_comision.get_estado_inscripcion_display }}
+                  </span>
+                </td>
+                <td>
+                  <select
+                    class="form-select form-select-sm estado-asistencia"
+                    name="asistencia_{{ alumno_comision.alumno.id }}"
+                    required
+                  >
+                    {% if alumno_comision.alumno.presente|default:False == False %}
+                    <option value="PRESENTE">Presente</option>
+                    <option value="AUSENTE" selected>Ausente</option>
+                    {% else %}
+                    <option value="PRESENTE" selected>Presente</option>
+                    <option value="AUSENTE">Ausente</option>
+                    {% endif %}
+                  </select>
+                </td>
+                <td>
+                  <input
+                    type="text"
+                    class="form-control form-control-sm"
+                    name="observacion_{{ alumno_comision.id }}"
+                    placeholder="Observaciones..."
+                    maxlength="100"
+                  />
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="6" class="text-center py-4 text-muted">
+                  <i class="bi bi-people display-4 d-block mb-2"></i>
+                  No hay alumnos inscritos en esta comisión.
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
+      </form>
     </div>
-
-    <!-- Resumen de asistencia -->
-    <div class="row mt-4">
-        <div class="col-md-3">
-            <div class="card text-center bg-success text-white">
-                <div class="card-body">
-                    <h6>Presentes</h6>
-                    <h3 id="contadorPresentes">0</h3>
-                </div>
-            </div>
+  </div>
+  <div class="row mt-4">
+    <div class="col-md-6">
+      <div class="card text-center bg-success text-white">
+        <div class="card-body">
+          <h6>Presentes</h6>
+          <h3 id="contadorPresentes">0</h3>
         </div>
-        <div class="col-md-3">
-            <div class="card text-center bg-danger text-white">
-                <div class="card-body">
-                    <h6>Ausentes</h6>
-                    <h3 id="contadorAusentes">0</h3>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-center bg-warning text-dark">
-                <div class="card-body">
-                    <h6>Tardanzas</h6>
-                    <h3 id="contadorTardanzas">0</h3>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-center bg-info text-white">
-                <div class="card-body">
-                    <h6>Justificados</h6>
-                    <h3 id="contadorJustificados">0</h3>
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
+    <div class="col-md-6">
+      <div class="card text-center bg-danger text-white">
+        <div class="card-body">
+          <h6>Ausentes</h6>
+          <h3 id="contadorAusentes">0</h3>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
+{% endblock %} {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener("DOMContentLoaded", function () {
     function actualizarContadores() {
-        const presentes = document.querySelectorAll('.estado-asistencia option:checked[value="PRESENTE"]').length;
-        const ausentes = document.querySelectorAll('.estado-asistencia option:checked[value="AUSENTE"]').length;
-        const tardanzas = document.querySelectorAll('.estado-asistencia option:checked[value="TARDANZA"]').length;
-        const justificados = document.querySelectorAll('.estado-asistencia option:checked[value="JUSTIFICADO"]').length;
-        
-        document.getElementById('contadorPresentes').textContent = presentes;
-        document.getElementById('contadorAusentes').textContent = ausentes;
-        document.getElementById('contadorTardanzas').textContent = tardanzas;
-        document.getElementById('contadorJustificados').textContent = justificados;
+      const presentes = document.querySelectorAll(
+        '.estado-asistencia option:checked[value="PRESENTE"]'
+      ).length;
+      const ausentes = document.querySelectorAll(
+        '.estado-asistencia option:checked[value="AUSENTE"]'
+      ).length;
+      const tardanzas = document.querySelectorAll(
+        '.estado-asistencia option:checked[value="TARDANZA"]'
+      ).length;
+      const justificados = document.querySelectorAll(
+        '.estado-asistencia option:checked[value="JUSTIFICADO"]'
+      ).length;
+
+      document.getElementById("contadorPresentes").textContent = presentes;
+      document.getElementById("contadorAusentes").textContent = ausentes;
+      document.getElementById("contadorTardanzas").textContent = tardanzas;
+      document.getElementById("contadorJustificados").textContent =
+        justificados;
     }
 
-    document.getElementById('marcarTodosPresentes').addEventListener('click', function() {
-        document.querySelectorAll('.estado-asistencia').forEach(select => {
-            select.value = 'PRESENTE';
+    document
+      .getElementById("marcarTodosPresentes")
+      .addEventListener("click", function () {
+        document.querySelectorAll(".estado-asistencia").forEach((select) => {
+          select.value = "PRESENTE";
         });
         actualizarContadores();
-    });
+      });
 
-    document.querySelectorAll('.estado-asistencia').forEach(select => {
-        select.addEventListener('change', actualizarContadores);
+    document.querySelectorAll(".estado-asistencia").forEach((select) => {
+      select.addEventListener("change", actualizarContadores);
     });
 
     actualizarContadores();
 
-    document.getElementById('asistenciaForm').addEventListener('submit', function(e) {
-        const fecha = document.getElementById('fecha_asistencia').value;
+    document
+      .getElementById("asistenciaForm")
+      .addEventListener("submit", function (e) {
+        const fecha = document.getElementById("fecha_asistencia").value;
         if (!fecha) {
-            e.preventDefault();
-            alert('Por favor, seleccione una fecha para la clase.');
-            return false;
+          e.preventDefault();
+          alert("Por favor, seleccione una fecha para la clase.");
+          return false;
         }
-        
-        if (!confirm('¿Está seguro de que desea guardar la asistencia?')) {
-            e.preventDefault();
-            return false;
-        }
-    });
-});
-</script>
-{% endblock %}
 
-{% block extra_css %}
+        if (!confirm("¿Está seguro de que desea guardar la asistencia?")) {
+          e.preventDefault();
+          return false;
+        }
+      });
+  });
+</script>
+{% endblock %} {% block extra_css %}
 <style>
-.estado-asistencia {
+  .estado-asistencia {
     min-width: 120px;
-}
-.table th {
+  }
+  .table th {
     font-weight: 600;
-}
-.card {
+  }
+  .card {
     border: none;
     box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-}
-.card-header {
+  }
+  .card-header {
     border-bottom: 1px solid rgba(0, 0, 0, 0.125);
-}
+  }
 </style>
 {% endblock %}

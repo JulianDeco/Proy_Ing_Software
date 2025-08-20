@@ -58,7 +58,7 @@ class Persona(models.Model):
         return f'{self.nombre} {self.apellido}'
 
     def __str__(self):
-        return f"{self.nombre} {self.apellido} ({self.dni})"
+        return f"{self.get_full_name} ({self.dni})"
     
 class Empleado(Persona):
     usuario = models.OneToOneField(
