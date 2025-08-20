@@ -31,7 +31,7 @@
                     </div>
                     <div>
                         <h6 class="mb-0">Cursos a cargo</h6>
-                        <h3 class="mb-0">5</h3>
+                        <h3 class="mb-0">{{ comisiones.count }}</h3>
                     </div>
                 </div>
                 <hr>
@@ -73,18 +73,19 @@
                             </tr>
                         </thead>
                         <tbody>
+                            {% for comision in comisiones %}
                             <tr>
-                                <td>08:00 - 10:00</td>
-                                <td>Matemáticas</td>
+                                <td>{{ omision.horario_inicio }}</td>
+                                <td>{{ comision.materia.nombre }}</td>
                                 <td>4° A</td>
-                                <td>Aula 12</td>
+                                <td>{{ comision.aula }}</td>
                                 <td>
                                     <button class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-clipboard-check"></i> Asistencia
+                                        <a href="{% url 'asistencia_curso' comision.codigo %}" class="bi bi-clipboard-check"></i> Asistencia
                                     </button>
                                 </td>
                             </tr>
-                            <!-- Más horarios... -->
+                            {% endfor %}
                         </tbody>
                     </table>
                 </div>

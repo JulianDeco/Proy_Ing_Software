@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import include, path
 
-from main.views import LoginEmailView, dashboard_profesores, home, logout_view, redirect_based_group
+from main.views import LoginEmailView, home, logout_view, redirect_based_group
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -11,7 +11,6 @@ urlpatterns = [
     path('login/', LoginEmailView.as_view(), name='login'),
     
     path('', home, name='home'),
-    path('profesores/', dashboard_profesores, name='dashboard_profesores'),
     
     path('institucional/', include('institucional.urls')),
     path('academico/', include('academico.urls')),

@@ -11,10 +11,6 @@ from .forms import LoginEmailForm
 def home(request):
     return render(request, 'main/index.html')
 
-@login_required
-def dashboard_profesores(request):
-    return render(request, 'profesores/dashboard.html')
-
 class LoginEmailView(LoginView):
     template_name = 'security/login.html'
     authentication_form = LoginEmailForm
