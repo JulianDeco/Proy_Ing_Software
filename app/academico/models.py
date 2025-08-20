@@ -130,3 +130,16 @@ class Calificacion(models.Model):
 
     def __str__(self):
         return f"{self.alumno_comision.alumno} - {self.tipo}: {self.nota}"
+    
+class Asistencia(models.Model):
+    alumno_comision = models.ForeignKey(InscripcionesAlumnosComisiones, on_delete=models.CASCADE, related_name='asistencias')
+    esta_presente = models.BooleanField(default=False)
+    fecha_asistencia = models.DateField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Asistencia'
+        verbose_name_plural = 'Asistencias'
+
+    def __str__(self):
+        return f"{self.alumno_comision.alumno} - {self.esta_presente} - {self.fecha_asistencia}"
+    
