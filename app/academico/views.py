@@ -1,16 +1,20 @@
 from django.utils import timezone
 from django.shortcuts import get_object_or_404, render
 from django.contrib.auth.decorators import login_required
+
+from main.utils import group_required
 from .models import Materia, Comision, InscripcionesAlumnosComisiones, Asistencia, Alumno
 from institucional.models import Empleado
 
 
 @login_required
+@group_required('Docente')
 def home_academico(request):
     return render(request, 'academico/academico.html')
 
 
 @login_required
+@group_required('Docente')
 def dashboard_profesores(request):
     datos_usuario = request.user
     datos_persona = Empleado.objects.get(usuario = datos_usuario)
@@ -24,6 +28,7 @@ def dashboard_profesores(request):
     )
 
 @login_required
+@group_required('Docente')
 def asistencia_curso(request, codigo, param_asistencia = None):
     comision = Comision.objects.get(codigo=codigo)
     alumnos_comision = InscripcionesAlumnosComisiones.objects.filter(comision=comision)
@@ -46,6 +51,7 @@ def asistencia_curso(request, codigo, param_asistencia = None):
     return render(request, 'academico/asistencia_curso.html', context = contexto)
 
 @login_required
+@group_required('Docente')
 def registrar_asistencia(request, codigo):
     datos = request.POST
     comision = get_object_or_404(Comision, codigo=codigo)

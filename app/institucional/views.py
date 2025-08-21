@@ -8,10 +8,12 @@ from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 
 
+from main.utils import group_required
 from institucional.forms import UsuarioForm
 from institucional.models import Usuario
 
 @login_required
+@group_required('Administrativo')
 def home_institucional(request):
     logs = LogEntry.objects.all().order_by('-action_time')[:10]
     
@@ -28,6 +30,7 @@ def home_institucional(request):
     return render(request, 'institucional/institucional.html', context)
 
 @login_required
+@group_required('Administrativo')
 def mas_usuarios(request):
     user_objects = Usuario.objects.all()
     grupos = Group.objects.all()
@@ -45,6 +48,7 @@ def mas_usuarios(request):
     return render(request, 'institucional/nuevos_usuarios.html', context)
 
 @login_required
+@group_required('Administrativo')
 def filtro_usuarios(request):
     if request.method != 'GET':
         return JsonResponse({'error': 'Método no permitido'}, status=405)
