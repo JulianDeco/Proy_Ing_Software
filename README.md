@@ -2,7 +2,7 @@ EduPunto - Sistema de Administración Académica
 ==============================================
 
 **Trabajo de Diploma – Año 2025**  
-**Materia:** Trabajo de Diploma  
+**Materia:** Trabajo de Diploma e Ingeniería de Software
 **Profesor:** Pablo Audoglio  
 **Autor:** Julián Decoppet  
 **Correo de contacto:** juliandecoppet@gmail.com  
