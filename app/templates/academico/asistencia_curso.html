@@ -73,13 +73,6 @@ Asistencia - {{ comision.materia.nombre }}{% endblock %} {% block content %}
             <button type="submit" class="btn btn-success me-2">
               <i class="bi bi-check-circle"></i> Guardar Asistencia
             </button>
-            <button
-              type="button"
-              class="btn btn-outline-secondary"
-              id="marcarTodosPresentes"
-            >
-              <i class="bi bi-check-all"></i> Marcar todos presentes
-            </button>
           </div>
         </div>
 
@@ -128,20 +121,23 @@ Asistencia - {{ comision.materia.nombre }}{% endblock %} {% block content %}
                     {{ alumno_comision.get_estado_inscripcion_display }}
                   </span>
                 </td>
-                <td>
-                  <select
-                    class="form-select form-select-sm estado-asistencia"
-                    name="asistencia_{{ alumno_comision.alumno.id }}"
-                    required
-                  >
-                    {% if alumno_comision.alumno.presente|default:False == False %}
-                    <option value="PRESENTE">Presente</option>
-                    <option value="AUSENTE" selected>Ausente</option>
-                    {% else %}
-                    <option value="PRESENTE" selected>Presente</option>
-                    <option value="AUSENTE">Ausente</option>
-                    {% endif %}
-                  </select>
+                <td class="text-center">
+                  <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="radio" 
+                            name="asistencia_{{ alumno_comision.alumno.id }}" 
+                            id="presente_{{ alumno_comision.alumno.id }}" 
+                            value="PRESENTE"
+                            {% if alumno_comision.alumno.presente|default:False %}checked{% endif %}>
+                      <label class="form-check-label" for="presente_{{ alumno_comision.alumno.id }}">Presente</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="radio" 
+                            name="asistencia_{{ alumno_comision.alumno.id }}" 
+                            id="ausente_{{ alumno_comision.alumno.id }}" 
+                            value="AUSENTE"
+                            {% if not alumno_comision.alumno.presente|default:False %}checked{% endif %}>
+                      <label class="form-check-label" for="ausente_{{ alumno_comision.alumno.id }}">Ausente</label>
+                  </div>
                 </td>
                 <td>
                   <input
@@ -167,63 +163,10 @@ Asistencia - {{ comision.materia.nombre }}{% endblock %} {% block content %}
       </form>
     </div>
   </div>
-  <div class="row mt-4">
-    <div class="col-md-6">
-      <div class="card text-center bg-success text-white">
-        <div class="card-body">
-          <h6>Presentes</h6>
-          <h3 id="contadorPresentes">0</h3>
-        </div>
-      </div>
-    </div>
-    <div class="col-md-6">
-      <div class="card text-center bg-danger text-white">
-        <div class="card-body">
-          <h6>Ausentes</h6>
-          <h3 id="contadorAusentes">0</h3>
-        </div>
-      </div>
-    </div>
-  </div>
 </div>
 {% endblock %} {% block extra_js %}
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-    function actualizarContadores() {
-      const presentes = document.querySelectorAll(
-        '.estado-asistencia option:checked[value="PRESENTE"]'
-      ).length;
-      const ausentes = document.querySelectorAll(
-        '.estado-asistencia option:checked[value="AUSENTE"]'
-      ).length;
-      const tardanzas = document.querySelectorAll(
-        '.estado-asistencia option:checked[value="TARDANZA"]'
-      ).length;
-      const justificados = document.querySelectorAll(
-        '.estado-asistencia option:checked[value="JUSTIFICADO"]'
-      ).length;
-
-      document.getElementById("contadorPresentes").textContent = presentes;
-      document.getElementById("contadorAusentes").textContent = ausentes;
-      document.getElementById("contadorTardanzas").textContent = tardanzas;
-      document.getElementById("contadorJustificados").textContent =
-        justificados;
-    }
-
-    document
-      .getElementById("marcarTodosPresentes")
-      .addEventListener("click", function () {
-        document.querySelectorAll(".estado-asistencia").forEach((select) => {
-          select.value = "PRESENTE";
-        });
-        actualizarContadores();
-      });
-
-    document.querySelectorAll(".estado-asistencia").forEach((select) => {
-      select.addEventListener("change", actualizarContadores);
-    });
-
-    actualizarContadores();
 
     document
       .getElementById("asistenciaForm")
@@ -242,7 +185,6 @@ Asistencia - {{ comision.materia.nombre }}{% endblock %} {% block content %}
       });
   });
 </script>
-{% endblock %} {% block extra_css %}
 <style>
   .estado-asistencia {
     min-width: 120px;

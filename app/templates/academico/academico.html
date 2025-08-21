@@ -33,15 +33,7 @@
                 <div class="row text-center mb-4">
                     <div class="col-md-3 border-end">
                         <h3 class="mb-0">1,245</h3>
-                        <small class="text-muted">Alumnos (RF03)</small>
-                    </div>
-                    <div class="col-md-3 border-end">
-                        <h3 class="mb-0">98%</h3>
-                        <small class="text-muted">Asistencia Promedio (RF05)</small>
-                    </div>
-                    <div class="col-md-3 border-end">
-                        <h3 class="mb-0">8.7</h3>
-                        <small class="text-muted">Promedio General (RF06)</small>
+                        <small class="text-muted">Alumnos</small>
                     </div>
                     <div class="col-md-3">
                         <h3 class="mb-0">42</h3>
@@ -83,17 +75,17 @@
 <ul class="nav nav-tabs mb-3" id="academicTabs" role="tablist">
     <li class="nav-item" role="presentation">
         <button class="nav-link active" id="students-tab" data-bs-toggle="tab" data-bs-target="#students" type="button">
-            <i class="bi bi-people-fill"></i> Alumnos (RF03)
+            <i class="bi bi-people-fill"></i> Alumnos 
         </button>
     </li>
     <li class="nav-item" role="presentation">
         <button class="nav-link" id="attendance-tab" data-bs-toggle="tab" data-bs-target="#attendance" type="button">
-            <i class="bi bi-clipboard-check"></i> Asistencias (RF05)
+            <i class="bi bi-clipboard-check"></i> Asistencias
         </button>
     </li>
     <li class="nav-item" role="presentation">
         <button class="nav-link" id="grades-tab" data-bs-toggle="tab" data-bs-target="#grades" type="button">
-            <i class="bi bi-journal-bookmark"></i> Calificaciones (RF06)
+            <i class="bi bi-journal-bookmark"></i> Calificaciones
         </button>
     </li>
 </ul>
@@ -175,65 +167,11 @@
             <div class="card-header bg-white">
                 <h5 class="mb-0">Registro de Asistencias</h5>
             </div>
-            <div class="card-body">
-                <div class="row mb-4">
-                    <div class="col-md-4">
-                        <label class="form-label">Seleccione fecha</label>
-                        <input type="date" class="form-control">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Seleccione grado</label>
-                        <select class="form-select">
-                            <option>4° A</option>
-                            <option>4° B</option>
-                            <!-- Más grados... -->
-                        </select>
-                    </div>
-                    <div class="col-md-4 d-flex align-items-end">
-                        <button class="btn btn-primary">Cargar Lista</button>
-                    </div>
-                </div>
-                
-                <div class="table-responsive">
-                    <table class="table table-bordered">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Alumno</th>
-                                <th class="text-center">Asistencia</th>
-                                <th>Observaciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>María Rodríguez</td>
-                                <td class="text-center">
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" name="attendance1" id="present1" checked>
-                                        <label class="form-check-label" for="present1">Presente</label>
-                                    </div>
-                                    <div class="form-check form-check-inline">
-                                        <input class="form-check-input" type="radio" name="attendance1" id="absent1">
-                                        <label class="form-check-label" for="absent1">Ausente</label>
-                                    </div>
-                                </td>
-                                <td>
-                                    <input type="text" class="form-control form-control-sm" placeholder="Justificación...">
-                                </td>
-                            </tr>
-                            <!-- Más alumnos... -->
-                        </tbody>
-                    </table>
-                </div>
-                <div class="text-end mt-3">
-                    <button class="btn btn-success">Guardar Asistencias</button>
-                </div>
-            </div>
         </div>
     </div>
 
     <!-- Pestaña Calificaciones -->
     <div class="tab-pane fade" id="grades" role="tabpanel">
-        <!-- Contenido similar para calificaciones... -->
     </div>
 </div>
 {% endblock %}

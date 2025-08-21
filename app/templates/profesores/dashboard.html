@@ -40,10 +40,6 @@
                         <h6 class="mb-0">Clases hoy</h6>
                         <h4 class="mb-0 text-success">3</h4>
                     </div>
-                    <div class="text-center">
-                        <h6 class="mb-0">Tareas pendientes</h6>
-                        <h4 class="mb-0 text-warning">12</h4>
-                    </div>
                 </div>
             </div>
         </div>
@@ -94,7 +90,6 @@
     </div>
 </div>
 
-<!-- Pestañas Principales -->
 <ul class="nav nav-tabs mb-4" id="teacherTabs" role="tablist">
     <li class="nav-item" role="presentation">
         <button class="nav-link active" id="courses-tab" data-bs-toggle="tab" data-bs-target="#courses" type="button">
@@ -102,18 +97,8 @@
         </button>
     </li>
     <li class="nav-item" role="presentation">
-        <button class="nav-link" id="attendance-tab" data-bs-toggle="tab" data-bs-target="#attendance" type="button">
-            <i class="bi bi-clipboard-check"></i> Asistencias
-        </button>
-    </li>
-    <li class="nav-item" role="presentation">
         <button class="nav-link" id="grades-tab" data-bs-toggle="tab" data-bs-target="#grades" type="button">
             <i class="bi bi-journal-check"></i> Calificaciones
-        </button>
-    </li>
-    <li class="nav-item" role="presentation">
-        <button class="nav-link" id="tasks-tab" data-bs-toggle="tab" data-bs-target="#tasks" type="button">
-            <i class="bi bi-list-task"></i> Tareas
         </button>
     </li>
 </ul>
@@ -145,62 +130,6 @@
                 </div>
             </div>
             {% endfor %}
-        </div>
-    </div>
-
-    <!-- Pestaña Asistencias -->
-    <div class="tab-pane fade" id="attendance" role="tabpanel">
-        <div class="card">
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Registro de Asistencias</h5>
-                <div class="d-flex">
-                    <select class="form-select form-select-sm me-2" style="width: 150px;">
-                        <option>4° A</option>
-                        <option>4° B</option>
-                    </select>
-                    <input type="date" class="form-control form-control-sm" style="width: 150px;">
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Alumno</th>
-                                <th class="text-center">Estado</th>
-                                <th>Observaciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for student in attendance_list %}
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <img src="{% static 'img/student' %}{{ forloop.counter }}.jpg" 
-                                             class="rounded-circle me-2" width="32" height="32">
-                                        <span>{{ student.name }}</span>
-                                    </div>
-                                </td>
-                                <td class="text-center">
-                                    <select class="form-select form-select-sm">
-                                        <option value="present" selected>Presente</option>
-                                        <option value="absent">Ausente</option>
-                                        <option value="late">Tardanza</option>
-                                    </select>
-                                </td>
-                                <td>
-                                    <input type="text" class="form-control form-control-sm" 
-                                           placeholder="Justificación...">
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                <div class="text-end mt-3">
-                    <button class="btn btn-primary">Guardar Asistencias</button>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -265,79 +194,4 @@
         </div>
     </div>
 
-    <!-- Pestaña Tareas -->
-    <div class="tab-pane fade" id="tasks" role="tabpanel">
-        <div class="row">
-            <div class="col-md-6 mb-4">
-                <div class="card h-100">
-                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Nueva Tarea</h5>
-                    </div>
-                    <div class="card-body">
-                        <form>
-                            <div class="mb-3">
-                                <label class="form-label">Curso</label>
-                                <select class="form-select">
-                                    <option>Matemáticas - 4° A</option>
-                                    <option>Ciencias - 4° A</option>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Título</label>
-                                <input type="text" class="form-control" placeholder="Ej: Ejercicios de álgebra">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Descripción</label>
-                                <textarea class="form-control" rows="3"></textarea>
-                            </div>
-                            <div class="row mb-3">
-                                <div class="col-md-6">
-                                    <label class="form-label">Fecha de Entrega</label>
-                                    <input type="date" class="form-control">
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label">Archivo Adjunto</label>
-                                    <input type="file" class="form-control">
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn-primary w-100">Publicar Tarea</button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6 mb-4">
-                <div class="card h-100">
-                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Tareas Pendientes</h5>
-                        <span class="badge bg-primary">{{ pending_tasks.count }}</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="list-group list-group-flush">
-                            {% for task in pending_tasks %}
-                            <div class="list-group-item">
-                                <div class="d-flex justify-content-between">
-                                    <h6 class="mb-1">{{ task.title }}</h6>
-                                    <small class="text-muted">{{ task.due_date|date:"d/m/Y" }}</small>
-                                </div>
-                                <small class="text-muted d-block mb-2">{{ task.course }}</small>
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="badge bg-info">{{ task.submissions }} entregas</span>
-                                    <div>
-                                        <button class="btn btn-sm btn-outline-primary me-1">
-                                            <i class="bi bi-eye"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-secondary">
-                                            <i class="bi bi-pencil"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}

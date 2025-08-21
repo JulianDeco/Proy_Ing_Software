@@ -40,8 +40,8 @@ def asistencia_curso(request, codigo, param_asistencia = None):
         return render(request, 'academico/asistencia_curso.html', context = contexto)
     
     for alummo_comision in alumnos_comision:
-
-        asistencia = Asistencia.objects.get(alumno_comision = alummo_comision)
+        fecha_actual = timezone.now().date()
+        asistencia = Asistencia.objects.get(alumno_comision = alummo_comision, fecha_asistencia=fecha_actual)
         alummo_comision.alumno.presente = asistencia.esta_presente
 
     contexto = {
@@ -72,7 +72,7 @@ def registrar_asistencia(request, codigo):
             inscripcion_alumno = get_object_or_404(
                         InscripcionesAlumnosComisiones,
                         alumno=alumno, 
-                        comision=comision
+                        comision=comision,
                     )
             Asistencia.objects.update_or_create(
                         alumno_comision=inscripcion_alumno,
