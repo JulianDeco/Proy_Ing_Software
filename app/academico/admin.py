@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from academico.models import Asistencia, Calificacion, Comision, EstadosAlumno, Materia, InscripcionesAlumnosComisiones
+from academico.models import AnioAcademico, Asistencia, CalendarioAcademico, Calificacion, Comision, EstadosAlumno, Materia, InscripcionesAlumnosComisiones
 
 @admin.register(Materia)
 class MateriaAdmin(admin.ModelAdmin):
@@ -31,3 +31,13 @@ class CalificacionAdmin(admin.ModelAdmin):
 class AsistenciaAdmin(admin.ModelAdmin):
     list_display = ('alumno_comision', 'esta_presente' ,'fecha_asistencia',)
     search_fields = ('alumno_comision', 'esta_presente' ,'fecha_asistencia',)
+
+@admin.register(AnioAcademico)
+class AnioAcademicoAdmin(admin.ModelAdmin):
+    list_display =('nombre','fecha_inicio', 'fecha_fin' ,'activo') 
+    search_fields = ('nombre','fecha_inicio', 'fecha_fin' ,'activo') 
+
+@admin.register(CalendarioAcademico)
+class CalendarioAcademico(admin.ModelAdmin):
+    list_display = ('anio_academico','fecha','es_dia_clase','descripcion',)
+    search_fields= ('anio_academico','fecha','es_dia_clase','descripcion',)

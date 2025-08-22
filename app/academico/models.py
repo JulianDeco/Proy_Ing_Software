@@ -36,6 +36,22 @@ class EstadoComision(models.TextChoices):
     EN_CURSO = 'EN_CURSO', 'En curso'
     FINALIZADA = 'FINALIZADA', 'Finalizada'
 
+class AnioAcademico(models.Model):
+    nombre = models.CharField(max_length=50)
+    fecha_inicio = models.DateField()
+    fecha_fin = models.DateField()
+    activo = models.BooleanField(default=False)
+    
+    class Meta:
+        verbose_name = 'Año Académico'
+        verbose_name_plural = 'Años Académicos'
+    
+    def __str__(self):
+        return f"{self.nombre} ({self.fecha_inicio} - {self.fecha_fin})"
+    
+    def clean(self):
+        if self.fecha_fin <= self.fecha_inicio:
+            raise ValidationError("La fecha de fin debe ser mayor a la fecha de inicio.")
 
 class Comision(models.Model):
     codigo = models.CharField(max_length=20)
@@ -48,19 +64,7 @@ class Comision(models.Model):
     aula = models.CharField(max_length=50, blank=True, null=True)
     cupo_maximo = models.PositiveIntegerField(default=30)
     estado = models.CharField(max_length=20, choices=EstadoComision.choices)
-
-    class Meta:
-        db_table = 'academico_comisiones'
-        verbose_name = 'Comision'
-        verbose_name_plural = 'Comisiones'
-        unique_together = ('codigo', 'materia', 'turno', 'dia_cursado')
-
-    def __str__(self):
-        return f"{self.materia.nombre} - ({self.codigo}) - {self.turno} - {self.docente.nombre} {self.docente.apellido}"
-
-    def clean(self):
-        if self.horario_fin <= self.horario_inicio:
-            raise ValidationError("El horario de fin debe ser mayor al horario de inicio.")
+    anio_academico = models.ForeignKey(AnioAcademico, on_delete=models.CASCADE, blank=True)
 
 class EstadosAlumno(models.Model):
     descripcion = models.CharField(max_length=100)
@@ -146,4 +150,19 @@ class Asistencia(models.Model):
 
     def __str__(self):
         return f"{self.alumno_comision.alumno} - {self.esta_presente} - {self.fecha_asistencia}"
+
+
+
+class CalendarioAcademico(models.Model):
+    anio_academico = models.ForeignKey(AnioAcademico, on_delete=models.CASCADE)
+    fecha = models.DateField()
+    es_dia_clase = models.BooleanField(default=True)
+    descripcion = models.CharField(max_length=200, blank=True, null=True)
     
+    class Meta:
+        verbose_name = 'Calendario Académico'
+        verbose_name_plural = 'Calendario Académico'
+        unique_together = ('anio_academico', 'fecha')
+    
+    def __str__(self):
+        return f"{self.fecha} - {'Clase' if self.es_dia_clase else 'No Clase'}"
