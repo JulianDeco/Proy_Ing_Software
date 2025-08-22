@@ -45,13 +45,14 @@ class ServiciosAcademico:
             comision=comision
         )
         
-        asistencia, creado_en = Asistencia.objects.update_or_create(
-            alumno_comision=inscripcion,
-            fecha_asistencia=fecha_actual,
-            defaults={'esta_presente': esta_presente}
-        )
+        asistencia = Asistencia.objects.get(
+                alumno_comision=inscripcion,
+                fecha_asistencia=fecha_actual
+            )
+        asistencia.esta_presente = esta_presente
+        asistencia.save()
         
-        return asistencia, creado_en
+        return asistencia, fecha_actual
     
     @staticmethod
     def obtener_estadisticas_docente(docente):

@@ -113,19 +113,14 @@ class DocenteRequiredMixin:
 class GestionAsistenciaView(DocenteRequiredMixin, View):
     servicios_academico = ServiciosAcademico()
 
-    def get(self, request, codigo, param_asistencia = None):
+    def get(self, request, codigo):
             comision = self.servicios_academico.obtener_comision_por_codigo(codigo)
             alumnos_comision = self.servicios_academico.obtener_alumnos_comision(comision)
-            if not param_asistencia:
-                contexto = {
-                    'comision': comision,
-                    'alumnos_comision': alumnos_comision
-                }
-                return render(request, 'academico/asistencia_curso.html', context = contexto)
             
             for alummo_comision in alumnos_comision:
                 asistencia = self.servicios_academico.obtener_asistencia_alumno_hoy(alummo_comision)
-                alummo_comision.alumno.presente = asistencia.esta_presente
+                if asistencia:
+                    alummo_comision.alumno.presente = asistencia.esta_presente
 
             contexto = {
                     'comision': comision,
@@ -150,7 +145,7 @@ class GestionAsistenciaView(DocenteRequiredMixin, View):
                     estado_alumno_asistencia = False
                 self.servicios_academico.registrar_asistencia(alumno, comision, estado_alumno_asistencia)
         param_asistencia = True
-        return self.get(request, codigo, param_asistencia)
+        return self.get(request, codigo)
 
 class GestionCalificacionesView(DocenteRequiredMixin, View):
     def get(self, request):

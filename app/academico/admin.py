@@ -29,8 +29,16 @@ class CalificacionAdmin(admin.ModelAdmin):
 
 @admin.register(Asistencia)
 class AsistenciaAdmin(admin.ModelAdmin):
-    list_display = ('alumno_comision', 'esta_presente' ,'fecha_asistencia',)
-    search_fields = ('alumno_comision', 'esta_presente' ,'fecha_asistencia',)
+    list_display = ('alumno_comision', 'esta_presente', 'fecha_asistencia',)
+    list_filter = ('esta_presente', 'fecha_asistencia', 'alumno_comision__comision',)
+    search_fields = (
+        'alumno_comision__alumno__nombre',
+        'alumno_comision__alumno__apellido', 
+        'alumno_comision__alumno__dni',
+        'alumno_comision__comision__codigo'
+    )
+    date_hierarchy = 'fecha_asistencia'
+    
 
 @admin.register(AnioAcademico)
 class AnioAcademicoAdmin(admin.ModelAdmin):

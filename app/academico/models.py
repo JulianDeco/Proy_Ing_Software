@@ -1,6 +1,8 @@
 import datetime
 from django.db import models
 from django.core.exceptions import ValidationError
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 from administracion.models import PlanEstudio
 from institucional.models import Persona
@@ -66,6 +68,9 @@ class Comision(models.Model):
     estado = models.CharField(max_length=20, choices=EstadoComision.choices)
     anio_academico = models.ForeignKey(AnioAcademico, on_delete=models.CASCADE, blank=True)
 
+    def __str__(self):
+        return f'{self.codigo} - {self.materia} - {self.turno}'
+
 class EstadosAlumno(models.Model):
     descripcion = models.CharField(max_length=100)
 
@@ -118,7 +123,31 @@ class InscripcionesAlumnosComisiones(models.Model):
         unique_together = ('alumno', 'comision')
     
     def __str__(self):
-        return f"Alumno {self.alumno.dni} inscripto en {self.comision.materia.nombre}"
+        return f"{self.alumno.nombre} {self.alumno.apellido} - {self.comision.codigo}"
+    
+    def crear_asistencias_automaticas(self):
+        comision = self.comision
+        dias_clase = CalendarioAcademico.objects.filter(
+            anio_academico=comision.anio_academico,
+            fecha__week_day=comision.dia_cursado + 1,
+            es_dia_clase=True,
+            fecha__gte=comision.anio_academico.fecha_inicio,
+            fecha__lte=comision.anio_academico.fecha_fin
+        )
+        
+        for dia_clase in dias_clase:
+            Asistencia.objects.get_or_create(
+                alumno_comision=self,
+                fecha_asistencia=dia_clase.fecha,
+                defaults={'esta_presente': False}
+            )
+        
+        return dias_clase.count()
+
+@receiver(post_save, sender=InscripcionesAlumnosComisiones)
+def crear_asistencias_al_inscribir(sender, instance, created, **kwargs):
+    if created:
+        cantidad_creada = instance.crear_asistencias_automaticas()
 
 class TipoCalificacion(models.TextChoices):
     PARCIAL = 'PARCIAL', 'Parcial'
@@ -142,7 +171,7 @@ class Calificacion(models.Model):
 class Asistencia(models.Model):
     alumno_comision = models.ForeignKey(InscripcionesAlumnosComisiones, on_delete=models.CASCADE, related_name='asistencias')
     esta_presente = models.BooleanField(default=False)
-    fecha_asistencia = models.DateField(auto_now_add=True)
+    fecha_asistencia = models.DateField()
 
     class Meta:
         verbose_name = 'Asistencia'

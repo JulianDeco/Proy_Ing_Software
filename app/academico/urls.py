@@ -3,9 +3,7 @@ from . import views
 
 urlpatterns = [
     path('', views.dashboard_profesores, name='docentes'),
-    #path('asistencia/curso/<int:codigo>', views.asistencia_curso, name='asistencia_curso'),
     path('asistencia/curso/<int:codigo>', views.GestionAsistenciaView.as_view(), name='asistencia_curso'),
-    #path('registrar_asistencia/<int:codigo>', views.registrar_asistencia, name='registrar_asistencia'),
     path('calificaciones/<int:codigo>/', views.calificaciones_curso, name='calificaciones_curso'),
     path('crear_evaluacion/<int:codigo>', views.crear_evaluacion, name='crear_evaluacion'),
     path('guardar_calificaciones/<int:codigo>', views.guardar_calificaciones, name='guardar_calificaciones'),
