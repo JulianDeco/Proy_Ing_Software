@@ -22,5 +22,6 @@ urlpatterns = [
     path('administracion/', include('administracion.urls')),
 
     path("change-password", auth_views.PasswordChangeView.as_view()),
-    path('password-recovery', auth_views.PasswordResetView.as_view())
+    path('password-recovery', auth_views.PasswordResetView.as_view()),
+
 ]

@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 import os
 from pathlib import Path
+from logging.handlers import TimedRotatingFileHandler
 
 from dotenv import load_dotenv
 
@@ -45,7 +46,7 @@ INSTALLED_APPS = [
     
     'institucional',
     'academico',
-    'administracion'
+    'administracion',
 ]
 
 MIDDLEWARE = [
@@ -139,6 +140,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 DJANGO_ADMIN_LOGS_DELETABLE = False
 DJANGO_ADMIN_LOGS_IGNORE_UNCHANGED = True
 
+import os
+import logging
+from logging.handlers import TimedRotatingFileHandler
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -155,9 +160,12 @@ LOGGING = {
     'handlers': {
         'file': {
             'level': 'DEBUG',
-            'class': 'logging.FileHandler',
+            'class': 'logging.handlers.TimedRotatingFileHandler',
             'filename': os.path.join(BASE_DIR, 'logs/django.log'),
-            'formatter': 'verbose'
+            'when': 'midnight',         
+            'backupCount': 7,           
+            'formatter': 'verbose',
+            'encoding': 'utf-8',        
         },
         'console': {
             'level': 'INFO',
