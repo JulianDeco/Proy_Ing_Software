@@ -1,7 +1,8 @@
 import datetime
 from django.utils import timezone
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.decorators import login_required
+from django.views import View
 
 from main.utils import group_required
 from .models import Materia, Comision, InscripcionesAlumnosComisiones, Asistencia, Alumno
@@ -98,3 +99,26 @@ def crear_evaluacion(request, codigo):
 
 def guardar_calificaciones(request, codigo):
     pass
+
+class DocenteRequiredMixin:
+    def test_func(self):
+        return self.request.user.groups.filter(name='Docente').exists()
+    
+    def dispatch(self, request, *args, **kwargs):
+        if not self.test_func():
+            return redirect('acceso-denegado')
+        return super().dispatch(request, *args, **kwargs)
+    
+class GestionAsistenciaView(DocenteRequiredMixin, View):
+    def get(self, request):
+        pass
+
+    def post(self, request):
+        pass
+
+class GestionCalificacionesView(DocenteRequiredMixin, View):
+    def get(self, request):
+        pass
+
+    def post(self, request):
+        pass
