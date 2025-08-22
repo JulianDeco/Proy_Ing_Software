@@ -51,7 +51,7 @@ Asistencia - {{ comision.materia.nombre }}{% endblock %} {% block content %}
       <form
         id="asistenciaForm"
         method="post"
-        action="{% url 'registrar_asistencia' comision.id %}"
+        action="{% url 'asistencia_curso' comision.id %}"
       >
         {% csrf_token %}
 

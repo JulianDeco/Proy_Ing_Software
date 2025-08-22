@@ -36,11 +36,9 @@ class ServiciosAcademico:
             return None
     
     @staticmethod
-    def registrar_asistencia(alumno_id, comision_id, esta_presente):
+    def registrar_asistencia(alumno, comision, esta_presente):
         fecha_actual = timezone.now().date()
-        alumno = get_object_or_404(Alumno, id=alumno_id)
-        comision = get_object_or_404(Comision, id=comision_id)
-        
+
         inscripcion = get_object_or_404(
             InscripcionesAlumnosComisiones,
             alumno=alumno,

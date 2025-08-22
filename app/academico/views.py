@@ -4,6 +4,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.decorators import login_required
 from django.views import View
 
+from academico.services import ServiciosAcademico
 from main.utils import group_required
 from .models import Materia, Comision, InscripcionesAlumnosComisiones, Asistencia, Alumno
 from institucional.models import Empleado
@@ -110,11 +111,46 @@ class DocenteRequiredMixin:
         return super().dispatch(request, *args, **kwargs)
     
 class GestionAsistenciaView(DocenteRequiredMixin, View):
-    def get(self, request):
-        pass
+    servicios_academico = ServiciosAcademico()
 
-    def post(self, request):
-        pass
+    def get(self, request, codigo, param_asistencia = None):
+            comision = self.servicios_academico.obtener_comision_por_codigo(codigo)
+            alumnos_comision = self.servicios_academico.obtener_alumnos_comision(comision)
+            if not param_asistencia:
+                contexto = {
+                    'comision': comision,
+                    'alumnos_comision': alumnos_comision
+                }
+                return render(request, 'academico/asistencia_curso.html', context = contexto)
+            
+            for alummo_comision in alumnos_comision:
+                asistencia = self.servicios_academico.obtener_asistencia_alumno_hoy(alummo_comision)
+                alummo_comision.alumno.presente = asistencia.esta_presente
+
+            contexto = {
+                    'comision': comision,
+                    'alumnos_comision': alumnos_comision
+                }
+            return render(request, 'academico/asistencia_curso.html', context = contexto)
+
+
+    def post(self, request, codigo):
+        datos = request.POST
+        comision = self.servicios_academico.obtener_comision_por_codigo(codigo)
+        for d in datos:
+            if d.startswith('asistencia_'):
+                alumno_id = int(d.replace('asistencia_',''))
+                estado_alumno_asistencia = datos[d]
+
+                alumno = get_object_or_404(Alumno, id = alumno_id)
+
+                if estado_alumno_asistencia == 'PRESENTE':
+                    estado_alumno_asistencia = True
+                elif estado_alumno_asistencia == 'AUSENTE':
+                    estado_alumno_asistencia = False
+                self.servicios_academico.registrar_asistencia(alumno, comision, estado_alumno_asistencia)
+        param_asistencia = True
+        return self.get(request, codigo, param_asistencia)
 
 class GestionCalificacionesView(DocenteRequiredMixin, View):
     def get(self, request):
