@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Panel del Profesor{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-person-video3"></i> Panel del Profesor</h1>
+        <div class="text-muted">
+            <i class="bi bi-person-circle"></i> {{ request.user.get_full_name }}
+        </div>
+    </div>
+
+    <!-- Resumen Estadístico -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card h-100 border-start border-primary border-4">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="bi bi-journal-bookmark text-primary fs-1"></i>
+                    </div>
+                    <h3 class="mb-0">{{ comisiones.count }}</h3>
+                    <p class="text-muted mb-0">Cursos a cargo</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card h-100 border-start border-success border-4">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="bi bi-people-fill text-success fs-1"></i>
+                    </div>
+                    <h3 class="mb-0">{{ total_alumnos }}</h3>
+                    <p class="text-muted mb-0">Total de alumnos</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="card h-100 border-start border-info border-4">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="bi bi-calendar-check text-info fs-1"></i>
+                    </div>
+                    <h3 class="mb-0">{{ clases_hoy }}</h3>
+                    <p class="text-muted mb-0">Clases hoy</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Cursos -->
+    <div class="card">
+        <div class="card-header bg-white">
+            <h5 class="mb-0"><i class="bi bi-journal-bookmark"></i> Mis Cursos</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Código</th>
+                            <th>Materia</th>
+                            <th>Horario</th>
+                            <th>Aula</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for comision in comisiones %}
+                        <tr>
+                            <td><strong>{{ comision.codigo }}</strong></td>
+                            <td>
+                                <div>
+                                    <strong>{{ comision.materia.nombre }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ comision.get_turno_display }}</small>
+                                </div>
+                            </td>
+                            <td>
+                                {{ comision.get_dia_cursado_display }}<br>
+                                {{ comision.horario_inicio|time:"H:i" }} - {{ comision.horario_fin|time:"H:i" }}
+                            </td>
+                            <td>{{ comision.aula|default:"Sin asignar" }}</td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'asistencia_curso' comision.codigo %}" 
+                                       class="btn btn-outline-primary">
+                                        <i class="bi bi-clipboard-check"></i> Asistencia
+                                    </a>
+                                    <a href="{% url 'calificaciones_curso' comision.codigo %}" 
+                                       class="btn btn-outline-success">
+                                        <i class="bi bi-journal-check"></i> Calificaciones
+                                    </a>
+                                    <button class="btn btn-outline-info">
+                                        <i class="bi bi-eye"></i> Detalles
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">
+                                <i class="bi bi-journal-x display-4 d-block mb-2"></i>
+                                No tiene cursos asignados.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Próximas Actividades -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0"><i class="bi bi-clock-history"></i> Próximas clases hoy</h6>
+                </div>
+                <div class="card-body">
+                    {% for comision in comisiones_hoy %}
+                    <div class="d-flex justify-content-between align-items-center mb-3 p-2 border rounded">
+                        <div>
+                            <strong>{{ comision.materia.nombre }}</strong>
+                            <br>
+                            <small class="text-muted">
+                                {{ comision.horario_inicio|time:"H:i" }} - {{ comision.aula }}
+                            </small>
+                        </div>
+                        <a href="{% url 'asistencia_curso' comision.codigo %}" 
+                           class="btn btn-sm btn-primary">
+                            <i class="bi bi-clipboard-check"></i> Asistencia
+                        </a>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">No hay más clases hoy</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0"><i class="bi bi-bell"></i> Recordatorios</h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <small>
+                            <i class="bi bi-info-circle"></i> 
+                            Recuerde tomar asistencia al inicio de cada clase
+                        </small>
+                    </div>
+                    <div class="alert alert-warning">
+                        <small>
+                            <i class="bi bi-exclamation-triangle"></i> 
+                            Próxima entrega de calificaciones: 30 de Noviembre
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+.card-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+}
+.table th {
+    font-weight: 600;
+    background-color: #f8f9fa;
+}
+.btn-group .btn {
+    border-radius: 0.25rem;
+    margin-right: 0.25rem;
+}
+</style>
+{% endblock %}

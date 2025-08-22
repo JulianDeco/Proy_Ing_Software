@@ -1,3 +1,4 @@
+import datetime
 from django.utils import timezone
 from django.shortcuts import get_object_or_404, render
 from django.contrib.auth.decorators import login_required
@@ -6,24 +7,24 @@ from main.utils import group_required
 from .models import Materia, Comision, InscripcionesAlumnosComisiones, Asistencia, Alumno
 from institucional.models import Empleado
 
-
-@login_required
-@group_required('Docente')
-def home_academico(request):
-    return render(request, 'academico/academico.html')
-
-
 @login_required
 @group_required('Docente')
 def dashboard_profesores(request):
     datos_usuario = request.user
     datos_persona = Empleado.objects.get(usuario = datos_usuario)
     comisiones = Comision.objects.filter(docente = datos_persona)
+    clases_hoy = comisiones.filter(dia_cursado=datetime.datetime.now().weekday() + 1).count()
+    total_alumnos = 0
+    for comision in comisiones:
+        consulta_inscriptos_comision = InscripcionesAlumnosComisiones.objects.filter(comision = comision)
+        total_alumnos = total_alumnos + consulta_inscriptos_comision.count()
     return render(  request, 
-                    'profesores/dashboard.html', 
+                    'academico/docentes.html', 
                     context= {
                     'docente': datos_persona,
-                    'comisiones':comisiones
+                    'comisiones':comisiones,
+                    'clases_hoy':clases_hoy,
+                    'total_alumnos':total_alumnos
                     }
     )
 
@@ -83,3 +84,17 @@ def registrar_asistencia(request, codigo):
                     )
     param_asistencia = True
     return asistencia_curso(request, codigo, param_asistencia)
+
+def calificaciones_curso(request, codigo):
+    comision = get_object_or_404(Comision, codigo=codigo)
+    return render(request, 'academico/calificaciones_curso.html', 
+        context = {
+            'comision':comision
+    })
+
+def crear_evaluacion(request, codigo):
+    comision = get_object_or_404(InscripcionesAlumnosComisiones, comision__id=codigo)
+    print(comision)
+
+def guardar_calificaciones(request, codigo):
+    pass
