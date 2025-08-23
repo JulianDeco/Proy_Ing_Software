@@ -12,6 +12,7 @@ class Materia(models.Model):
     codigo = models.CharField(max_length=20)
     plan_estudio = models.ForeignKey(PlanEstudio, on_delete=models.CASCADE)
     descripcion = models.TextField(blank=True, null=True)
+    correlativas = models.ManyToManyField('self', blank=True, symmetrical=False,)
 
     class Meta:
         db_table = 'academico_materias'
@@ -21,6 +22,7 @@ class Materia(models.Model):
 
     def __str__(self):
         return f"{self.nombre} ({self.codigo})"
+
 class Turno(models.TextChoices):
     MANANA = 'mañana', 'Mañana'
     TARDE = 'tarde', 'Tarde'

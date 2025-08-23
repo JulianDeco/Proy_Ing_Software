@@ -1,11 +1,16 @@
 from django.contrib import admin
 
 from academico.models import AnioAcademico, Asistencia, CalendarioAcademico, Calificacion, Comision, EstadosAlumno, Materia, InscripcionesAlumnosComisiones
+from academico.forms import MateriaAdminForm
 
 @admin.register(Materia)
 class MateriaAdmin(admin.ModelAdmin):
+    form = MateriaAdminForm
     list_display = ('nombre', 'codigo', 'plan_estudio')
+    list_filter = ('plan_estudio',)
     search_fields = ('nombre', 'codigo', 'plan_estudio__nombre')
+    filter_horizontal = ('correlativas',)
+    
 
 @admin.register(Comision)
 class ComisionAdmin(admin.ModelAdmin):
