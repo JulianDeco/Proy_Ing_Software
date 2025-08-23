@@ -73,7 +73,7 @@ class Empleado(Persona):
 
 
 class Rol(models.Model):
-    nombre = models.CharField(max_length=50)  # Docente, Administrativo, Alumno
+    nombre = models.CharField(max_length=50) 
     descripcion = models.TextField(blank=True)
 
     class Meta:

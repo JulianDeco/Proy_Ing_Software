@@ -1,0 +1,53 @@
+<!-- academico/seleccionar_clase_asistencia.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4">📅 Seleccionar Clase para Tomar Asistencia</h2>
+    
+    <div class="row">
+        {% for item in comisiones_con_fechas %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        {{ item.comision.materia.nombre }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        <strong>Comisión:</strong> {{ item.comision.codigo }}<br>
+                        <strong>Día:</strong> {{ item.comision.get_dia_cursado_display }}<br>
+                        <strong>Horario:</strong> {{ item.comision.horario_inicio|time:'H:i' }} - {{ item.comision.horario_fin|time:'H:i' }}<br>
+                        <strong>Aula:</strong> {{ item.comision.aula|default:"Sin asignar" }}
+                    </p>
+                    
+                    <h6>📋 Últimas fechas de clase:</h6>
+                    <div class="list-group mb-3">
+                        {% for fecha in item.fechas_clase %}
+                        <a href="{% url 'asistencia_curso' item.comision.codigo %}?fecha={{ fecha.fecha|date:'Y-m-d' }}"
+                           class="list-group-item list-group-item-action {% if forloop.first %}list-group-item-primary{% endif %}">
+                            {{ fecha.fecha|date:'d/m/Y' }}
+                            {% if forloop.first %}<span class="badge bg-success float-end">Última</span>{% endif %}
+                        </a>
+                        {% empty %}
+                        <div class="list-group-item text-muted">
+                            No hay clases registradas
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                <h4>No tienes comisiones asignadas</h4>
+                <p>No se encontraron comisiones en curso para tomar asistencia.</p>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -48,120 +48,118 @@ Asistencia - {{ comision.materia.nombre }}{% endblock %} {% block content %}
       </h5>
     </div>
     <div class="card-body">
-      <form
-        id="asistenciaForm"
-        method="post"
-        action="{% url 'asistencia_curso' comision.id %}"
-      >
-        {% csrf_token %}
+    <form
+    id="asistenciaForm"
+    method="post"
+    action="{% url 'asistencia_curso' comision.id %}"
+>
+    {% csrf_token %}
 
-        <div class="row mb-4">
-          <div class="col-md-4">
-            <label for="fecha_asistencia" class="form-label"
-              ><strong>Fecha de la clase:</strong></label
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <label for="fecha_clase" class="form-label">
+                <strong>Fecha de la clase:</strong>
+            </label>
+            <select
+                class="form-select"
+                id="fecha_clase"
+                name="fecha_asistencia"
+                required
             >
-            <input
-              type="date"
-              class="form-control"
-              id="fecha_asistencia"
-              name="fecha_asistencia"
-              value="{% now 'Y-m-d' %}"
-              required
-            />
-          </div>
-          <div class="col-md-8 d-flex align-items-end">
-            <button type="submit" class="btn btn-success me-2">
-              <i class="bi bi-check-circle"></i> Guardar Asistencia
-            </button>
-          </div>
+                <option value="">-- Seleccionar fecha --</option>
+                <option value="{{ fecha_seleccionada|date:'Y-m-d' }}" 
+                        {% if fecha_seleccionada %}selected{% endif %}>
+                    {{ fecha_seleccionada|date:'d/m/Y' }}
+                </option>
+            </select>
         </div>
+        <div class="col-md-8 d-flex align-items-end">
+            <button type="submit" class="btn btn-success me-2">
+                <i class="bi bi-check-circle"></i> Guardar Asistencia
+            </button>
+        </div>
+    </div>
 
-        <!-- Tabla de alumnos -->
-        <div class="table-responsive">
-          <table class="table table-hover table-striped">
+    <!-- El resto de tu template se mantiene IGUAL -->
+    <div class="table-responsive">
+        <table class="table table-hover table-striped">
             <thead class="table-dark">
-              <tr>
-                <th width="50px">#</th>
-                <th>Alumno</th>
-                <th>DNI</th>
-                <th>Estado</th>
-                <th>Asistencia</th>
-                <th>Observaciones</th>
-              </tr>
+                <tr>
+                    <th width="50px">#</th>
+                    <th>Alumno</th>
+                    <th>DNI</th>
+                    <th>Estado</th>
+                    <th>Asistencia</th>
+                    <th>Observaciones</th>
+                </tr>
             </thead>
             <tbody>
-              {% for alumno_comision in alumnos_comision %}
-              <tr>
-                <td>{{ forloop.counter }}</td>
-                <td>
-                  <div class="d-flex align-items-center">
-                    <img
-                      src="{% static '/img/default_profile.jpg' %}"
-                      class="rounded-circle me-2"
-                      width="32"
-                      height="32"
-                      alt="{{ alumno_comision.alumno.get_full_name }}"
-                    />
-                    <div>
-                      <strong
-                        >{{ alumno_comision.alumno.get_full_name }}</strong
-                      >
-                      <br />
-                      <small class="text-muted"
-                        >{{ alumno_comision.alumno.email|default:"Sin email"}}</small
-                      >
-                    </div>
-                  </div>
-                </td>
-                <td>{{ alumno_comision.alumno.dni|default:"-" }}</td>
-                <td>
-                  <span
-                    class="badge {% if alumno_comision.estado_inscripcion == 'REGULAR' %}bg-success {% else %}bg-warning text-dark{% endif %}"
-                  >
-                    {{ alumno_comision.get_estado_inscripcion_display }}
-                  </span>
-                </td>
-                <td class="text-center">
-                  <div class="form-check form-check-inline">
-                      <input class="form-check-input" type="radio" 
-                            name="asistencia_{{ alumno_comision.alumno.id }}" 
-                            id="presente_{{ alumno_comision.alumno.id }}" 
-                            value="PRESENTE"
-                            {% if alumno_comision.alumno.presente|default:False %}checked{% endif %}>
-                      <label class="form-check-label" for="presente_{{ alumno_comision.alumno.id }}">Presente</label>
-                  </div>
-                  <div class="form-check form-check-inline">
-                      <input class="form-check-input" type="radio" 
-                            name="asistencia_{{ alumno_comision.alumno.id }}" 
-                            id="ausente_{{ alumno_comision.alumno.id }}" 
-                            value="AUSENTE"
-                            {% if not alumno_comision.alumno.presente|default:False %}checked{% endif %}>
-                      <label class="form-check-label" for="ausente_{{ alumno_comision.alumno.id }}">Ausente</label>
-                  </div>
-                </td>
-                <td>
-                  <input
-                    type="text"
-                    class="form-control form-control-sm"
-                    name="observacion_{{ alumno_comision.id }}"
-                    placeholder="Observaciones..."
-                    maxlength="100"
-                  />
-                </td>
-              </tr>
-              {% empty %}
-              <tr>
-                <td colspan="6" class="text-center py-4 text-muted">
-                  <i class="bi bi-people display-4 d-block mb-2"></i>
-                  No hay alumnos inscritos en esta comisión.
-                </td>
-              </tr>
-              {% endfor %}
+                {% for alumno_comision in alumnos_comision %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <img
+                                src="{% static '/img/default_profile.jpg' %}"
+                                class="rounded-circle me-2"
+                                width="32"
+                                height="32"
+                                alt="{{ alumno_comision.alumno.get_full_name }}"
+                            />
+                            <div>
+                                <strong>{{ alumno_comision.alumno.get_full_name }}</strong>
+                                <br />
+                                <small class="text-muted">{{ alumno_comision.alumno.email|default:"Sin email"}}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ alumno_comision.alumno.dni|default:"-" }}</td>
+                    <td>
+                        <span class="badge {% if alumno_comision.estado_inscripcion == 'REGULAR' %}bg-success {% else %}bg-warning text-dark{% endif %}">
+                            {{ alumno_comision.get_estado_inscripcion_display }}
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" 
+                                  name="asistencia_{{ alumno_comision.alumno.id }}" 
+                                  id="presente_{{ alumno_comision.alumno.id }}" 
+                                  value="PRESENTE"
+                                  {% if alumno_comision.alumno.presente|default:False %}checked{% endif %}>
+                            <label class="form-check-label" for="presente_{{ alumno_comision.alumno.id }}">Presente</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" 
+                                  name="asistencia_{{ alumno_comision.alumno.id }}" 
+                                  id="ausente_{{ alumno_comision.alumno.id }}" 
+                                  value="AUSENTE"
+                                  {% if not alumno_comision.alumno.presente|default:False %}checked{% endif %}>
+                            <label class="form-check-label" for="ausente_{{ alumno_comision.alumno.id }}">Ausente</label>
+                        </div>
+                    </td>
+                    <td>
+                        <input
+                            type="text"
+                            class="form-control form-control-sm"
+                            name="observacion_{{ alumno_comision.id }}"
+                            placeholder="Observaciones..."
+                            maxlength="100"
+                        />
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-4 text-muted">
+                        <i class="bi bi-people display-4 d-block mb-2"></i>
+                        No hay alumnos inscritos en esta comisión.
+                    </td>
+                </tr>
+                {% endfor %}
             </tbody>
-          </table>
-        </div>
-      </form>
+        </table>
     </div>
+</form>
+</div>
   </div>
 </div>
 {% endblock %} {% block extra_js %}

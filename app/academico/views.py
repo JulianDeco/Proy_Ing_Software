@@ -6,8 +6,8 @@ from django.views import View
 
 from academico.services import ServiciosAcademico
 from main.utils import group_required
-from .models import Materia, Comision, InscripcionesAlumnosComisiones, Asistencia, Alumno
-from institucional.models import Empleado
+from .models import CalendarioAcademico, Materia, Comision, InscripcionesAlumnosComisiones, Asistencia, Alumno
+from institucional.models import Empleado, Persona
 
 @login_required
 @group_required('Docente')
@@ -113,18 +113,33 @@ class DocenteRequiredMixin:
 class GestionAsistenciaView(DocenteRequiredMixin, View):
     servicios_academico = ServiciosAcademico()
 
-    def get(self, request, codigo):
+    def get(self, request, codigo, fecha_guardado = None):
             comision = self.servicios_academico.obtener_comision_por_codigo(codigo)
             alumnos_comision = self.servicios_academico.obtener_alumnos_comision(comision)
-            
+
+            if not fecha_guardado:
+                fecha_seleccionada = request.GET.get('fecha')
+            else:
+                fecha_seleccionada = fecha_guardado
+
             for alummo_comision in alumnos_comision:
-                asistencia = self.servicios_academico.obtener_asistencia_alumno_hoy(alummo_comision)
+                asistencia = self.servicios_academico.obtener_asistencia_alumno_hoy(alummo_comision, fecha_seleccionada)
                 if asistencia:
                     alummo_comision.alumno.presente = asistencia.esta_presente
-
+            
+            if fecha_seleccionada:
+                try:
+                    fechas_clase, _= self.servicios_academico.obtener_fechas_clases(comision)
+                    fecha_seleccionada = timezone.datetime.strptime(fecha_seleccionada, '%Y-%m-%d').date()
+                except ValueError:
+                    fecha_seleccionada = None
+            else:
+                fechas_clase, fecha_seleccionada = self.servicios_academico.obtener_fechas_clases(comision)
+            
             contexto = {
                     'comision': comision,
-                    'alumnos_comision': alumnos_comision
+                    'alumnos_comision': alumnos_comision,
+                    'fecha_seleccionada': fecha_seleccionada
                 }
             return render(request, 'academico/asistencia_curso.html', context = contexto)
 
@@ -132,6 +147,7 @@ class GestionAsistenciaView(DocenteRequiredMixin, View):
     def post(self, request, codigo):
         datos = request.POST
         comision = self.servicios_academico.obtener_comision_por_codigo(codigo)
+        fecha_asistencia = datos['fecha_asistencia']
         for d in datos:
             if d.startswith('asistencia_'):
                 alumno_id = int(d.replace('asistencia_',''))
@@ -143,9 +159,32 @@ class GestionAsistenciaView(DocenteRequiredMixin, View):
                     estado_alumno_asistencia = True
                 elif estado_alumno_asistencia == 'AUSENTE':
                     estado_alumno_asistencia = False
-                self.servicios_academico.registrar_asistencia(alumno, comision, estado_alumno_asistencia)
+                self.servicios_academico.registrar_asistencia(alumno, comision, estado_alumno_asistencia, fecha_asistencia)
         param_asistencia = True
-        return self.get(request, codigo)
+        return self.get(request, codigo, fecha_asistencia)
+
+class GestionClasesView(DocenteRequiredMixin, View):
+    servicios_academico = ServiciosAcademico()
+    
+    def get(self, request):
+        persona = get_object_or_404(Empleado, usuario=request.user)
+        comisiones = Comision.objects.filter(
+            docente=persona,
+            estado='EN_CURSO'
+        )
+        comisiones_con_fechas = []
+        for comision in comisiones:
+            fechas_clase, _ = self.servicios_academico.obtener_fechas_clases(comision)
+            
+            comisiones_con_fechas.append({
+                'comision': comision,
+                'fechas_clase': fechas_clase,
+                'proxima_clase': fechas_clase.first() if fechas_clase else None
+            })
+        
+        return render(request, 'academico/seleccionar_clase_asistencia.html', {
+            'comisiones_con_fechas': comisiones_con_fechas
+        })
 
 class GestionCalificacionesView(DocenteRequiredMixin, View):
     def get(self, request):
