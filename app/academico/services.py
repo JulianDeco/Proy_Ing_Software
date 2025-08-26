@@ -59,7 +59,7 @@ class ServiciosAcademico:
             )
         asistencia.esta_presente = esta_presente
         asistencia.save()
-        
+
         return asistencia, fecha_asistencia
     
     @staticmethod

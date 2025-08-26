@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.views import View
 
 from academico.services import ServiciosAcademico
+from main.services import ActionFlag, LogAction
 from main.utils import group_required
 from .models import CalendarioAcademico, Materia, Comision, InscripcionesAlumnosComisiones, Asistencia, Alumno
 from institucional.models import Empleado, Persona
@@ -159,7 +160,13 @@ class GestionAsistenciaView(DocenteRequiredMixin, View):
                     estado_alumno_asistencia = True
                 elif estado_alumno_asistencia == 'AUSENTE':
                     estado_alumno_asistencia = False
-                self.servicios_academico.registrar_asistencia(alumno, comision, estado_alumno_asistencia, fecha_asistencia)
+                asistencia, _ = self.servicios_academico.registrar_asistencia(alumno, comision, estado_alumno_asistencia, fecha_asistencia)
+                LogAction(
+                    user=request.user,
+                    model_instance_or_queryset=asistencia,
+                    action=ActionFlag.CHANGE,
+                    change_message="Cambio de estado de asistencia"
+                    ).log()
         param_asistencia = True
         return self.get(request, codigo, fecha_asistencia)
 
