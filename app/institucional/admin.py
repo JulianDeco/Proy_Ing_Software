@@ -6,7 +6,7 @@ from academico.models import Alumno
 
 @admin.register(Usuario)
 class UsuarioAdmin(BaseUserAdmin):
-    list_display = ('email', 'habilitado', 'is_staff', 'is_superuser')
+    list_display = ('email','empleado', 'habilitado', 'is_staff', 'is_superuser')
     search_fields = ('email',)
     ordering = ('email',)
     
