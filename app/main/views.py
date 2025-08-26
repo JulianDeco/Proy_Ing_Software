@@ -25,7 +25,7 @@ def redirect_based_group(request):
     groups = user.groups.values_list('name', flat=True)  
 
     if 'Docente' in groups:
-        return redirect('dashboard_docente')  
+        return redirect('docentes')  
     elif 'Administrativo' in groups:
         return redirect('dashboard_admin')   
     elif 'Alumno' in groups:

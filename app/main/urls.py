@@ -15,7 +15,7 @@ urlpatterns = [
     path('logout', logout_view, name='logout'),
     path('login', LoginEmailView.as_view(), name='login'),
 
-    path('', home, name='home'),
+    path('', redirect_based_group, name='home'),
     
     path('institucional/', include('institucional.urls')),
     path('academico/', include('academico.urls')),

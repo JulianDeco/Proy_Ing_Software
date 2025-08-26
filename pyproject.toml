@@ -13,6 +13,7 @@ dependencies = [
     "django-admin-logs (>=1.4.0,<2.0.0)",
     "requests (>=2.32.5,<3.0.0)",
     "python-dotenv (>=1.1.1,<2.0.0)",
+    "gunicorn (>=23.0.0,<24.0.0)",
 ]
 
 
