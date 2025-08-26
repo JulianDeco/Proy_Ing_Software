@@ -180,7 +180,10 @@ class Asistencia(models.Model):
         verbose_name_plural = 'Asistencias'
 
     def __str__(self):
-        return f"{self.alumno_comision.alumno} - {self.esta_presente} - {self.fecha_asistencia}"
+        if self.esta_presente:
+            return f"{self.alumno_comision.alumno} - Presente - {self.fecha_asistencia}"
+        else:
+            return f"{self.alumno_comision.alumno} - Ausente - {self.fecha_asistencia}"
 
 
 

@@ -161,6 +161,10 @@ class GestionAsistenciaView(DocenteRequiredMixin, View):
                 elif estado_alumno_asistencia == 'AUSENTE':
                     estado_alumno_asistencia = False
                 asistencia, _ = self.servicios_academico.registrar_asistencia(alumno, comision, estado_alumno_asistencia, fecha_asistencia)
+                if asistencia.esta_presente:
+                    asistencia.esta_presente = 'Presente'
+                else:
+                    asistencia.esta_presente = 'Ausente'
                 LogAction(
                     user=request.user,
                     model_instance_or_queryset=asistencia,
