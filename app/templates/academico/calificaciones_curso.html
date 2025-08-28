@@ -59,43 +59,33 @@
             </div>
         </div>
     </div>
-
-    <!-- Gestión de evaluaciones -->
     <div class="card mb-4">
         <div class="card-header bg-white d-flex justify-content-between align-items-center">
-            <h5 class="mb-0"><i class="bi bi-list-check"></i> Evaluaciones</h5>
-            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#nuevaEvaluacionModal">
-                <i class="bi bi-plus-circle"></i> Nueva Evaluación
-            </button>
+            <h5 class="mb-0"><i class="bi bi-list-check"></i> Calificaciones</h5>
+            <a href="{% url 'crear_calificacion' codigo=comision.codigo %}" class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-circle"></i> Nueva Calificación
+            </a>
         </div>
         <div class="card-body">
-            {% if evaluaciones %}
+            {% if calificaciones %}
             <div class="table-responsive">
                 <table class="table table-hover">
                     <thead class="table-light">
                         <tr>
-                            <th>Nombre</th>
-                            <th>Tipo</th>
                             <th>Fecha</th>
-                            <th>Puntaje máximo</th>
-                            <th>Ponderación</th>
+                            <th>Tipo</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for evaluacion in evaluaciones %}
+                        {% for evaluacion in calificaciones %}
                         <tr>
-                            <td>{{ evaluacion.nombre }}</td>
-                            <td><span class="badge bg-info">{{ evaluacion.get_tipo_display }}</span></td>
-                            <td>{{ evaluacion.fecha|date:"d/m/Y" }}</td>
-                            <td>{{ evaluacion.puntaje_maximo }}</td>
-                            <td>{{ evaluacion.ponderacion }}%</td>
+                            <td>{{ evaluacion.fecha}}</td>
+                            <td><span class="badge bg-info">{{ evaluacion.tipo }}</span></td>
                             <td>
                                 <div class="btn-group btn-group-sm">
-                                    <button class="btn btn-outline-primary" data-bs-toggle="modal" 
-                                            data-bs-target="#editarEvaluacionModal" 
-                                            data-evaluacion-id="{{ evaluacion.id }}">
-                                        <i class="bi bi-pencil"></i>
+                                    <button class="btn btn-outline-primary">
+                                            <i class="bi bi-pencil"></i>
                                     </button>
                                     <a href="#" class="btn btn-outline-danger">
                                         <i class="bi bi-trash"></i>
@@ -220,7 +210,7 @@
                 <h5 class="modal-title">Nueva Evaluación</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form method="post" action="{% url 'crear_evaluacion' comision.codigo %}">
+            <form method="post" action="{% url 'crear_calificacion' codigo=comision.codigo %}">
                 {% csrf_token %}
                 <div class="modal-body">
                     <div class="mb-3">
@@ -289,104 +279,6 @@
     </div>
 </div>
 {% endblock %}
-
-{% block extra_js %}
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Guardar calificaciones
-    document.getElementById('guardarCalificaciones').addEventListener('click', function() {
-        const calificaciones = [];
-        document.querySelectorAll('.calificacion-input').forEach(input => {
-            if (input.value !== '') {
-                calificaciones.push({
-                    estudiante_id: input.dataset.alumnoId,
-                    evaluacion_id: input.dataset.evaluacionId,
-                    puntaje: input.value
-                });
-            }
-        });
-        
-        // Enviar datos al servidor
-        fetch("{% url 'guardar_calificaciones' comision.codigo %}", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: JSON.stringify({calificaciones: calificaciones})
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.status === 'success') {
-                alert('Calificaciones guardadas correctamente');
-                // Actualizar promedios si es necesario
-                location.reload();
-            } else {
-                alert('Error al guardar las calificaciones: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error al guardar las calificaciones');
-        });
-    });
-    
-    // Manejar el modal de edición de evaluación
-    const editarEvaluacionModal = document.getElementById('editarEvaluacionModal');
-    editarEvaluacionModal.addEventListener('show.bs.modal', function (event) {
-        const button = event.relatedTarget;
-        const evaluacionId = button.getAttribute('data-evaluacion-id');
-        
-        // Cargar datos de la evaluación
-        fetch(`/evaluaciones/${evaluacionId}/editar/`)
-            .then(response => response.json())
-            .then(data => {
-                // Llenar el formulario con los datos
-                const modalBody = editarEvaluacionModal.querySelector('.modal-body');
-                modalBody.innerHTML = `
-                    <div class="mb-3">
-                        <label for="edit_nombre" class="form-label">Nombre de la evaluación</label>
-                        <input type="text" class="form-control" id="edit_nombre" name="nombre" value="${data.nombre}" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="edit_tipo" class="form-label">Tipo</label>
-                        <select class="form-select" id="edit_tipo" name="tipo" required>
-                            <option value="P" ${data.tipo === 'P' ? 'selected' : ''}>Parcial</option>
-                            <option value="T" ${data.tipo === 'T' ? 'selected' : ''}>Trabajo Práctico</option>
-                            <option value="E" ${data.tipo === 'E' ? 'selected' : ''}>Examen Final</option>
-                            <option value="Q" ${data.tipo === 'Q' ? 'selected' : ''}>Quiz</option>
-                            <option value="O" ${data.tipo === 'O' ? 'selected' : ''}>Otro</option>
-                        </select>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="edit_fecha" class="form-label">Fecha</label>
-                                <input type="date" class="form-control" id="edit_fecha" name="fecha" value="${data.fecha}" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="edit_puntaje_maximo" class="form-label">Puntaje máximo</label>
-                                <input type="number" class="form-control" id="edit_puntaje_maximo" name="puntaje_maximo" value="${data.puntaje_maximo}" min="1" required>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="edit_ponderacion" class="form-label">Ponderación (%)</label>
-                        <input type="number" class="form-control" id="edit_ponderacion" name="ponderacion" value="${data.ponderacion}" min="1" max="100" required>
-                        <div class="form-text">Porcentaje que representa esta evaluación en la calificación final.</div>
-                    </div>
-                `;
-                
-                // Actualizar acción del formulario
-                document.getElementById('formEditarEvaluacion').action = `/evaluaciones/${evaluacionId}/editar/`;
-            });
-    });
-});
-</script>
-{% endblock %}
-
 {% block extra_css %}
 <style>
 .calificacion-input {

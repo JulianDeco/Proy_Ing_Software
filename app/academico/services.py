@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from .models import CalendarioAcademico, Comision, InscripcionesAlumnosComisiones, Asistencia, Alumno
+from .models import CalendarioAcademico, Calificacion, Comision, InscripcionesAlumnosComisiones, Asistencia, Alumno, TipoCalificacion
 from institucional.models import Empleado
 
 class ServiciosAcademico:
@@ -61,6 +61,21 @@ class ServiciosAcademico:
         asistencia.save()
 
         return asistencia, fecha_asistencia
+    
+    @staticmethod
+    def crear_calificacion(alumno, fecha, tipo_calificacion, calificacion):
+        valores_calificacion = [choice[0] for choice in TipoCalificacion.choices]
+
+        if tipo_calificacion in valores_calificacion:
+            calificacion_nuevo = Calificacion(
+                alumno_comision= alumno,
+                tipo =  tipo_calificacion,
+                nota = calificacion,
+                fecha= fecha
+            )
+            calificacion_nuevo.save()
+        else:
+            return None
     
     @staticmethod
     def obtener_estadisticas_docente(docente):

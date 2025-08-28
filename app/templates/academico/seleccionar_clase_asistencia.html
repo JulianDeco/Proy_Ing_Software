@@ -23,20 +23,17 @@
                         <strong>Aula:</strong> {{ item.comision.aula|default:"Sin asignar" }}
                     </p>
                     
-                    <h6>📋 Últimas fechas de clase:</h6>
-                    <div class="list-group mb-3">
+                   <h6>📋 Seleccionar fecha de clase:</h6>
+                    <select class="form-select mb-3" onchange="if(this.value) window.location.href=this.value;">
+                        <option value="">-- Seleccione una fecha --</option>
                         {% for fecha in item.fechas_clase %}
-                        <a href="{% url 'asistencia_curso' item.comision.codigo %}?fecha={{ fecha.fecha|date:'Y-m-d' }}"
-                           class="list-group-item list-group-item-action {% if forloop.first %}list-group-item-primary{% endif %}">
-                            {{ fecha.fecha|date:'d/m/Y' }}
-                            {% if forloop.first %}<span class="badge bg-success float-end">Última</span>{% endif %}
-                        </a>
+                            <option value="{% url 'asistencia_curso' item.comision.codigo %}?fecha={{ fecha.fecha|date:'Y-m-d' }}">
+                                {{ fecha.fecha|date:'d/m/Y' }}{% if forloop.first %} (Última clase){% endif %}
+                            </option>
                         {% empty %}
-                        <div class="list-group-item text-muted">
-                            No hay clases registradas
-                        </div>
+                            <option value="" disabled>No hay clases registradas</option>
                         {% endfor %}
-                    </div>
+                    </select>
                 </div>
             </div>
         </div>

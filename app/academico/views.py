@@ -1,5 +1,6 @@
 import datetime
 from django.utils import timezone
+from django.db.models import Count, Avg
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.decorators import login_required
 from django.views import View
@@ -7,7 +8,7 @@ from django.views import View
 from academico.services import ServiciosAcademico
 from main.services import ActionFlag, LogAction
 from main.utils import group_required
-from .models import CalendarioAcademico, Materia, Comision, InscripcionesAlumnosComisiones, Asistencia, Alumno
+from .models import CalendarioAcademico, Calificacion, Materia, Comision, InscripcionesAlumnosComisiones, Asistencia, Alumno
 from institucional.models import Empleado, Persona
 
 @login_required
@@ -90,9 +91,25 @@ def registrar_asistencia(request, codigo):
 
 def calificaciones_curso(request, codigo):
     comision = get_object_or_404(Comision, codigo=codigo)
+    calificaciones = Calificacion.objects.filter(
+        alumno_comision__comision=comision
+    ).values('tipo', 'fecha').annotate(
+        promedio=Avg('nota')
+    ).order_by('tipo', '-fecha')
+    
+    # Si no tienes fecha_creacion, usa otra fecha o crea un campo
+    resumen = []
+    for calif in calificaciones:
+        resumen.append({
+            'tipo': calif['tipo'],
+            'fecha': calif['fecha'].strftime('%d/%m/%Y') if calif['fecha'] else 'Sin fecha',
+            'promedio': round(calif['promedio'], 2) if calif['promedio'] else 0
+        })
+    
     return render(request, 'academico/calificaciones_curso.html', 
         context = {
-            'comision':comision
+            'comision': comision,
+            'calificaciones': resumen
     })
 
 def crear_evaluacion(request, codigo):
@@ -198,8 +215,29 @@ class GestionClasesView(DocenteRequiredMixin, View):
         })
 
 class GestionCalificacionesView(DocenteRequiredMixin, View):
-    def get(self, request):
-        pass
+    servicios_academico = ServiciosAcademico()
 
-    def post(self, request):
-        pass
+    def get(self, request, codigo):
+
+        comision = self.servicios_academico.obtener_comision_por_codigo(codigo)
+        inscripciones = self.servicios_academico.obtener_alumnos_comision(codigo)
+        contexto = {
+            'comision': comision,
+            'materia': comision.materia,
+            'inscripciones': inscripciones
+        }
+        return render(request, 'academico/carga_calificacion.html', context=contexto)
+
+    def post(self, request, codigo):
+        datos = request.POST
+        fecha = datos.get('fecha')
+        tipo_calificacion = datos.get('tipo')
+        alumnos_comision = self.servicios_academico.obtener_alumnos_comision(codigo)
+        for dato in datos:
+            if dato.startswith('nota_'):
+                alumno_id = int(dato.replace('nota_', ''))
+                calificacion = int(datos[dato][0])
+                alumno = alumnos_comision.get(alumno__id = alumno_id)
+                self.servicios_academico.crear_calificacion(alumno, fecha, tipo_calificacion, calificacion)
+
+        return calificaciones_curso(request, codigo)
