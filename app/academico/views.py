@@ -93,16 +93,15 @@ def calificaciones_curso(request, codigo):
     comision = get_object_or_404(Comision, codigo=codigo)
     calificaciones = Calificacion.objects.filter(
         alumno_comision__comision=comision
-    ).values('tipo', 'fecha').annotate(
+    ).values('tipo', 'fecha_creacion').annotate(
         promedio=Avg('nota')
-    ).order_by('tipo', '-fecha')
+    ).order_by('tipo', '-fecha_creacion')
     
-    # Si no tienes fecha_creacion, usa otra fecha o crea un campo
     resumen = []
     for calif in calificaciones:
         resumen.append({
             'tipo': calif['tipo'],
-            'fecha': calif['fecha'].strftime('%d/%m/%Y') if calif['fecha'] else 'Sin fecha',
+            'fecha_creacion': calif['fecha_creacion'].strftime('%d/%m/%Y') if calif['fecha_creacion'] else 'Sin fecha',
             'promedio': round(calif['promedio'], 2) if calif['promedio'] else 0
         })
     
@@ -222,6 +221,7 @@ class GestionCalificacionesView(DocenteRequiredMixin, View):
         comision = self.servicios_academico.obtener_comision_por_codigo(codigo)
         inscripciones = self.servicios_academico.obtener_alumnos_comision(codigo)
         contexto = {
+            'hoy':datetime.datetime.now(),
             'comision': comision,
             'materia': comision.materia,
             'inscripciones': inscripciones
@@ -238,6 +238,11 @@ class GestionCalificacionesView(DocenteRequiredMixin, View):
                 alumno_id = int(dato.replace('nota_', ''))
                 calificacion = int(datos[dato][0])
                 alumno = alumnos_comision.get(alumno__id = alumno_id)
-                self.servicios_academico.crear_calificacion(alumno, fecha, tipo_calificacion, calificacion)
-
+                calificacion_nuevo = self.servicios_academico.crear_calificacion(alumno, fecha, tipo_calificacion, calificacion)
+                LogAction(
+                    user=request.user,
+                    model_instance_or_queryset=calificacion_nuevo,
+                    action=ActionFlag.ADDITION,
+                    change_message="Se crea calificación"
+                    ).log()
         return calificaciones_curso(request, codigo)

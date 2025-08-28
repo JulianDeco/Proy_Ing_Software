@@ -67,13 +67,13 @@ class ServiciosAcademico:
         valores_calificacion = [choice[0] for choice in TipoCalificacion.choices]
 
         if tipo_calificacion in valores_calificacion:
-            calificacion_nuevo = Calificacion(
+            calificacion_nuevo = Calificacion.objects.create(
                 alumno_comision= alumno,
                 tipo =  tipo_calificacion,
                 nota = calificacion,
-                fecha= fecha
+                fecha_creacion= fecha
             )
-            calificacion_nuevo.save()
+            return calificacion_nuevo
         else:
             return None
     

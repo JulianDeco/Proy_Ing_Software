@@ -161,7 +161,7 @@ class Calificacion(models.Model):
     alumno_comision = models.ForeignKey(InscripcionesAlumnosComisiones, on_delete=models.CASCADE, related_name='calificaciones')
     tipo = models.CharField(max_length=20, choices=TipoCalificacion.choices)
     nota = models.DecimalField(max_digits=4, decimal_places=2)
-    fecha = models.DateTimeField()
+    fecha_creacion = models.DateTimeField()
     class Meta:
         unique_together = ('alumno_comision', 'tipo')
         verbose_name = 'Calificación'
