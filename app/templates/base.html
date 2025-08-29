@@ -16,7 +16,16 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
-    {% include 'includes/navbar.html' %}
+    {% if request.user.groups.all %}
+        {% for group in request.user.groups.all %}
+            {% if group.name == 'Docente' %}
+                {% include 'includes/navbar_profesores.html' %}
+            {% else %}
+                {% include 'includes/navbar.html' %}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+    
     
     <main class="container py-4">
         {% block content %}
