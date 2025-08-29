@@ -1,17 +1,18 @@
 from django.contrib.auth.decorators import user_passes_test
 from django.core.exceptions import PermissionDenied
 
-from django.template.loader import render_to_string
+from django.shortcuts import render
 from django.http import HttpResponse
 from weasyprint import HTML
 import tempfile
 import os
 from datetime import datetime
+from django.conf import settings
 
-def generar_certificado_pdf(contexto, template_name='admin/certificado_template.html'):
-    html_string = render_to_string(template_name, contexto)
+def generar_certificado_pdf(request, contexto, template_name='admin/certificado_template.html'):
+    html_string = render(request, template_name=template_name, context=contexto).content.decode('utf-8')
     with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as output:
-        HTML(string=html_string).write_pdf(output.name)
+        HTML(base_url=settings.BASE_DIR, string=html_string).write_pdf(output.name)
         with open(output.name, 'rb') as f:
             pdf_content = f.read()
         os.unlink(output.name)
@@ -29,7 +30,7 @@ def crear_contexto_certificado(alumno, tipo_certificado, institucion,curso=None,
         'fecha_actual': datetime.now().strftime('%d/%m/%Y'),
         'anio_actual': datetime.now().year,
         'institucion': institucion,
-        'logo' : nombre_archivo_solo
+        'logo':nombre_archivo_solo
     }
 
 def group_required(*group_names):

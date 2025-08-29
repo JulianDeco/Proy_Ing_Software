@@ -76,9 +76,10 @@ class AlumnoAdmin(admin.ModelAdmin):
                     generado_por=request.user
                 )
                 contexto['certificado'] = certificado
+                contexto['base_url'] = request.build_absolute_uri('/')[:-1]
                 
                 # Generar PDF
-                pdf_content = generar_certificado_pdf(contexto)
+                pdf_content = generar_certificado_pdf(request, contexto)
                 
                 # Crear respuesta HTTP
                 response = HttpResponse(pdf_content, content_type='application/pdf')
