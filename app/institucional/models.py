@@ -16,7 +16,6 @@ class Usuario(AbstractUser):
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
-    # objects = UsuarioManager()
     class Meta:
         db_table = 'institucional_usuarios'
         verbose_name = 'Usuario'

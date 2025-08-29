@@ -1,54 +1,19 @@
+from django.contrib import admin
 from django.http import HttpResponse
 from django.contrib import messages
 from django.shortcuts import get_object_or_404
 from django.utils.html import format_html
-from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-
-from administracion.models import Certificado, TipoCertificado
-from main.utils import crear_contexto_certificado, generar_certificado_pdf
-from institucional.models import Institucion, Usuario, Persona, Empleado
 from academico.models import Alumno
-
-@admin.register(Institucion)
-class InstitucionAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'direccion','nro_telefono','nro_celular','logo')
-
-@admin.register(Usuario)
-class UsuarioAdmin(BaseUserAdmin):
-    list_display = ('email','empleado', 'habilitado', 'is_staff', 'is_superuser')
-    search_fields = ('email',)
-    ordering = ('email',)
-    
-    fieldsets = (
-        (None, {'fields': ('email', 'password')}),
-        ('Permisos', {'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions')}),
-    )
-
-    add_fieldsets = (
-        (None, {
-            'classes': ('wide',),
-            'fields': ('email', 'password1', 'password2', 'habilitado', 'groups', 'is_staff', 'is_superuser'),
-        }),
-    )
-
-@admin.register(Empleado)
-class EmpleadoAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'apellido', 'dni', 'usuario_asociado')
-    search_fields = ('nombre', 'apellido', 'dni', 'usuario__email')
-
-    def usuario_asociado(self, obj):
-        return obj.usuario.email if obj.usuario else '—'
-    usuario_asociado.short_description = 'Usuario'
+from administracion.models import TipoCertificado, Certificado
+from .utils import generar_certificado_pdf, crear_contexto_certificado
 
 @admin.register(Alumno)
 class AlumnoAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'apellido', 'dni', 'promedio', 'estado')
-    search_fields = ('nombre', 'apellido', 'dni')
+    list_display = ('dni', 'nombre_completo', 'email', 'estado')
     actions = ['generar_certificado_asistencia', 'generar_certificado_aprobacion']
     
     def nombre_completo(self, obj):
-        return f"{obj.nombre} {obj.apellido}"
+        return f"{obj.persona.nombre} {obj.persona.apellido}"
     nombre_completo.short_description = 'Nombre Completo'
     
     def generar_certificado_asistencia(self, request, queryset):
@@ -66,19 +31,25 @@ class AlumnoAdmin(admin.ModelAdmin):
             # Para un solo alumno: descargar directamente
             if queryset.count() == 1:
                 alumno = queryset.first()
-                institucion = Institucion.objects.first()
-                contexto = crear_contexto_certificado(alumno, tipo_certificado, institucion)
+                contexto = crear_contexto_certificado(alumno, tipo_certificado)
+                
+                # Crear registro en base de datos
                 certificado = Certificado.objects.create(
                     alumno=alumno,
                     tipo=tipo_certificado,
                     generado_por=request.user
                 )
                 contexto['certificado'] = certificado
-                contexto['base_url'] = request.build_absolute_uri('/')[:-1]
-                pdf_content = generar_certificado_pdf(request, contexto)
+                
+                # Generar PDF
+                pdf_content = generar_certificado_pdf(contexto)
+                
+                # Crear respuesta HTTP
                 response = HttpResponse(pdf_content, content_type='application/pdf')
-                response['Content-Disposition'] = f'attachment; filename="certificado_{alumno.dni}_{tipo_certificado}.pdf"'
+                response['Content-Disposition'] = f'attachment; filename="certificado_{alumno.persona.dni}_{tipo_certificado}.pdf"'
                 return response
+            
+            # Para múltiples alumnos: procesar en lote
             else:
                 certificados_generados = []
                 for alumno in queryset:
@@ -102,7 +73,7 @@ class AlumnoAdmin(admin.ModelAdmin):
                 f"Error al generar certificados: {str(e)}",
                 messages.ERROR
             )
-    #ARREGLAR
+    
     def ver_certificados(self, obj):
         count = obj.certificado_set.count()
         url = f"/admin/academico/certificado/?alumno__id__exact={obj.id}"
@@ -113,7 +84,7 @@ class AlumnoAdmin(admin.ModelAdmin):
 class CertificadoAdmin(admin.ModelAdmin):
     list_display = ('alumno', 'tipo', 'fecha_emision', 'codigo_verificacion', 'descargar_certificado')
     list_filter = ('tipo', 'fecha_emision')
-    search_fields = ('alumno__nombre', 'alumno__apellido', 'codigo_verificacion')
+    search_fields = ('alumno__persona__nombre', 'alumno__persona__apellido', 'codigo_verificacion')
     
     def descargar_certificado(self, obj):
         return format_html(
@@ -139,5 +110,5 @@ class CertificadoAdmin(admin.ModelAdmin):
         pdf_content = generar_certificado_pdf(contexto)
         
         response = HttpResponse(pdf_content, content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="certificado_{certificado.alumno.dni}_{certificado.tipo}.pdf"'
+        response['Content-Disposition'] = f'attachment; filename="certificado_{certificado.alumno.persona.dni}_{certificado.tipo}.pdf"'
         return response
