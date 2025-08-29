@@ -6,7 +6,7 @@ class Institucion(models.Model):
     direccion = models.CharField(max_length=200)
     nro_telefono = models.CharField(max_length=200)
     nro_celular = models.CharField(max_length=200)
-    logo = models.FileField(upload_to=f'img/')
+    logo = models.FileField(upload_to='app/static/img/')
 
 class Usuario(AbstractUser):
     username = None

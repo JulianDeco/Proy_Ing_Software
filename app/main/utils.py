@@ -9,27 +9,18 @@ import os
 from datetime import datetime
 
 def generar_certificado_pdf(contexto, template_name='admin/certificado_template.html'):
-    # Renderizar el template HTML
     html_string = render_to_string(template_name, contexto)
-    
-    # Crear un archivo temporal
     with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as output:
-        # Generar PDF con WeasyPrint
         HTML(string=html_string).write_pdf(output.name)
-        
-        # Leer el contenido del PDF
         with open(output.name, 'rb') as f:
             pdf_content = f.read()
-        
-        # Eliminar el archivo temporal
         os.unlink(output.name)
     
     return pdf_content
 
 def crear_contexto_certificado(alumno, tipo_certificado, institucion,curso=None, materia=None):
-    """
-    Crea el contexto para el certificado
-    """
+    nombre_archivo = institucion.logo.name
+    nombre_archivo_solo = nombre_archivo.split('/')[-1]
     return {
         'alumno': alumno,
         'tipo_certificado': tipo_certificado,
@@ -37,7 +28,8 @@ def crear_contexto_certificado(alumno, tipo_certificado, institucion,curso=None,
         'materia': materia,
         'fecha_actual': datetime.now().strftime('%d/%m/%Y'),
         'anio_actual': datetime.now().year,
-        'institucion': institucion
+        'institucion': institucion,
+        'logo' : nombre_archivo_solo
     }
 
 def group_required(*group_names):
