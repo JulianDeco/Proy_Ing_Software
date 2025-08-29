@@ -26,7 +26,7 @@ def generar_certificado_pdf(contexto, template_name='admin/certificado_template.
     
     return pdf_content
 
-def crear_contexto_certificado(alumno, tipo_certificado, curso=None, materia=None):
+def crear_contexto_certificado(alumno, tipo_certificado, institucion,curso=None, materia=None):
     """
     Crea el contexto para el certificado
     """
@@ -37,11 +37,7 @@ def crear_contexto_certificado(alumno, tipo_certificado, curso=None, materia=Non
         'materia': materia,
         'fecha_actual': datetime.now().strftime('%d/%m/%Y'),
         'anio_actual': datetime.now().year,
-        'institucion': {
-            'nombre': 'Nombre de tu Institución',
-            'direccion': 'Dirección de la institución',
-            'logo': ''  # Ajusta esta ruta
-        }
+        'institucion': institucion
     }
 
 def group_required(*group_names):

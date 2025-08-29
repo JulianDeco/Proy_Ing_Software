@@ -66,7 +66,8 @@ class AlumnoAdmin(admin.ModelAdmin):
             # Para un solo alumno: descargar directamente
             if queryset.count() == 1:
                 alumno = queryset.first()
-                contexto = crear_contexto_certificado(alumno, tipo_certificado)
+                institucion = Institucion.objects.first()
+                contexto = crear_contexto_certificado(alumno, tipo_certificado, institucion)
                 
                 # Crear registro en base de datos
                 certificado = Certificado.objects.create(

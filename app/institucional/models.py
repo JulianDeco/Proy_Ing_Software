@@ -2,10 +2,10 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 
 class Institucion(models.Model):
-    nombre = models.CharField(200)
-    direccion = models.CharField(200)
-    nro_telefono = models.CharField(200)
-    nro_celular = models.CharField(200)
+    nombre = models.CharField(max_length=200)
+    direccion = models.CharField(max_length=200)
+    nro_telefono = models.CharField(max_length=200)
+    nro_celular = models.CharField(max_length=200)
     logo = models.FileField(upload_to=f'img/')
 
 class Usuario(AbstractUser):
