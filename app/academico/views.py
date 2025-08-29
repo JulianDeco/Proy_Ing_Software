@@ -4,6 +4,7 @@ from django.db.models import Count, Avg
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.decorators import login_required
 from django.views import View
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 
 from academico.services import ServiciosAcademico
 from main.services import ActionFlag, LogAction
@@ -32,101 +33,37 @@ def dashboard_profesores(request):
                     }
     )
 
-@login_required
-@group_required('Docente')
-def asistencia_curso(request, codigo, param_asistencia = None):
-    comision = Comision.objects.get(codigo=codigo)
-    alumnos_comision = InscripcionesAlumnosComisiones.objects.filter(comision=comision)
-    if not param_asistencia:
-        contexto = {
-            'comision': comision,
-            'alumnos_comision': alumnos_comision
-        }
-        return render(request, 'academico/asistencia_curso.html', context = contexto)
-    
-    for alummo_comision in alumnos_comision:
-        fecha_actual = timezone.now().date()
-        asistencia = Asistencia.objects.get(alumno_comision = alummo_comision, fecha_asistencia=fecha_actual)
-        alummo_comision.alumno.presente = asistencia.esta_presente
-
-    contexto = {
-            'comision': comision,
-            'alumnos_comision': alumnos_comision
-        }
-    return render(request, 'academico/asistencia_curso.html', context = contexto)
-
-@login_required
-@group_required('Docente')
-def registrar_asistencia(request, codigo):
-    datos = request.POST
-    comision = get_object_or_404(Comision, codigo=codigo)
-    for d in datos:
-        if d.startswith('asistencia_'):
-            alumno_id = int(d.replace('asistencia_',''))
-            estado_alumno_asistencia = datos[d]
-
-            alumno = Alumno.objects.get(id = alumno_id)
-
-            if estado_alumno_asistencia == 'PRESENTE':
-                estado_alumno_asistencia = True
-            elif estado_alumno_asistencia == 'AUSENTE':
-                estado_alumno_asistencia = False
-
-            fecha_actual = timezone.now().date()
-
-            inscripcion_alumno = get_object_or_404(
-                        InscripcionesAlumnosComisiones,
-                        alumno=alumno, 
-                        comision=comision,
-                    )
-            Asistencia.objects.update_or_create(
-                        alumno_comision=inscripcion_alumno,
-                        fecha_asistencia=fecha_actual,
-                        defaults={
-                            'esta_presente': estado_alumno_asistencia 
-                        }
-                    )
-    param_asistencia = True
-    return asistencia_curso(request, codigo, param_asistencia)
-
-def calificaciones_curso(request, codigo):
-    comision = get_object_or_404(Comision, codigo=codigo)
-    calificaciones = Calificacion.objects.filter(
-        alumno_comision__comision=comision
-    ).values('tipo', 'fecha_creacion').annotate(
-        promedio=Avg('nota')
-    ).order_by('tipo', '-fecha_creacion')
-    
-    resumen = []
-    for calif in calificaciones:
-        resumen.append({
-            'tipo': calif['tipo'],
-            'fecha_creacion': calif['fecha_creacion'].strftime('%d/%m/%Y') if calif['fecha_creacion'] else 'Sin fecha',
-            'promedio': round(calif['promedio'], 2) if calif['promedio'] else 0
-        })
-    
-    return render(request, 'academico/calificaciones_curso.html', 
-        context = {
-            'comision': comision,
-            'calificaciones': resumen
-    })
-
-def crear_evaluacion(request, codigo):
-    comision = get_object_or_404(InscripcionesAlumnosComisiones, comision__id=codigo)
-    print(comision)
-
-def guardar_calificaciones(request, codigo):
-    pass
-
-class DocenteRequiredMixin:
+class DocenteRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     def test_func(self):
         return self.request.user.groups.filter(name='Docente').exists()
     
-    def dispatch(self, request, *args, **kwargs):
-        if not self.test_func():
-            return redirect('acceso-denegado')
-        return super().dispatch(request, *args, **kwargs)
-    
+    def handle_no_permission(self):
+        return redirect('acceso-denegado')
+
+class CalificacionesCursoView(DocenteRequiredMixin, View):
+    servicios_academico = ServiciosAcademico()
+
+    def get(self, request, codigo):
+        comision = get_object_or_404(Comision, codigo=codigo)
+        calificaciones = Calificacion.objects.filter(
+            alumno_comision__comision=comision
+        ).values('tipo', 'fecha_creacion').annotate(
+            promedio=Avg('nota')
+        ).order_by('tipo', '-fecha_creacion')
+        
+        resumen = []
+        for calif in calificaciones:
+            resumen.append({
+                'tipo': calif['tipo'],
+                'fecha_creacion': calif['fecha_creacion'].strftime('%d/%m/%Y') if calif['fecha_creacion'] else 'Sin fecha',
+                'promedio': round(calif['promedio'], 2) if calif['promedio'] else 0
+            })
+        
+        return render(request, 'academico/calificaciones_curso.html', {
+            'comision': comision,
+            'calificaciones': resumen
+        })
+
 class GestionAsistenciaView(DocenteRequiredMixin, View):
     servicios_academico = ServiciosAcademico()
 
