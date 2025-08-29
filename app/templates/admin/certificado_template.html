@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Certificado</title>
+    <style>
+        @page {
+            margin: 2cm;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+        }
+        .certificado {
+            border: 3px solid #000;
+            padding: 2cm;
+            text-align: center;
+            min-height: 15cm;
+        }
+        .header {
+            margin-bottom: 1cm;
+        }
+        .logo {
+            max-width: 150px;
+            margin-bottom: 0.5cm;
+        }
+        .titulo {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 1cm;
+            text-decoration: underline;
+        }
+        .contenido {
+            font-size: 18px;
+            margin-bottom: 1cm;
+            text-align: justify;
+        }
+        .firma {
+            margin-top: 2cm;
+            border-top: 1px solid #000;
+            width: 50%;
+            margin-left: auto;
+            margin-right: auto;
+            padding-top: 0.5cm;
+        }
+        .footer {
+            margin-top: 1cm;
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="certificado">
+        <div class="header">
+            {% if institucion.logo %}
+            <img src="{{ institucion.logo }}" class="logo" alt="Logo">
+            {% endif %}
+            <h1>{{ institucion.nombre }}</h1>
+            <p>{{ institucion.direccion }}</p>
+        </div>
+        
+        <div class="titulo">
+            CERTIFICADO DE {{ tipo_certificado|upper }}
+        </div>
+        
+        <div class="contenido">
+            <p>La dirección de {{ institucion.nombre }} certifica que:</p>
+            
+            <p style="text-align: center; font-weight: bold; font-size: 20px;">
+                {{ alumno.nombre }} {{ alumno.apellido }}
+            </p>
+            
+            <p>Documento Nacional de Identidad: {{ alumno.dni }}</p>
+            
+            <p>Ha {{ tipo_certificado }} satisfactoriamente 
+            {% if curso %}en el curso "{{ curso.codigo }}"{% endif %}
+            {% if materia %}en la materia "{{ materia.nombre }}"{% endif %}
+            durante el año {{ anio_actual }}.</p>
+            
+            <p>Se extiende el presente certificado para los fines que estime convenientes.</p>
+        </div>
+        
+        <div class="firma">
+            <p>Firma y sello</p>
+            <p>Director/Autoridad</p>
+        </div>
+        
+        <div class="footer">
+            <p>Certificado generado el: {{ fecha_actual }}</p>
+            <p>Código de verificación: {{ certificado.codigo_verificacion }}</p>
+        </div>
+    </div>
+</body>
+</html>

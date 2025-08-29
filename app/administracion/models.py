@@ -1,6 +1,6 @@
 from django.db import models
-
-from institucional.models import Persona, Usuario
+from django.db import models
+from django.conf import settings
 
 class PlanEstudio(models.Model):
     nombre = models.CharField(max_length=100)
@@ -27,16 +27,29 @@ class Reporte(models.Model):
         verbose_name_plural = 'Reportes'
     
 
-class Certificacion(models.Model):
-    persona = models.ForeignKey(Persona, on_delete=models.CASCADE, related_name='certificaciones')
-    tipo = models.CharField(max_length=100)  # regularidad, analítico, etc.
+class TipoCertificado(models.TextChoices):
+    ASISTENCIA = 'asistencia', 'Certificado de Asistencia'
+    APROBACION = 'aprobacion', 'Certificado de Aprobación'
+    EXAMEN = 'examen', 'Certificado de Examen'
+    OTRO = 'otro', 'Otro Certificado'
+
+class Certificado(models.Model):
+    alumno = models.ForeignKey('academico.Alumno', on_delete=models.CASCADE)
+    tipo = models.CharField(max_length=20, choices=TipoCertificado.choices)
     fecha_emision = models.DateField(auto_now_add=True)
-    generado_por = models.ForeignKey(Usuario, on_delete=models.SET_NULL, null=True)
-
+    codigo_verificacion = models.CharField(max_length=50, unique=True)
+    contenido = models.TextField(blank=True)
+    generado_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
+    
     class Meta:
-        db_table = 'institucional_certificaciones'
-        verbose_name = 'Certificación'
-        verbose_name_plural = 'Certificaciones'
-
+        verbose_name = 'Certificado'
+        verbose_name_plural = 'Certificados'
+    
     def __str__(self):
-        return f"{self.tipo} - {self.persona.nombre} {self.persona.apellido}"
+        return f"Certificado {self.get_tipo_display()} - {self.alumno}"
+    
+    def save(self, *args, **kwargs):
+        if not self.codigo_verificacion:
+            import uuid
+            self.codigo_verificacion = str(uuid.uuid4())[:8].upper()
+        super().save(*args, **kwargs)

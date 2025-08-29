@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from administracion.models import Certificacion, PlanEstudio, Reporte
+from administracion.models import PlanEstudio, Reporte
 
 @admin.register(PlanEstudio)
 class PlanEstudioAdmin(admin.ModelAdmin):
@@ -11,8 +11,3 @@ class PlanEstudioAdmin(admin.ModelAdmin):
 class ReporteAdmin(admin.ModelAdmin):
     list_display = ('titulo', 'fecha_generacion', 'archivo')
     search_fields = ('titulo',)
-
-@admin.register(Certificacion)
-class CertificacionAdmin(admin.ModelAdmin):
-    list_display = ('persona', 'tipo', 'fecha_emision', 'generado_por')
-    search_fields = ('persona__nombre', 'persona__apellido', 'tipo')
