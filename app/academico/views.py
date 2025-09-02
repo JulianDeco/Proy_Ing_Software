@@ -182,4 +182,4 @@ class GestionCalificacionesView(DocenteRequiredMixin, View):
                     action=ActionFlag.ADDITION,
                     change_message="Se crea calificación"
                     ).log()
-        return calificaciones_curso(request, codigo)
+        return CalificacionesCursoView.get(request, codigo)
