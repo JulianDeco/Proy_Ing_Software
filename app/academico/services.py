@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from .models import CalendarioAcademico, Calificacion, Comision, InscripcionesAlumnosComisiones, Asistencia, Alumno, TipoCalificacion
+from .models import CalendarioAcademico, Calificacion, Comision, InscripcionAlumnoComision, Asistencia, Alumno, TipoCalificacion
 from institucional.models import Empleado
 
 class ServiciosAcademico:
@@ -18,11 +18,11 @@ class ServiciosAcademico:
     
     @staticmethod
     def obtener_alumnos_comision(comision):
-        return InscripcionesAlumnosComisiones.objects.filter(comision=comision)
+        return InscripcionAlumnoComision.objects.filter(comision=comision)
     
     @staticmethod
     def contar_inscriptos_comision(comision):
-        return InscripcionesAlumnosComisiones.objects.filter(comision=comision).count()
+        return InscripcionAlumnoComision.objects.filter(comision=comision).count()
     
     @staticmethod
     def obtener_fechas_clases(comision):
@@ -48,7 +48,7 @@ class ServiciosAcademico:
     @staticmethod
     def registrar_asistencia(alumno, comision, esta_presente, fecha_asistencia):
         inscripcion = get_object_or_404(
-            InscripcionesAlumnosComisiones,
+            InscripcionAlumnoComision,
             alumno=alumno,
             comision=comision
         )
@@ -84,7 +84,7 @@ class ServiciosAcademico:
         
         total_alumnos = 0
         for comision in comisiones:
-            total_alumnos += InscripcionesAlumnosComisiones.objects.filter(comision=comision).count()
+            total_alumnos += InscripcionAlumnoComision.objects.filter(comision=comision).count()
         
         return {
             'total_comisiones': comisiones.count(),

@@ -9,7 +9,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from academico.services import ServiciosAcademico
 from main.services import ActionFlag, LogAction
 from main.utils import group_required
-from .models import CalendarioAcademico, Calificacion, Materia, Comision, InscripcionesAlumnosComisiones, Asistencia, Alumno
+from .models import CalendarioAcademico, Calificacion, Materia, Comision, InscripcionAlumnoComision, Asistencia, Alumno
 from institucional.models import Empleado, Persona
 
 @login_required
@@ -21,7 +21,7 @@ def dashboard_profesores(request):
     clases_hoy = comisiones.filter(dia_cursado=datetime.datetime.now().weekday() + 1).count()
     total_alumnos = 0
     for comision in comisiones:
-        consulta_inscriptos_comision = InscripcionesAlumnosComisiones.objects.filter(comision = comision)
+        consulta_inscriptos_comision = InscripcionAlumnoComision.objects.filter(comision = comision)
         total_alumnos = total_alumnos + consulta_inscriptos_comision.count()
     return render(  request, 
                     'academico/docentes.html', 

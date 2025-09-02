@@ -108,7 +108,7 @@ class EstadoMateria(models.TextChoices):
     REGULAR = 'REGULAR', 'Regular'
     LIBRE = 'LIBRE', 'Libre'
 
-class InscripcionesAlumnosComisiones(models.Model):
+class InscripcionAlumnoComision(models.Model):
     alumno = models.ForeignKey(Alumno, on_delete=models.CASCADE)
     comision = models.ForeignKey(Comision, on_delete=models.CASCADE)
     creado = models.DateTimeField(auto_now_add=True)
@@ -146,7 +146,7 @@ class InscripcionesAlumnosComisiones(models.Model):
         
         return dias_clase.count()
 
-@receiver(post_save, sender=InscripcionesAlumnosComisiones)
+@receiver(post_save, sender=InscripcionAlumnoComision)
 def crear_asistencias_al_inscribir(sender, instance, created, **kwargs):
     if created:
         cantidad_creada = instance.crear_asistencias_automaticas()
@@ -158,7 +158,7 @@ class TipoCalificacion(models.TextChoices):
     CONCEPTO = 'CONCEPTO', 'Concepto'
     
 class Calificacion(models.Model):
-    alumno_comision = models.ForeignKey(InscripcionesAlumnosComisiones, on_delete=models.CASCADE, related_name='calificaciones')
+    alumno_comision = models.ForeignKey(InscripcionAlumnoComision, on_delete=models.CASCADE, related_name='calificaciones')
     tipo = models.CharField(max_length=20, choices=TipoCalificacion.choices)
     nota = models.DecimalField(max_digits=4, decimal_places=2)
     fecha_creacion = models.DateTimeField()
@@ -171,7 +171,7 @@ class Calificacion(models.Model):
         return f"{self.alumno_comision.alumno} - {self.tipo}: {self.nota}"
     
 class Asistencia(models.Model):
-    alumno_comision = models.ForeignKey(InscripcionesAlumnosComisiones, on_delete=models.CASCADE, related_name='asistencias')
+    alumno_comision = models.ForeignKey(InscripcionAlumnoComision, on_delete=models.CASCADE, related_name='asistencias')
     esta_presente = models.BooleanField(default=False)
     fecha_asistencia = models.DateField()
 
