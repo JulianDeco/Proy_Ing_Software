@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     
     'django_admin_logs',
+    'holidays',
     
     'institucional',
     'academico',

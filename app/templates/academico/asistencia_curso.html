@@ -90,7 +90,7 @@ Asistencia - {{ comision.materia.nombre }}{% endblock %} {% block content %}
                     <th>DNI</th>
                     <th>Estado</th>
                     <th>Asistencia</th>
-                    <th>Observaciones</th>
+                    <th>Porcentaje asistencia</th>
                 </tr>
             </thead>
             <tbody>
@@ -137,14 +137,8 @@ Asistencia - {{ comision.materia.nombre }}{% endblock %} {% block content %}
                             <label class="form-check-label" for="ausente_{{ alumno_comision.alumno.id }}">Ausente</label>
                         </div>
                     </td>
-                    <td>
-                        <input
-                            type="text"
-                            class="form-control form-control-sm"
-                            name="observacion_{{ alumno_comision.id }}"
-                            placeholder="Observaciones..."
-                            maxlength="100"
-                        />
+                    <td class="text-center fw-bold text-primary">
+                        {{ alumno_comision.alumno.porcentaje_asistencia }}%
                     </td>
                 </tr>
                 {% empty %}

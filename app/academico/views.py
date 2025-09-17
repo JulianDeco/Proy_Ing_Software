@@ -80,6 +80,8 @@ class GestionAsistenciaView(DocenteRequiredMixin, View):
                 asistencia = self.servicios_academico.obtener_asistencia_alumno_hoy(alummo_comision, fecha_seleccionada)
                 if asistencia:
                     alummo_comision.alumno.presente = asistencia.esta_presente
+                
+                alummo_comision.alumno.porcentaje_asistencia = self.servicios_academico.obtener_porcentaje_asistencia(alummo_comision, fecha_seleccionada)
             
             if fecha_seleccionada:
                 try:

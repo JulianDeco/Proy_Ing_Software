@@ -46,6 +46,19 @@ class ServiciosAcademico:
             return None
     
     @staticmethod
+    def obtener_porcentaje_asistencia(alumno_comision, fecha_seleccionada):
+        asistencias = Asistencia.objects.filter(
+                alumno_comision=alumno_comision, 
+                fecha_asistencia__lt=fecha_seleccionada
+                )
+        total_asistencias = asistencias.count()
+        presentes = 0
+        for asistencia in asistencias:
+            if asistencia.esta_presente == True:
+                presentes += 1
+        return round(presentes * 100 / total_asistencias, 2)
+    
+    @staticmethod
     def registrar_asistencia(alumno, comision, esta_presente, fecha_asistencia):
         inscripcion = get_object_or_404(
             InscripcionAlumnoComision,
