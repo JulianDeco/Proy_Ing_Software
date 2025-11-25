@@ -319,7 +319,7 @@ class GestionCalificacionesView(DocenteRequiredMixin, View):
                     alumno_id = int(dato.replace('nota_', ''))
 
                     # Validar cada nota individual
-                    nota_form = NotaIndividualForm({'nota': datos[dato][0]})
+                    nota_form = NotaIndividualForm({'nota': datos[dato]})
                     if not nota_form.is_valid():
                         for error in nota_form.errors.get('nota', []):
                             messages.error(request, f'Alumno ID {alumno_id}: {error}')

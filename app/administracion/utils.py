@@ -22,7 +22,8 @@ def crear_backup_completo():
 
     with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
         # 1. Backup de la base de datos completa
-        db_buffer = BytesIO()
+        from io import StringIO
+        db_buffer = StringIO()
         call_command('dumpdata',
                     '--natural-foreign',
                     '--natural-primary',
@@ -55,7 +56,7 @@ NOTA: Este backup NO incluye:
         zip_file.writestr(f'{backup_name}/README.txt', info_content)
 
         # 3. Copiar la base de datos SQLite si existe
-        db_path = settings.DATABASES['default']['NAME']
+        db_path = str(settings.DATABASES['default']['NAME'])
         if os.path.exists(db_path) and db_path.endswith('.sqlite3'):
             with open(db_path, 'rb') as db_file:
                 zip_file.writestr(f'{backup_name}/db.sqlite3', db_file.read())

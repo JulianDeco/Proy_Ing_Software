@@ -44,9 +44,18 @@ class CertificadoAdmin(admin.ModelAdmin):
         return custom_urls + urls
 
     def download_certificado(self, request, object_id):
+        from institucional.models import Institucion
         certificado = get_object_or_404(Certificado, id=object_id)
         try:
-            contexto = crear_contexto_certificado(certificado.alumno, certificado.tipo)
+            institucion = Institucion.objects.first()
+            if not institucion:
+                return HttpResponse('Error: No hay institución configurada en el sistema.', status=500)
+
+            contexto = crear_contexto_certificado(
+                certificado.alumno,
+                certificado.get_tipo_display(),
+                institucion
+            )
             contexto['certificado'] = certificado
 
             pdf_content = generar_certificado_pdf(contexto)

@@ -70,8 +70,8 @@ class AlumnoAdmin(admin.ModelAdmin):
         'generar_certificado_asistencia',
         'generar_certificado_aprobacion',
         'generar_certificado_examen',
-        'generar_certificado_regularidad',
-        'generar_certificado_alumno_regular'
+        'generar_certificado_alumno_regular',
+        'generar_certificado_buen_comportamiento'
     ]
 
     def nombre_completo(self, obj):
@@ -90,13 +90,13 @@ class AlumnoAdmin(admin.ModelAdmin):
         return self._generar_certificados(request, queryset, TipoCertificado.EXAMEN)
     generar_certificado_examen.short_description = "Generar certificado de examen"
 
-    def generar_certificado_regularidad(self, request, queryset):
-        return self._generar_certificados(request, queryset, TipoCertificado.REGULARIDAD)
-    generar_certificado_regularidad.short_description = "Generar certificado de regularidad"
-
     def generar_certificado_alumno_regular(self, request, queryset):
         return self._generar_certificados(request, queryset, TipoCertificado.ALUMNO_REGULAR)
     generar_certificado_alumno_regular.short_description = "Generar certificado de alumno regular"
+
+    def generar_certificado_buen_comportamiento(self, request, queryset):
+        return self._generar_certificados(request, queryset, TipoCertificado.BUEN_COMPORTAMIENTO)
+    generar_certificado_buen_comportamiento.short_description = "Generar certificado de buen comportamiento"
 
     def _generar_certificados(self, request, queryset, tipo_certificado):
         try:
@@ -110,8 +110,7 @@ class AlumnoAdmin(admin.ModelAdmin):
                     generado_por=request.user
                 )
                 contexto['certificado'] = certificado
-                contexto['base_url'] = request.build_absolute_uri('/')[:-1]
-                pdf_content = generar_certificado_pdf(request, contexto)
+                pdf_content = generar_certificado_pdf(contexto)
                 response = HttpResponse(pdf_content, content_type='application/pdf')
                 response['Content-Disposition'] = f'attachment; filename="certificado_{alumno.dni}_{tipo_certificado}.pdf"'
                 return response

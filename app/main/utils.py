@@ -9,14 +9,15 @@ import os
 from datetime import datetime
 from django.conf import settings
 
-def generar_certificado_pdf(request, contexto, template_name='admin/certificado_template.html'):
-    html_string = render(request, template_name=template_name, context=contexto).content.decode('utf-8')
+def generar_certificado_pdf(contexto, template_name='admin/certificado_template.html'):
+    from django.template.loader import render_to_string
+    html_string = render_to_string(template_name, context=contexto)
     with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as output:
         HTML(base_url=settings.BASE_DIR, string=html_string).write_pdf(output.name)
         with open(output.name, 'rb') as f:
             pdf_content = f.read()
         os.unlink(output.name)
-    
+
     return pdf_content
 
 def crear_contexto_certificado(alumno, tipo_certificado, institucion,curso=None, materia=None):

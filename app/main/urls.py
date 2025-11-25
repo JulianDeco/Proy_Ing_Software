@@ -9,8 +9,8 @@ admin.site.site_header = "Administración de sistema educativo"
 admin.site.index_title = "Sitio de administración"
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
     path("admin/backup/descargar/", download_backup, name='admin_backup'),
+    path("admin/", admin.site.urls),
 
     path('redirect', redirect_based_group, name='redirect_login'),
     path('logout', logout_view, name='logout'),

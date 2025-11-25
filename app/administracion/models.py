@@ -31,7 +31,6 @@ class TipoCertificado(models.TextChoices):
     ASISTENCIA = 'asistencia', 'Certificado de Asistencia'
     APROBACION = 'aprobacion', 'Certificado de Aprobación'
     EXAMEN = 'examen', 'Certificado de Examen'
-    REGULARIDAD = 'regularidad', 'Certificado de Regularidad'
     ALUMNO_REGULAR = 'alumno_regular', 'Certificado de Alumno Regular'
     BUEN_COMPORTAMIENTO = 'buen_comportamiento', 'Certificado de Buen Comportamiento'
     OTRO = 'otro', 'Otro Certificado'
