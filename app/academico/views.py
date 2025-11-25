@@ -169,6 +169,7 @@ class GestionCalificacionesView(DocenteRequiredMixin, View):
         }
         return render(request, 'academico/carga_calificacion.html', context=contexto)
 
+    @transaction.atomic
     def post(self, request, codigo):
         datos = request.POST
         fecha = datos.get('fecha')
