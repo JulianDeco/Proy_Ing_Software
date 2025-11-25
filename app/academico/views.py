@@ -13,33 +13,29 @@ from main.utils import group_required
 from .models import CalendarioAcademico, Calificacion, Materia, Comision, InscripcionAlumnoComision, Asistencia, Alumno
 from institucional.models import Empleado, Persona
 
-@login_required
-@group_required('Docente')
-def dashboard_profesores(request):
-    datos_usuario = request.user
-    datos_persona = Empleado.objects.get(usuario = datos_usuario)
-    comisiones = Comision.objects.filter(docente = datos_persona)
-    clases_hoy = comisiones.filter(dia_cursado=datetime.datetime.now().weekday() + 1).count()
-    total_alumnos = 0
-    for comision in comisiones:
-        consulta_inscriptos_comision = InscripcionAlumnoComision.objects.filter(comision = comision)
-        total_alumnos = total_alumnos + consulta_inscriptos_comision.count()
-    return render(  request, 
-                    'academico/docentes.html', 
-                    context= {
-                    'docente': datos_persona,
-                    'comisiones':comisiones,
-                    'clases_hoy':clases_hoy,
-                    'total_alumnos':total_alumnos
-                    }
-    )
 
 class DocenteRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     def test_func(self):
         return self.request.user.groups.filter(name='Docente').exists()
-    
+
     def handle_no_permission(self):
         return redirect('acceso-denegado')
+
+
+class DashboardProfesoresView(DocenteRequiredMixin, View):
+    servicios_academico = ServiciosAcademico()
+
+    def get(self, request):
+        empleado = self.servicios_academico.obtener_docente_actual(request.user)
+        estadisticas = self.servicios_academico.obtener_estadisticas_docente(empleado)
+        comisiones = self.servicios_academico.obtener_comisiones_docente(empleado)
+
+        return render(request, 'academico/docentes.html', {
+            'docente': empleado,
+            'comisiones': comisiones,
+            'clases_hoy': estadisticas['clases_hoy'],
+            'total_alumnos': estadisticas['total_alumnos']
+        })
 
 class CalificacionesCursoView(DocenteRequiredMixin, View):
     servicios_academico = ServiciosAcademico()
