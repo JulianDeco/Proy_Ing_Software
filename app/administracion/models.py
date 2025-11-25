@@ -31,23 +31,28 @@ class TipoCertificado(models.TextChoices):
     ASISTENCIA = 'asistencia', 'Certificado de Asistencia'
     APROBACION = 'aprobacion', 'Certificado de Aprobación'
     EXAMEN = 'examen', 'Certificado de Examen'
+    REGULARIDAD = 'regularidad', 'Certificado de Regularidad'
+    ALUMNO_REGULAR = 'alumno_regular', 'Certificado de Alumno Regular'
+    BUEN_COMPORTAMIENTO = 'buen_comportamiento', 'Certificado de Buen Comportamiento'
     OTRO = 'otro', 'Otro Certificado'
 
 class Certificado(models.Model):
     alumno = models.ForeignKey('academico.Alumno', on_delete=models.CASCADE)
-    tipo = models.CharField(max_length=20, choices=TipoCertificado.choices)
+    tipo = models.CharField(max_length=30, choices=TipoCertificado.choices)
     fecha_emision = models.DateField(auto_now_add=True)
     codigo_verificacion = models.CharField(max_length=50, unique=True)
     contenido = models.TextField(blank=True)
     generado_por = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True)
-    
+
     class Meta:
+        db_table = 'administracion_certificados'
         verbose_name = 'Certificado'
         verbose_name_plural = 'Certificados'
-    
+        ordering = ['-fecha_emision']
+
     def __str__(self):
         return f"Certificado {self.get_tipo_display()} - {self.alumno}"
-    
+
     def save(self, *args, **kwargs):
         if not self.codigo_verificacion:
             import uuid

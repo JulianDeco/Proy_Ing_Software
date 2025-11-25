@@ -1,7 +1,13 @@
 from django.contrib import admin
+from django.http import HttpResponse
+from django.contrib import messages
+from django.utils.html import format_html
 
-from academico.models import AnioAcademico, Asistencia, CalendarioAcademico, Calificacion, Comision, EstadosAlumno, Materia, InscripcionAlumnoComision
+from academico.models import Alumno, AnioAcademico, Asistencia, CalendarioAcademico, Calificacion, Comision, EstadosAlumno, Materia, InscripcionAlumnoComision
 from academico.forms import MateriaAdminForm
+from administracion.models import Certificado, TipoCertificado
+from institucional.models import Institucion
+from main.utils import crear_contexto_certificado, generar_certificado_pdf
 
 @admin.register(Materia)
 class MateriaAdmin(admin.ModelAdmin):
@@ -54,3 +60,81 @@ class AnioAcademicoAdmin(admin.ModelAdmin):
 class CalendarioAcademico(admin.ModelAdmin):
     list_display = ('anio_academico','fecha','es_dia_clase','descripcion',)
     search_fields= ('anio_academico','fecha','es_dia_clase','descripcion',)
+
+@admin.register(Alumno)
+class AlumnoAdmin(admin.ModelAdmin):
+    list_display = ('legajo', 'nombre_completo', 'dni', 'email', 'promedio', 'estado')
+    search_fields = ('nombre', 'apellido', 'dni', 'legajo', 'email')
+    list_filter = ('estado',)
+    actions = [
+        'generar_certificado_asistencia',
+        'generar_certificado_aprobacion',
+        'generar_certificado_examen',
+        'generar_certificado_regularidad',
+        'generar_certificado_alumno_regular'
+    ]
+
+    def nombre_completo(self, obj):
+        return f"{obj.nombre} {obj.apellido}"
+    nombre_completo.short_description = 'Nombre Completo'
+
+    def generar_certificado_asistencia(self, request, queryset):
+        return self._generar_certificados(request, queryset, TipoCertificado.ASISTENCIA)
+    generar_certificado_asistencia.short_description = "Generar certificado de asistencia"
+
+    def generar_certificado_aprobacion(self, request, queryset):
+        return self._generar_certificados(request, queryset, TipoCertificado.APROBACION)
+    generar_certificado_aprobacion.short_description = "Generar certificado de aprobación"
+
+    def generar_certificado_examen(self, request, queryset):
+        return self._generar_certificados(request, queryset, TipoCertificado.EXAMEN)
+    generar_certificado_examen.short_description = "Generar certificado de examen"
+
+    def generar_certificado_regularidad(self, request, queryset):
+        return self._generar_certificados(request, queryset, TipoCertificado.REGULARIDAD)
+    generar_certificado_regularidad.short_description = "Generar certificado de regularidad"
+
+    def generar_certificado_alumno_regular(self, request, queryset):
+        return self._generar_certificados(request, queryset, TipoCertificado.ALUMNO_REGULAR)
+    generar_certificado_alumno_regular.short_description = "Generar certificado de alumno regular"
+
+    def _generar_certificados(self, request, queryset, tipo_certificado):
+        try:
+            if queryset.count() == 1:
+                alumno = queryset.first()
+                institucion = Institucion.objects.first()
+                contexto = crear_contexto_certificado(alumno, tipo_certificado, institucion)
+                certificado = Certificado.objects.create(
+                    alumno=alumno,
+                    tipo=tipo_certificado,
+                    generado_por=request.user
+                )
+                contexto['certificado'] = certificado
+                contexto['base_url'] = request.build_absolute_uri('/')[:-1]
+                pdf_content = generar_certificado_pdf(request, contexto)
+                response = HttpResponse(pdf_content, content_type='application/pdf')
+                response['Content-Disposition'] = f'attachment; filename="certificado_{alumno.dni}_{tipo_certificado}.pdf"'
+                return response
+            else:
+                certificados_generados = []
+                for alumno in queryset:
+                    certificado = Certificado.objects.create(
+                        alumno=alumno,
+                        tipo=tipo_certificado,
+                        generado_por=request.user
+                    )
+                    certificados_generados.append(certificado)
+
+                self.message_user(
+                    request,
+                    f"Se generaron {len(certificados_generados)} certificados de {tipo_certificado}. "
+                    f"Puede descargarlos desde el módulo Administración > Certificados.",
+                    messages.SUCCESS
+                )
+
+        except Exception as e:
+            self.message_user(
+                request,
+                f"Error al generar certificados: {str(e)}",
+                messages.ERROR
+            )

@@ -1,13 +1,59 @@
 from django.contrib import admin
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+from django.utils.html import format_html
+from django.contrib import messages
 
-from administracion.models import PlanEstudio, Reporte
+from administracion.models import Certificado, PlanEstudio, Reporte, TipoCertificado
+from main.utils import crear_contexto_certificado, generar_certificado_pdf
 
 @admin.register(PlanEstudio)
 class PlanEstudioAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'codigo')
+    list_display = ('codigo', 'nombre')
     search_fields = ('nombre', 'codigo')
+    ordering = ('codigo',)
 
 @admin.register(Reporte)
 class ReporteAdmin(admin.ModelAdmin):
     list_display = ('titulo', 'fecha_generacion', 'archivo')
+    list_filter = ('fecha_generacion',)
     search_fields = ('titulo',)
+    ordering = ('-fecha_generacion',)
+
+@admin.register(Certificado)
+class CertificadoAdmin(admin.ModelAdmin):
+    list_display = ('codigo_verificacion', 'alumno', 'tipo', 'fecha_emision', 'generado_por', 'descargar_certificado')
+    list_filter = ('tipo', 'fecha_emision')
+    search_fields = ('alumno__nombre', 'alumno__apellido', 'alumno__dni', 'codigo_verificacion')
+    ordering = ('-fecha_emision',)
+    readonly_fields = ('codigo_verificacion', 'fecha_emision')
+
+    def descargar_certificado(self, obj):
+        return format_html(
+            '<a class="button" href="/admin/administracion/certificado/{}/download/">📄 Descargar PDF</a>',
+            obj.id
+        )
+    descargar_certificado.short_description = 'Acción'
+
+    def get_urls(self):
+        from django.urls import path
+        urls = super().get_urls()
+        custom_urls = [
+            path('<path:object_id>/download/', self.admin_site.admin_view(self.download_certificado), name='certificado_download'),
+        ]
+        return custom_urls + urls
+
+    def download_certificado(self, request, object_id):
+        certificado = get_object_or_404(Certificado, id=object_id)
+        try:
+            contexto = crear_contexto_certificado(certificado.alumno, certificado.tipo)
+            contexto['certificado'] = certificado
+
+            pdf_content = generar_certificado_pdf(contexto)
+
+            response = HttpResponse(pdf_content, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="certificado_{certificado.alumno.dni}_{certificado.tipo}.pdf"'
+            return response
+        except Exception as e:
+            messages.error(request, f'Error al generar el certificado: {str(e)}')
+            return HttpResponse(f'Error: {str(e)}', status=500)
