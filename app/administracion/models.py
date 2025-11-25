@@ -57,3 +57,14 @@ class Certificado(models.Model):
             import uuid
             self.codigo_verificacion = str(uuid.uuid4())[:8].upper()
         super().save(*args, **kwargs)
+
+
+class BackupManager(models.Model):
+    """
+    Modelo proxy para gestionar backups en el admin.
+    No representa una tabla real en la base de datos.
+    """
+    class Meta:
+        managed = False
+        verbose_name = 'Gestión de Backup'
+        verbose_name_plural = 'Gestión de Backups'

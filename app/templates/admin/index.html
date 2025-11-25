@@ -13,7 +13,7 @@
         <tbody>
             <tr>
                 <td style="padding: 15px;">
-                    <a href="{% url 'admin_backup' %}" class="button" style="background-color: #417690; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">
+                    <a href="{% url 'admin_backup' %}" class="button" style="background-color: #417690; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block; margin-right: 10px;">
                         <strong>📦 Descargar Backup Completo del Sistema</strong>
                     </a>
                     <p style="margin-top: 10px; color: #666; font-size: 13px;">
@@ -21,6 +21,29 @@
                         <br>
                         <em>Nota: Solo usuarios administradores pueden realizar esta acción.</em>
                     </p>
+                </td>
+            </tr>
+            <tr>
+                <td style="padding: 15px; border-top: 1px solid #eee;">
+                    <form method="post" action="{% url 'admin_restore_backup' %}" enctype="multipart/form-data" onsubmit="return confirm('⚠️ ADVERTENCIA: Esta acción reemplazará TODOS los datos actuales del sistema con los del backup.\n\n¿Está seguro de continuar?');">
+                        {% csrf_token %}
+                        <div style="margin-bottom: 10px;">
+                            <label for="backup_file" style="font-weight: bold; display: block; margin-bottom: 5px;">
+                                🔄 Restaurar Backup del Sistema
+                            </label>
+                            <input type="file" name="backup_file" id="backup_file" accept=".zip" required style="margin-bottom: 10px;">
+                        </div>
+                        <button type="submit" class="button" style="background-color: #ba2121; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">
+                            <strong>Restaurar Backup</strong>
+                        </button>
+                        <p style="margin-top: 10px; color: #ba2121; font-size: 13px;">
+                            <strong>⚠️ ADVERTENCIA:</strong> Esta acción eliminará todos los datos actuales y los reemplazará con los datos del backup.
+                            <br>
+                            Asegúrese de tener un backup reciente antes de proceder.
+                            <br>
+                            <em>Solo archivos .zip generados por este sistema son válidos.</em>
+                        </p>
+                    </form>
                 </td>
             </tr>
         </tbody>

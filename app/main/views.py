@@ -8,7 +8,7 @@ from django.contrib import messages
 
 from .utils import group_required
 from .forms import LoginEmailForm
-from administracion.utils import crear_backup_completo
+from administracion.utils import crear_backup_completo, restaurar_backup
 
 @login_required
 @group_required('Administrativo')
@@ -55,3 +55,32 @@ def download_backup(request):
     except Exception as e:
         messages.error(request, f'Error al generar el backup: {str(e)}')
         return redirect('/admin/')
+
+@staff_member_required
+def upload_restore_backup(request):
+    """Vista para subir y restaurar un backup del sistema"""
+    if request.method == 'POST':
+        if 'backup_file' not in request.FILES:
+            messages.error(request, 'No se ha seleccionado ningún archivo.')
+            return redirect('/admin/')
+
+        archivo_backup = request.FILES['backup_file']
+
+        if not archivo_backup.name.endswith('.zip'):
+            messages.error(request, 'El archivo debe ser un ZIP.')
+            return redirect('/admin/')
+
+        try:
+            success, mensaje = restaurar_backup(archivo_backup)
+
+            if success:
+                messages.success(request, mensaje)
+            else:
+                messages.error(request, mensaje)
+
+        except Exception as e:
+            messages.error(request, f'Error inesperado: {str(e)}')
+
+        return redirect('/admin/')
+
+    return redirect('/admin/')

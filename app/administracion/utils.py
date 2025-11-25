@@ -75,3 +75,69 @@ NOTA: Este backup NO incluye:
 
     zip_buffer.seek(0)
     return zip_buffer, f'{backup_name}.zip'
+
+def restaurar_backup(archivo_zip):
+    """
+    Restaura un backup del sistema desde un archivo ZIP
+    Args:
+        archivo_zip: Archivo ZIP uploadado con el backup
+    Returns:
+        tuple: (success: bool, mensaje: str)
+    """
+    import tempfile
+    import json
+    from django.core.management import call_command
+    from django.db import connection
+
+    try:
+        # Crear directorio temporal
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Extraer el ZIP
+            with zipfile.ZipFile(archivo_zip, 'r') as zip_ref:
+                zip_ref.extractall(temp_dir)
+
+            # Buscar el archivo database_backup.json
+            json_file = None
+            db_file = None
+
+            for root, dirs, files in os.walk(temp_dir):
+                for file in files:
+                    if file == 'database_backup.json':
+                        json_file = os.path.join(root, file)
+                    elif file == 'db.sqlite3':
+                        db_file = os.path.join(root, file)
+
+            if not json_file:
+                return False, "No se encontró el archivo database_backup.json en el backup"
+
+            # Validar que sea un JSON válido
+            try:
+                with open(json_file, 'r') as f:
+                    json.load(f)
+            except json.JSONDecodeError:
+                return False, "El archivo de backup no es un JSON válido"
+
+            # Limpiar la base de datos actual (excepto usuarios superadmin)
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            superusers = list(User.objects.filter(is_superuser=True).values())
+
+            # Ejecutar flush para limpiar la base de datos
+            call_command('flush', '--no-input', verbosity=0)
+
+            # Restaurar los superusuarios
+            for su_data in superusers:
+                su_data.pop('id', None)
+                User.objects.create(**su_data)
+
+            # Cargar los datos del backup
+            call_command('loaddata', json_file, verbosity=0)
+
+            # Si existe el archivo db.sqlite3 y estamos usando SQLite,
+            # ofrecer reemplazarlo (esto requeriría reiniciar el servidor)
+            # Por ahora solo usamos loaddata que es más seguro
+
+            return True, "Backup restaurado exitosamente. Se han recuperado todos los datos."
+
+    except Exception as e:
+        return False, f"Error al restaurar el backup: {str(e)}"
