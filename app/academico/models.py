@@ -58,17 +58,23 @@ class AnioAcademico(models.Model):
             raise ValidationError("La fecha de fin debe ser mayor a la fecha de inicio.")
 
 class Comision(models.Model):
-    codigo = models.CharField(max_length=20)
+    codigo = models.CharField(max_length=20, db_index=True)  # Índice para búsquedas por código
     horario_inicio = models.TimeField()
     horario_fin = models.TimeField()
-    dia_cursado = models.IntegerField(choices=Dia.choices)
+    dia_cursado = models.IntegerField(choices=Dia.choices, db_index=True)  # Índice para filtrar clases de hoy
     turno = models.CharField(max_length=50, choices=Turno.choices)
     docente = models.ForeignKey('institucional.Persona', on_delete=models.SET_NULL, null=True)
     materia = models.ForeignKey(Materia, on_delete=models.CASCADE)
     aula = models.CharField(max_length=50, blank=True, null=True)
     cupo_maximo = models.PositiveIntegerField(default=30)
-    estado = models.CharField(max_length=20, choices=EstadoComision.choices)
+    estado = models.CharField(max_length=20, choices=EstadoComision.choices, db_index=True)  # Índice para filtrar por estado
     anio_academico = models.ForeignKey(AnioAcademico, on_delete=models.CASCADE, blank=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['docente', 'estado'], name='comision_docente_estado_idx'),
+            models.Index(fields=['dia_cursado', 'estado'], name='comision_dia_estado_idx'),
+        ]
 
     def __str__(self):
         return f'{self.codigo} - {self.materia} - {self.turno}'
@@ -196,13 +202,18 @@ class TipoCalificacion(models.TextChoices):
     
 class Calificacion(models.Model):
     alumno_comision = models.ForeignKey(InscripcionAlumnoComision, on_delete=models.CASCADE, related_name='calificaciones')
-    tipo = models.CharField(max_length=20, choices=TipoCalificacion.choices)
+    tipo = models.CharField(max_length=20, choices=TipoCalificacion.choices, db_index=True)
     nota = models.DecimalField(max_digits=4, decimal_places=2)
-    fecha_creacion = models.DateTimeField()
+    fecha_creacion = models.DateTimeField(db_index=True)
+
     class Meta:
         unique_together = ('alumno_comision', 'tipo')
         verbose_name = 'Calificación'
         verbose_name_plural = 'Calificaciones'
+        indexes = [
+            models.Index(fields=['alumno_comision', 'tipo'], name='calif_alumno_tipo_idx'),
+            models.Index(fields=['fecha_creacion'], name='calif_fecha_idx'),
+        ]
 
     def __str__(self):
         return f"{self.alumno_comision.alumno} - {self.tipo}: {self.nota}"
@@ -210,11 +221,15 @@ class Calificacion(models.Model):
 class Asistencia(models.Model):
     alumno_comision = models.ForeignKey(InscripcionAlumnoComision, on_delete=models.CASCADE, related_name='asistencias')
     esta_presente = models.BooleanField(default=False)
-    fecha_asistencia = models.DateField()
+    fecha_asistencia = models.DateField(db_index=True)
 
     class Meta:
         verbose_name = 'Asistencia'
         verbose_name_plural = 'Asistencias'
+        indexes = [
+            models.Index(fields=['alumno_comision', 'fecha_asistencia'], name='asist_alumno_fecha_idx'),
+            models.Index(fields=['fecha_asistencia', 'esta_presente'], name='asist_fecha_presente_idx'),
+        ]
 
     def __str__(self):
         if self.esta_presente:
@@ -226,14 +241,17 @@ class Asistencia(models.Model):
 
 class CalendarioAcademico(models.Model):
     anio_academico = models.ForeignKey(AnioAcademico, on_delete=models.CASCADE)
-    fecha = models.DateField()
-    es_dia_clase = models.BooleanField(default=True)
+    fecha = models.DateField(db_index=True)
+    es_dia_clase = models.BooleanField(default=True, db_index=True)
     descripcion = models.CharField(max_length=200, blank=True, null=True)
-    
+
     class Meta:
         verbose_name = 'Calendario Académico'
         verbose_name_plural = 'Calendario Académico'
         unique_together = ('anio_academico', 'fecha')
-    
+        indexes = [
+            models.Index(fields=['anio_academico', 'fecha', 'es_dia_clase'], name='cal_anio_fecha_clase_idx'),
+        ]
+
     def __str__(self):
         return f"{self.fecha} - {'Clase' if self.es_dia_clase else 'No Clase'}"
