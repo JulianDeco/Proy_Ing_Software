@@ -37,7 +37,10 @@ class DashboardProfesoresView(DocenteRequiredMixin, View):
     def get(self, request):
         empleado = self.servicios_academico.obtener_docente_actual(request.user)
         estadisticas = self.servicios_academico.obtener_estadisticas_docente(empleado)
-        comisiones = self.servicios_academico.obtener_comisiones_docente(empleado)
+        # Optimizar query con select_related para evitar N+1
+        comisiones = self.servicios_academico.obtener_comisiones_docente(empleado).select_related(
+            'materia', 'anio_academico'
+        )
 
         return render(request, 'academico/docentes.html', {
             'docente': empleado,
@@ -75,7 +78,8 @@ class GestionAsistenciaView(DocenteRequiredMixin, View):
 
     def get(self, request, codigo, fecha_guardado = None):
             comision = self.servicios_academico.obtener_comision_por_codigo(codigo)
-            alumnos_comision = self.servicios_academico.obtener_alumnos_comision(comision)
+            # Optimizar con select_related para evitar N+1 en alumno
+            alumnos_comision = self.servicios_academico.obtener_alumnos_comision(comision).select_related('alumno')
 
             if not fecha_guardado:
                 fecha_seleccionada = request.GET.get('fecha')
@@ -169,10 +173,11 @@ class GestionClasesView(DocenteRequiredMixin, View):
     
     def get(self, request):
         persona = get_object_or_404(Empleado, usuario=request.user)
+        # Optimizar con select_related para materia y año académico
         comisiones = Comision.objects.filter(
             docente=persona,
             estado='EN_CURSO'
-        )
+        ).select_related('materia', 'anio_academico')
         comisiones_con_fechas = []
         for comision in comisiones:
             fechas_clase, _ = self.servicios_academico.obtener_fechas_clases(comision)
@@ -191,9 +196,9 @@ class GestionCalificacionesView(DocenteRequiredMixin, View):
     servicios_academico = ServiciosAcademico()
 
     def get(self, request, codigo):
-
         comision = self.servicios_academico.obtener_comision_por_codigo(codigo)
-        inscripciones = self.servicios_academico.obtener_alumnos_comision(codigo)
+        # Optimizar con select_related para alumno
+        inscripciones = self.servicios_academico.obtener_alumnos_comision(codigo).select_related('alumno')
         contexto = {
             'hoy':datetime.datetime.now(),
             'comision': comision,
