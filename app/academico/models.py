@@ -123,9 +123,45 @@ class InscripcionAlumnoComision(models.Model):
         verbose_name = 'Inscripción del alumno en comisiones'
         verbose_name_plural = 'Inscripciones de alumnos en comisiones'
         unique_together = ('alumno', 'comision')
-    
+
     def __str__(self):
         return f"{self.alumno.nombre} {self.alumno.apellido} - {self.comision.codigo}"
+
+    def clean(self):
+        """Validar reglas de negocio antes de guardar"""
+        super().clean()
+
+        # Validar capacidad máxima de la comisión
+        if self.comision.cupo_maximo:
+            inscriptos_actuales = InscripcionAlumnoComision.objects.filter(
+                comision=self.comision
+            ).count()
+
+            # Si es una nueva inscripción (no tiene pk)
+            if not self.pk and inscriptos_actuales >= self.comision.cupo_maximo:
+                raise ValidationError(
+                    f'La comisión {self.comision.codigo} ha alcanzado su capacidad máxima '
+                    f'de {self.comision.cupo_maximo} estudiantes.'
+                )
+
+        # Validar que el alumno haya aprobado las materias correlativas
+        materia = self.comision.materia
+        correlativas = materia.correlativas.all()
+
+        if correlativas.exists():
+            for correlativa in correlativas:
+                # Buscar si el alumno tiene aprobada la correlativa
+                aprobada = InscripcionAlumnoComision.objects.filter(
+                    alumno=self.alumno,
+                    comision__materia=correlativa,
+                    estado_inscripcion='APROBADA'
+                ).exists()
+
+                if not aprobada:
+                    raise ValidationError(
+                        f'El alumno debe aprobar la materia correlativa "{correlativa.nombre}" '
+                        f'antes de inscribirse en "{materia.nombre}".'
+                    )
     
     def crear_asistencias_automaticas(self):
         comision = self.comision
