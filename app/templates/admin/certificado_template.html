@@ -62,24 +62,107 @@
         </div>
         
         <div class="titulo">
-            CERTIFICADO DE {{ tipo_certificado|upper }}
+            {{ tipo_certificado|upper }}
         </div>
-        
+
         <div class="contenido">
             <p>La dirección de {{ institucion.nombre }} certifica que:</p>
-            
+
             <p style="text-align: center; font-weight: bold; font-size: 20px;">
                 {{ alumno.nombre }} {{ alumno.apellido }}
             </p>
-            
+
             <p>Documento Nacional de Identidad: {{ alumno.dni }}</p>
-            
-            <p>Ha {{ tipo_certificado }} satisfactoriamente 
-            {% if curso %}en el curso "{{ curso.codigo }}"{% endif %}
-            {% if materia %}en la materia "{{ materia.nombre }}"{% endif %}
-            durante el año {{ anio_actual }}.</p>
-            
-            <p>Se extiende el presente certificado para los fines que estime convenientes.</p>
+            {% if alumno.legajo %}<p>Legajo: {{ alumno.legajo }}</p>{% endif %}
+
+            {% if 'asistencia' in tipo_certificado.lower %}
+                <p>Ha asistido regularmente a clases durante el ciclo académico {{ anio_actual }}, registrando una asistencia de <strong>{{ porcentaje_asistencia }}%</strong> sobre un total de {{ total_clases }} clases ({{ clases_presentes }} presentes).</p>
+                {% if materias_cursadas %}
+                <p><strong>Materias cursadas:</strong></p>
+                <ul style="text-align: left; margin-left: 3cm;">
+                    {% for inscripcion in materias_cursadas %}
+                    <li>{{ inscripcion.comision.materia.nombre }} - Comisión {{ inscripcion.comision.codigo }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+
+            {% elif 'aprobación' in tipo_certificado.lower %}
+                {% if materias_aprobadas %}
+                <p>Ha aprobado satisfactoriamente las siguientes materias:</p>
+                <table style="margin: 1cm auto; border-collapse: collapse; width: 80%;">
+                    <thead>
+                        <tr style="background-color: #f0f0f0;">
+                            <th style="border: 1px solid #000; padding: 8px;">Materia</th>
+                            <th style="border: 1px solid #000; padding: 8px;">Nota</th>
+                            <th style="border: 1px solid #000; padding: 8px;">Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for materia in materias_aprobadas %}
+                        <tr>
+                            <td style="border: 1px solid #000; padding: 8px;">{{ materia.materia.nombre }}</td>
+                            <td style="border: 1px solid #000; padding: 8px; text-align: center;">{{ materia.nota }}</td>
+                            <td style="border: 1px solid #000; padding: 8px; text-align: center;">{{ materia.fecha|date:"d/m/Y" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                <p>Total de materias aprobadas: <strong>{{ cantidad_aprobadas }}</strong></p>
+                {% else %}
+                <p>El alumno aún no registra materias aprobadas en el sistema.</p>
+                {% endif %}
+
+            {% elif 'examen' in tipo_certificado.lower %}
+                {% if examenes %}
+                <p>Ha rendido los siguientes exámenes:</p>
+                <table style="margin: 1cm auto; border-collapse: collapse; width: 90%; font-size: 14px;">
+                    <thead>
+                        <tr style="background-color: #f0f0f0;">
+                            <th style="border: 1px solid #000; padding: 8px;">Materia</th>
+                            <th style="border: 1px solid #000; padding: 8px;">Tipo</th>
+                            <th style="border: 1px solid #000; padding: 8px;">Nota</th>
+                            <th style="border: 1px solid #000; padding: 8px;">Resultado</th>
+                            <th style="border: 1px solid #000; padding: 8px;">Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for examen in examenes %}
+                        <tr>
+                            <td style="border: 1px solid #000; padding: 8px;">{{ examen.materia.nombre }}</td>
+                            <td style="border: 1px solid #000; padding: 8px; text-align: center;">{{ examen.tipo }}</td>
+                            <td style="border: 1px solid #000; padding: 8px; text-align: center;">{{ examen.nota }}</td>
+                            <td style="border: 1px solid #000; padding: 8px; text-align: center;">{{ examen.resultado }}</td>
+                            <td style="border: 1px solid #000; padding: 8px; text-align: center;">{{ examen.fecha|date:"d/m/Y" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p>El alumno aún no registra exámenes rendidos en el sistema.</p>
+                {% endif %}
+
+            {% elif 'alumno regular' in tipo_certificado.lower %}
+                <p>Se encuentra en condición de <strong>ALUMNO REGULAR</strong> en las siguientes materias del ciclo académico {{ anio_actual }}:</p>
+                {% if materias_regulares %}
+                <ul style="text-align: left; margin-left: 3cm;">
+                    {% for inscripcion in materias_regulares %}
+                    <li>{{ inscripcion.comision.materia.nombre }} - Comisión {{ inscripcion.comision.codigo }} - {{ inscripcion.comision.get_turno_display }}</li>
+                    {% endfor %}
+                </ul>
+                <p>Total de materias en condición regular: <strong>{{ cantidad_materias }}</strong></p>
+                {% else %}
+                <p>El alumno no registra materias en condición regular.</p>
+                {% endif %}
+
+            {% elif 'buen comportamiento' in tipo_certificado.lower %}
+                <p>Ha demostrado buen comportamiento y conducta ejemplar durante el ciclo académico {{ anio_actual }}, cumpliendo con las normas y reglamentos de la institución.</p>
+                <p>Durante este período ha cursado {{ cantidad_materias }} materia{% if cantidad_materias != 1 %}s{% endif %}.</p>
+
+            {% else %}
+                <p>Cumple satisfactoriamente con los requisitos establecidos para la emisión del presente certificado durante el año {{ anio_actual }}.</p>
+            {% endif %}
+
+            <p style="margin-top: 1cm;">Se extiende el presente certificado a solicitud del interesado para los fines que estime convenientes.</p>
         </div>
         
         <div class="firma">
