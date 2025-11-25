@@ -20,6 +20,7 @@ from .exceptions import (
     AsistenciaNoExisteError,
     FechaNoClaseError
 )
+from .forms import RegistroAsistenciaForm, CalificacionForm, NotaIndividualForm
 
 
 class DocenteRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
@@ -110,13 +111,17 @@ class GestionAsistenciaView(DocenteRequiredMixin, View):
     @transaction.atomic
     def post(self, request, codigo):
         try:
+            # Validar datos del formulario principal
+            form = RegistroAsistenciaForm(request.POST)
+            if not form.is_valid():
+                for field, errors in form.errors.items():
+                    for error in errors:
+                        messages.error(request, error)
+                return redirect('asistencia_curso', codigo=codigo)
+
             datos = request.POST
             comision = self.servicios_academico.obtener_comision_por_codigo(codigo)
-            fecha_asistencia = datos.get('fecha_asistencia')
-
-            if not fecha_asistencia:
-                messages.error(request, 'Debe especificar una fecha de asistencia.')
-                return redirect('asistencia_curso', codigo=codigo)
+            fecha_asistencia = form.cleaned_data['fecha_asistencia']
 
             for d in datos:
                 if d.startswith('asistencia_'):
@@ -200,13 +205,17 @@ class GestionCalificacionesView(DocenteRequiredMixin, View):
     @transaction.atomic
     def post(self, request, codigo):
         try:
-            datos = request.POST
-            fecha = datos.get('fecha')
-            tipo_calificacion = datos.get('tipo')
-
-            if not fecha or not tipo_calificacion:
-                messages.error(request, 'Debe especificar fecha y tipo de calificación.')
+            # Validar datos del formulario principal
+            form = CalificacionForm(request.POST)
+            if not form.is_valid():
+                for field, errors in form.errors.items():
+                    for error in errors:
+                        messages.error(request, error)
                 return redirect('crear_calificacion', codigo=codigo)
+
+            datos = request.POST
+            fecha = form.cleaned_data['fecha']
+            tipo_calificacion = form.cleaned_data['tipo']
 
             alumnos_comision = self.servicios_academico.obtener_alumnos_comision(codigo)
             calificaciones_creadas = 0
@@ -214,7 +223,15 @@ class GestionCalificacionesView(DocenteRequiredMixin, View):
             for dato in datos:
                 if dato.startswith('nota_'):
                     alumno_id = int(dato.replace('nota_', ''))
-                    calificacion = int(datos[dato][0])
+
+                    # Validar cada nota individual
+                    nota_form = NotaIndividualForm({'nota': datos[dato][0]})
+                    if not nota_form.is_valid():
+                        for error in nota_form.errors.get('nota', []):
+                            messages.error(request, f'Alumno ID {alumno_id}: {error}')
+                        continue
+
+                    calificacion = nota_form.cleaned_data['nota']
                     alumno = alumnos_comision.get(alumno__id=alumno_id)
 
                     calificacion_nuevo = self.servicios_academico.crear_calificacion(
