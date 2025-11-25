@@ -100,6 +100,8 @@ class ServiciosAcademico:
     
     @staticmethod
     def crear_calificacion(alumno, fecha, tipo_calificacion, calificacion):
+        from django.db import IntegrityError
+
         valores_calificacion = [choice[0] for choice in TipoCalificacion.choices]
 
         if tipo_calificacion not in valores_calificacion:
@@ -114,13 +116,37 @@ class ServiciosAcademico:
                 f"La calificación debe estar entre 0 y 10. Valor recibido: {calificacion}"
             )
 
-        calificacion_nuevo = Calificacion.objects.create(
-            alumno_comision= alumno,
-            tipo =  tipo_calificacion,
-            nota = calificacion,
-            fecha_creacion= fecha
-        )
-        return calificacion_nuevo
+        # Verificar si ya existe una calificación del mismo tipo
+        calificacion_existente = Calificacion.objects.filter(
+            alumno_comision=alumno,
+            tipo=tipo_calificacion
+        ).first()
+
+        if calificacion_existente:
+            # Actualizar la calificación existente en lugar de crear una nueva
+            calificacion_existente.nota = calificacion
+            calificacion_existente.fecha_creacion = fecha
+            calificacion_existente.save()
+            return calificacion_existente
+
+        try:
+            calificacion_nuevo = Calificacion.objects.create(
+                alumno_comision= alumno,
+                tipo =  tipo_calificacion,
+                nota = calificacion,
+                fecha_creacion= fecha
+            )
+            return calificacion_nuevo
+        except IntegrityError:
+            # Si por alguna razón se intenta crear duplicado, obtenemos y actualizamos
+            calificacion_existente = Calificacion.objects.get(
+                alumno_comision=alumno,
+                tipo=tipo_calificacion
+            )
+            calificacion_existente.nota = calificacion
+            calificacion_existente.fecha_creacion = fecha
+            calificacion_existente.save()
+            return calificacion_existente
     
     @staticmethod
     def obtener_estadisticas_docente(docente):
