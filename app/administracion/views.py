@@ -73,7 +73,7 @@ def reporte_academico(request):
     # Datos para filtros
     comisiones = Comision.objects.all().select_related('materia', 'anio_academico')
     materias = Materia.objects.all()
-    anios = AnioAcademico.objects.all().order_by('-anio')
+    anios = AnioAcademico.objects.all().order_by('-fecha_inicio')
 
     contexto = {
         'datos': datos_reporte,

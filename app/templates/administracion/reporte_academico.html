@@ -239,7 +239,7 @@
                         <option value="">Todas las comisiones</option>
                         {% for comision in comisiones %}
                         <option value="{{ comision.id }}" {% if filtros_aplicados.comision_id == comision.id %}selected{% endif %}>
-                            {{ comision.materia.nombre }} - {{ comision.nombre }} ({{ comision.anio_academico.anio }})
+                            {{ comision.materia.nombre }} - {{ comision.codigo }} ({{ comision.anio_academico.nombre }})
                         </option>
                         {% endfor %}
                     </select>
@@ -263,7 +263,7 @@
                         <option value="">Todos los años</option>
                         {% for anio in anios %}
                         <option value="{{ anio.id }}" {% if filtros_aplicados.anio_academico == anio.id %}selected{% endif %}>
-                            {{ anio.anio }}
+                            {{ anio.nombre }}
                         </option>
                         {% endfor %}
                     </select>
