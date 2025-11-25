@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.decorators import login_required
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.db import transaction
 
 from academico.services import ServiciosAcademico
 from main.services import ActionFlag, LogAction
@@ -100,6 +101,7 @@ class GestionAsistenciaView(DocenteRequiredMixin, View):
             return render(request, 'academico/asistencia_curso.html', context = contexto)
 
 
+    @transaction.atomic
     def post(self, request, codigo):
         datos = request.POST
         comision = self.servicios_academico.obtener_comision_por_codigo(codigo)
