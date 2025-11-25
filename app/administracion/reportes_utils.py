@@ -212,7 +212,7 @@ def obtener_datos_reporte_academico(filtros=None):
 
     # 1. DATOS DE ALUMNOS
     alumnos = Alumno.objects.filter(
-        inscripciones_comisiones__in=inscripciones
+        inscripcionalumnocomision__in=inscripciones
     ).distinct()
 
     # 2. CALIFICACIONES POR MATERIA
