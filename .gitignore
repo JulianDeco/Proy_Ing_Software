@@ -210,3 +210,7 @@ __marimo__/
 
 # Claude Code
 CLAUDE.md
+
+# Markdown files (except README)
+*.md
+!README.md
