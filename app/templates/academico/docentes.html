@@ -21,12 +21,12 @@
                     <div class="mb-3">
                         <i class="bi bi-journal-bookmark text-primary fs-1"></i>
                     </div>
-                    <h3 class="mb-0">{{ comisiones.count }}</h3>
-                    <p class="text-muted mb-0">Cursos a cargo</p>
+                    <h3 class="mb-0">{{ total_comisiones }}</h3>
+                    <p class="text-muted mb-0">Comisiones activas</p>
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-3 mb-3">
             <div class="card h-100 border-start border-success border-4">
                 <div class="card-body text-center">
@@ -38,7 +38,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="col-md-3 mb-3">
             <div class="card h-100 border-start border-info border-4">
                 <div class="card-body text-center">
@@ -47,6 +47,20 @@
                     </div>
                     <h3 class="mb-0">{{ clases_hoy }}</h3>
                     <p class="text-muted mb-0">Clases hoy</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <div class="card h-100 border-start border-warning border-4">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="bi bi-clock-history text-warning fs-1"></i>
+                    </div>
+                    <h3 class="mb-0">
+                        {% widthratio comisiones_hoy|length total_comisiones 100 %}%
+                    </h3>
+                    <p class="text-muted mb-0">Carga del día</p>
                 </div>
             </div>
         </div>
@@ -66,45 +80,61 @@
                             <th>Materia</th>
                             <th>Horario</th>
                             <th>Aula</th>
+                            <th class="text-center">Alumnos</th>
+                            <th class="text-center">Estado</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for comision in comisiones %}
+                        {% for item in comisiones_con_stats %}
                         <tr>
-                            <td><strong>{{ comision.codigo }}</strong></td>
+                            <td><strong>{{ item.comision.codigo }}</strong></td>
                             <td>
                                 <div>
-                                    <strong>{{ comision.materia.nombre }}</strong>
+                                    <strong>{{ item.comision.materia.nombre }}</strong>
                                     <br>
-                                    <small class="text-muted">{{ comision.get_turno_display }}</small>
+                                    <small class="text-muted">{{ item.comision.get_turno_display }}</small>
                                 </div>
                             </td>
                             <td>
-                                {{ comision.get_dia_cursado_display }}<br>
-                                {{ comision.horario_inicio|time:"H:i" }} - {{ comision.horario_fin|time:"H:i" }}
+                                {{ item.comision.get_dia_cursado_display }}<br>
+                                <small>{{ item.comision.horario_inicio|time:"H:i" }} - {{ item.comision.horario_fin|time:"H:i" }}</small>
                             </td>
-                            <td>{{ comision.aula|default:"Sin asignar" }}</td>
+                            <td>{{ item.comision.aula|default:"Sin asignar" }}</td>
+                            <td class="text-center">
+                                <span class="badge bg-secondary">{{ item.total_alumnos }}</span>
+                            </td>
+                            <td class="text-center">
+                                {% if item.tiene_pendientes %}
+                                    <span class="badge bg-warning text-dark" title="Calificaciones pendientes">
+                                        <i class="bi bi-exclamation-circle"></i> {{ item.calificaciones_pendientes }} pendiente{{ item.calificaciones_pendientes|pluralize }}
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-success" title="Todas las calificaciones cargadas">
+                                        <i class="bi bi-check-circle"></i> Al día
+                                    </span>
+                                {% endif %}
+                            </td>
                             <td>
                                 <div class="btn-group btn-group-sm">
-                                    <a href="{% url 'asistencia_curso' comision.codigo %}"
+                                    <a href="{% url 'asistencia_curso' item.comision.codigo %}"
                                        class="btn btn-outline-primary"
                                        title="Registrar asistencia">
-                                        <i class="bi bi-clipboard-check"></i> Asistencia
+                                        <i class="bi bi-clipboard-check"></i>
                                     </a>
-                                    <a href="{% url 'calificaciones_curso' comision.codigo %}"
+                                    <a href="{% url 'calificaciones_curso' item.comision.codigo %}"
                                        class="btn btn-outline-success"
                                        title="Ver y gestionar calificaciones">
-                                        <i class="bi bi-journal-check"></i> Calificaciones
+                                        <i class="bi bi-journal-check"></i>
                                     </a>
                                 </div>
                             </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="6" class="text-center py-4 text-muted">
+                            <td colspan="7" class="text-center py-4 text-muted">
                                 <i class="bi bi-journal-x display-4 d-block mb-2"></i>
-                                No tiene cursos asignados.
+                                No tiene comisiones asignadas.
                             </td>
                         </tr>
                         {% endfor %}
@@ -114,30 +144,37 @@
         </div>
     </div>
 
-    <!-- Próximas Actividades -->
+    <!-- Clases de Hoy y Pendientes -->
     <div class="row mt-4">
         <div class="col-md-6">
             <div class="card">
-                <div class="card-header bg-white">
-                    <h6 class="mb-0"><i class="bi bi-clock-history"></i> Próximas clases hoy</h6>
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="bi bi-calendar-event"></i> Clases de Hoy</h6>
+                    <span class="badge bg-info">{{ comisiones_hoy|length }}</span>
                 </div>
                 <div class="card-body">
                     {% for comision in comisiones_hoy %}
-                    <div class="d-flex justify-content-between align-items-center mb-3 p-2 border rounded">
+                    <div class="d-flex justify-content-between align-items-center mb-3 p-3 border rounded hover-shadow">
                         <div>
                             <strong>{{ comision.materia.nombre }}</strong>
                             <br>
                             <small class="text-muted">
-                                {{ comision.horario_inicio|time:"H:i" }} - {{ comision.aula }}
+                                <i class="bi bi-clock"></i> {{ comision.horario_inicio|time:"H:i" }} - {{ comision.horario_fin|time:"H:i" }}
+                                | <i class="bi bi-door-open"></i> {{ comision.aula|default:"Sin aula" }}
                             </small>
+                            <br>
+                            <span class="badge bg-secondary mt-1">{{ comision.codigo }}</span>
                         </div>
-                        <a href="{% url 'asistencia_curso' comision.codigo %}" 
+                        <a href="{% url 'asistencia_curso' comision.codigo %}"
                            class="btn btn-sm btn-primary">
-                            <i class="bi bi-clipboard-check"></i> Asistencia
+                            <i class="bi bi-clipboard-check"></i>
                         </a>
                     </div>
                     {% empty %}
-                    <p class="text-muted">No hay más clases hoy</p>
+                    <div class="text-center text-muted py-3">
+                        <i class="bi bi-calendar-x display-4"></i>
+                        <p class="mt-2 mb-0">No hay clases programadas para hoy</p>
+                    </div>
                     {% endfor %}
                 </div>
             </div>
@@ -145,22 +182,39 @@
 
         <div class="col-md-6">
             <div class="card">
-                <div class="card-header bg-white">
-                    <h6 class="mb-0"><i class="bi bi-bell"></i> Recordatorios</h6>
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="bi bi-exclamation-circle"></i> Tareas Pendientes</h6>
+                    {% with total_pendientes=comisiones_con_stats|length %}
+                    <span class="badge {% if total_pendientes > 0 %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                        {% for item in comisiones_con_stats %}
+                            {% if item.tiene_pendientes %}1{% endif %}
+                        {% endfor %}
+                    </span>
+                    {% endwith %}
                 </div>
                 <div class="card-body">
-                    <div class="alert alert-info">
-                        <small>
-                            <i class="bi bi-info-circle"></i> 
-                            Recuerde tomar asistencia al inicio de cada clase
-                        </small>
-                    </div>
-                    <div class="alert alert-warning">
-                        <small>
-                            <i class="bi bi-exclamation-triangle"></i> 
-                            Próxima entrega de calificaciones: 30 de Noviembre
-                        </small>
-                    </div>
+                    {% for item in comisiones_con_stats %}
+                        {% if item.tiene_pendientes %}
+                        <div class="d-flex justify-content-between align-items-center mb-3 p-3 border rounded bg-warning bg-opacity-10">
+                            <div>
+                                <strong>{{ item.comision.materia.nombre }}</strong>
+                                <br>
+                                <small class="text-muted">
+                                    {{ item.calificaciones_pendientes }} alumno{{ item.calificaciones_pendientes|pluralize }} sin calificaciones completas
+                                </small>
+                            </div>
+                            <a href="{% url 'calificaciones_curso' item.comision.codigo %}"
+                               class="btn btn-sm btn-warning">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+                        </div>
+                        {% endif %}
+                    {% empty %}
+                        <div class="text-center text-success py-3">
+                            <i class="bi bi-check-circle display-4"></i>
+                            <p class="mt-2 mb-0">¡Todo al día! No hay tareas pendientes</p>
+                        </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>

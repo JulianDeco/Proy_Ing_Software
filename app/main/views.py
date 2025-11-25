@@ -3,9 +3,12 @@ from django.shortcuts import redirect, render
 from django.contrib.auth.views import LoginView
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib import messages
 
 from .utils import group_required
 from .forms import LoginEmailForm
+from administracion.utils import crear_backup_completo
 
 @login_required
 @group_required('Administrativo')
@@ -36,3 +39,19 @@ def redirect_based_group(request):
 def logout_view(request):
     logout(request)
     return redirect('login')
+
+@staff_member_required
+def download_backup(request):
+    """Vista para descargar backup completo del sistema"""
+    try:
+        zip_buffer, filename = crear_backup_completo()
+
+        response = HttpResponse(zip_buffer.getvalue(), content_type='application/zip')
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+        messages.success(request, 'Backup generado exitosamente.')
+        return response
+
+    except Exception as e:
+        messages.error(request, f'Error al generar el backup: {str(e)}')
+        return redirect('/admin/')

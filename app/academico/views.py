@@ -40,13 +40,46 @@ class DashboardProfesoresView(DocenteRequiredMixin, View):
         # Optimizar query con select_related para evitar N+1
         comisiones = self.servicios_academico.obtener_comisiones_docente(empleado).select_related(
             'materia', 'anio_academico'
-        )
+        ).filter(estado='EN_CURSO')
+
+        # Obtener comisiones con clases hoy
+        dia_hoy = timezone.now().weekday() + 1
+        comisiones_hoy = comisiones.filter(dia_cursado=dia_hoy).order_by('horario_inicio')
+
+        # Calcular estadísticas adicionales por comisión
+        comisiones_con_stats = []
+        for comision in comisiones:
+            inscripciones = InscripcionAlumnoComision.objects.filter(comision=comision)
+            total_alumnos = inscripciones.count()
+
+            # Calificaciones pendientes (alumnos sin todas las evaluaciones)
+            tipos_evaluacion = Calificacion.objects.filter(
+                alumno_comision__comision=comision
+            ).values('tipo').distinct().count()
+
+            alumnos_con_calificaciones_completas = 0
+            if tipos_evaluacion > 0:
+                for inscripcion in inscripciones:
+                    calif_alumno = Calificacion.objects.filter(alumno_comision=inscripcion).count()
+                    if calif_alumno >= tipos_evaluacion:
+                        alumnos_con_calificaciones_completas += 1
+
+            pendientes = total_alumnos - alumnos_con_calificaciones_completas if tipos_evaluacion > 0 else total_alumnos
+
+            comisiones_con_stats.append({
+                'comision': comision,
+                'total_alumnos': total_alumnos,
+                'calificaciones_pendientes': pendientes,
+                'tiene_pendientes': pendientes > 0
+            })
 
         return render(request, 'academico/docentes.html', {
             'docente': empleado,
-            'comisiones': comisiones,
+            'comisiones_con_stats': comisiones_con_stats,
+            'comisiones_hoy': comisiones_hoy,
             'clases_hoy': estadisticas['clases_hoy'],
-            'total_alumnos': estadisticas['total_alumnos']
+            'total_alumnos': estadisticas['total_alumnos'],
+            'total_comisiones': comisiones.count()
         })
 
 class CalificacionesCursoView(DocenteRequiredMixin, View):
