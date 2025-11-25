@@ -65,18 +65,27 @@ Asistencia - {{ comision.materia.nombre }}{% endblock %} {% block content %}
                 id="fecha_clase"
                 name="fecha_asistencia"
                 required
+                onchange="window.location.href='?fecha=' + this.value"
             >
                 <option value="">-- Seleccionar fecha --</option>
-                <option value="{{ fecha_seleccionada|date:'Y-m-d' }}" 
-                        {% if fecha_seleccionada %}selected{% endif %}>
-                    {{ fecha_seleccionada|date:'d/m/Y' }}
+                {% for fecha in fechas_clase %}
+                <option value="{{ fecha.fecha|date:'Y-m-d' }}"
+                        {% if fecha_seleccionada and fecha.fecha == fecha_seleccionada %}selected{% endif %}>
+                    {{ fecha.fecha|date:'d/m/Y' }} - {{ fecha.fecha|date:'l' }}
                 </option>
+                {% endfor %}
             </select>
+            <small class="form-text text-muted">
+                Seleccione una fecha para ver/editar la asistencia de ese día
+            </small>
         </div>
         <div class="col-md-8 d-flex align-items-end">
             <button type="submit" class="btn btn-success me-2">
                 <i class="bi bi-check-circle"></i> Guardar Asistencia
             </button>
+            <a href="{% url 'docentes' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
         </div>
     </div>
 

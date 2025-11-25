@@ -54,23 +54,71 @@ class CalificacionesCursoView(DocenteRequiredMixin, View):
 
     def get(self, request, codigo):
         comision = get_object_or_404(Comision, codigo=codigo)
-        calificaciones = Calificacion.objects.filter(
+
+        # Obtener todas las inscripciones de alumnos
+        inscripciones = InscripcionAlumnoComision.objects.filter(
+            comision=comision
+        ).select_related('alumno').order_by('alumno__apellido', 'alumno__nombre')
+
+        # Obtener todos los tipos de calificación que existen para esta comisión
+        tipos_calificacion = Calificacion.objects.filter(
             alumno_comision__comision=comision
-        ).values('tipo', 'fecha_creacion').annotate(
-            promedio=Avg('nota')
-        ).order_by('tipo', '-fecha_creacion')
-        
-        resumen = []
-        for calif in calificaciones:
-            resumen.append({
-                'tipo': calif['tipo'],
-                'fecha_creacion': calif['fecha_creacion'].strftime('%d/%m/%Y') if calif['fecha_creacion'] else 'Sin fecha',
-                'promedio': round(calif['promedio'], 2) if calif['promedio'] else 0
-            })
-        
+        ).values('tipo').distinct().order_by('tipo')
+
+        # Crear matriz de calificaciones
+        matriz_calificaciones = []
+        for inscripcion in inscripciones:
+            fila = {
+                'inscripcion': inscripcion,
+                'alumno': inscripcion.alumno,
+                'calificaciones': {},
+                'promedio': 0,
+                'total_calificaciones': 0
+            }
+
+            # Obtener todas las calificaciones del alumno
+            calificaciones_alumno = Calificacion.objects.filter(
+                alumno_comision=inscripcion
+            )
+
+            suma_notas = 0
+            cantidad_notas = 0
+
+            for calif in calificaciones_alumno:
+                fila['calificaciones'][calif.tipo] = {
+                    'nota': calif.nota,
+                    'fecha': calif.fecha_creacion
+                }
+                suma_notas += float(calif.nota)
+                cantidad_notas += 1
+
+            if cantidad_notas > 0:
+                fila['promedio'] = round(suma_notas / cantidad_notas, 2)
+                fila['total_calificaciones'] = cantidad_notas
+
+            matriz_calificaciones.append(fila)
+
+        # Calcular promedios por tipo de evaluación
+        promedios_por_tipo = {}
+        for tipo in tipos_calificacion:
+            promedio = Calificacion.objects.filter(
+                alumno_comision__comision=comision,
+                tipo=tipo['tipo']
+            ).aggregate(promedio=Avg('nota'))
+            promedios_por_tipo[tipo['tipo']] = round(promedio['promedio'], 2) if promedio['promedio'] else 0
+
+        # Calcular promedio general del curso
+        promedio_general = Calificacion.objects.filter(
+            alumno_comision__comision=comision
+        ).aggregate(promedio=Avg('nota'))
+
         return render(request, 'academico/calificaciones_curso.html', {
             'comision': comision,
-            'calificaciones': resumen
+            'matriz_calificaciones': matriz_calificaciones,
+            'tipos_calificacion': tipos_calificacion,
+            'promedios_por_tipo': promedios_por_tipo,
+            'promedio_general': round(promedio_general['promedio'], 2) if promedio_general['promedio'] else 0,
+            'total_alumnos': inscripciones.count()
         })
 
 class GestionAsistenciaView(DocenteRequiredMixin, View):
@@ -81,33 +129,41 @@ class GestionAsistenciaView(DocenteRequiredMixin, View):
             # Optimizar con select_related para evitar N+1 en alumno
             alumnos_comision = self.servicios_academico.obtener_alumnos_comision(comision).select_related('alumno')
 
+            # Obtener todas las fechas de clase disponibles
+            fechas_clase, fecha_default = self.servicios_academico.obtener_fechas_clases(comision)
+
             if not fecha_guardado:
-                fecha_seleccionada = request.GET.get('fecha')
+                fecha_seleccionada_str = request.GET.get('fecha')
             else:
-                fecha_seleccionada = fecha_guardado
+                fecha_seleccionada_str = fecha_guardado
 
-            for alummo_comision in alumnos_comision:
+            # Determinar la fecha seleccionada
+            if fecha_seleccionada_str:
                 try:
-                    asistencia = self.servicios_academico.obtener_asistencia_alumno_hoy(alummo_comision, fecha_seleccionada)
-                    alummo_comision.alumno.presente = asistencia.esta_presente
-                except AsistenciaNoExisteError:
-                    alummo_comision.alumno.presente = False
-
-                alummo_comision.alumno.porcentaje_asistencia = self.servicios_academico.obtener_porcentaje_asistencia(alummo_comision, fecha_seleccionada)
-
-            if fecha_seleccionada:
-                try:
-                    fechas_clase, _= self.servicios_academico.obtener_fechas_clases(comision)
-                    fecha_seleccionada = timezone.datetime.strptime(fecha_seleccionada, '%Y-%m-%d').date()
+                    fecha_seleccionada = timezone.datetime.strptime(str(fecha_seleccionada_str), '%Y-%m-%d').date()
                 except ValueError:
-                    fecha_seleccionada = None
+                    fecha_seleccionada = fecha_default
             else:
-                fechas_clase, fecha_seleccionada = self.servicios_academico.obtener_fechas_clases(comision)
+                fecha_seleccionada = fecha_default
+
+            # Cargar asistencias para la fecha seleccionada
+            for alumno_comision in alumnos_comision:
+                try:
+                    asistencia = self.servicios_academico.obtener_asistencia_alumno_hoy(alumno_comision, fecha_seleccionada)
+                    alumno_comision.alumno.presente = asistencia.esta_presente
+                except AsistenciaNoExisteError:
+                    alumno_comision.alumno.presente = False
+
+                if fecha_seleccionada:
+                    alumno_comision.alumno.porcentaje_asistencia = self.servicios_academico.obtener_porcentaje_asistencia(alumno_comision, fecha_seleccionada)
+                else:
+                    alumno_comision.alumno.porcentaje_asistencia = 0
 
             contexto = {
                     'comision': comision,
                     'alumnos_comision': alumnos_comision,
-                    'fecha_seleccionada': fecha_seleccionada
+                    'fecha_seleccionada': fecha_seleccionada,
+                    'fechas_clase': fechas_clase
                 }
             return render(request, 'academico/asistencia_curso.html', context = contexto)
 

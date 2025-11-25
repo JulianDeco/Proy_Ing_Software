@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load academico_filters %}
 
 {% block title %}Calificaciones - {{ comision.materia.nombre }}{% endblock %}
 
@@ -16,13 +17,6 @@
                 </ol>
             </nav>
         </div>
-        <div class="text-end">
-            <div class="text-muted mb-1">
-                <i class="bi bi-person-circle"></i> {{ request.user.get_full_name }}
-            </div>
-            <span class="badge bg-info">Turno {{ comision.get_turno_display }}</span>
-            <span class="badge bg-secondary">Día {{ comision.get_dia_cursado_display }}</span>
-        </div>
     </div>
 
     <!-- Información del curso -->
@@ -38,20 +32,25 @@
                         <strong>Horario:</strong> {{ comision.horario_inicio|time:"H:i" }} - {{ comision.horario_fin|time:"H:i" }}
                     </p>
                     <p class="card-text">
-                        <strong>Aula:</strong> {{ comision.aula|default:"Sin asignar" }}
+                        <strong>Turno:</strong> {{ comision.get_turno_display }} | <strong>Día:</strong> {{ comision.get_dia_cursado_display }}
                     </p>
                 </div>
                 <div class="col-md-6 text-md-end">
-                    <div class="d-flex flex-column">
-                        <span class="badge bg-primary mb-2 align-self-md-end">{{ comision.inscripciones_count }} alumnos</span>
+                    <div class="d-flex flex-column align-items-md-end gap-2">
+                        <span class="badge bg-primary">{{ total_alumnos }} alumnos</span>
+                        <span class="badge bg-info">Promedio del curso: {{ promedio_general }}</span>
                         <div class="btn-group">
-                            <a href="{% url 'asistencia_curso' comision.codigo %}" 
+                            <a href="{% url 'crear_calificacion' codigo=comision.codigo %}"
+                               class="btn btn-success">
+                                <i class="bi bi-plus-circle"></i> Nueva Calificación
+                            </a>
+                            <a href="{% url 'asistencia_curso' comision.codigo %}"
                                class="btn btn-outline-primary">
                                 <i class="bi bi-clipboard-check"></i> Asistencia
                             </a>
-                            <a href="{% url 'docentes' %}" 
+                            <a href="{% url 'docentes' %}"
                                class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left"></i> Volver al Panel
+                                <i class="bi bi-arrow-left"></i> Volver
                             </a>
                         </div>
                     </div>
@@ -59,240 +58,136 @@
             </div>
         </div>
     </div>
-    <div class="card mb-4">
-        <div class="card-header bg-white d-flex justify-content-between align-items-center">
-            <h5 class="mb-0"><i class="bi bi-list-check"></i> Calificaciones</h5>
-            <a href="{% url 'crear_calificacion' codigo=comision.codigo %}" class="btn btn-sm btn-primary">
-                <i class="bi bi-plus-circle"></i> Nueva Calificación
-            </a>
-        </div>
-        <div class="card-body">
-            {% if calificaciones %}
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Tipo</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for evaluacion in calificaciones %}
-                        <tr>
-                            <td>{{ evaluacion.fecha_creacion}}</td>
-                            <td><span class="badge bg-info">{{ evaluacion.tipo }}</span></td>
-                            <td>
-                                <div class="btn-group btn-group-sm">
-                                    <button class="btn btn-outline-primary">
-                                            <i class="bi bi-pencil"></i>
-                                    </button>
-                                    <a href="#" class="btn btn-outline-danger">
-                                        <i class="bi bi-trash"></i>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div class="text-center py-4 text-muted">
-                <i class="bi bi-list-check display-4 d-block mb-2"></i>
-                <p>No hay evaluaciones registradas.</p>
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#nuevaEvaluacionModal">
-                    <i class="bi bi-plus-circle"></i> Crear primera evaluación
-                </button>
-            </div>
-            {% endif %}
-        </div>
-    </div>
 
-    <!-- Tabla de calificaciones -->
+    <!-- Tabla Matricial de Calificaciones -->
     <div class="card">
         <div class="card-header bg-white d-flex justify-content-between align-items-center">
-            <h5 class="mb-0"><i class="bi bi-table"></i> Calificaciones de los Alumnos</h5>
-            <div>
-                <button class="btn btn-sm btn-outline-secondary">
-                    <i class="bi bi-download"></i> Exportar
-                </button>
-            </div>
+            <h5 class="mb-0"><i class="bi bi-table"></i> Registro de Calificaciones</h5>
+            <button class="btn btn-sm btn-outline-secondary" onclick="window.print()">
+                <i class="bi bi-printer"></i> Imprimir
+            </button>
         </div>
         <div class="card-body p-0">
-            {% if alumnos %}
-            <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
-                <table class="table table-striped table-hover mb-0">
-                    <thead class="table-light sticky-top">
+            {% if matriz_calificaciones %}
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered mb-0">
+                    <thead class="table-light">
                         <tr>
-                            <th style="position: sticky; left: 0; background: white; z-index: 1;">Alumno</th>
-                            {% for evaluacion in evaluaciones %}
-                            <th class="text-center" title="{{ evaluacion.nombre }}">
-                                {{ evaluacion.nombre|truncatewords:2 }}<br>
-                                <small class="text-muted">{{ evaluacion.ponderacion }}%</small>
+                            <th class="text-center" style="width: 50px;">#</th>
+                            <th style="min-width: 200px;">Alumno</th>
+                            <th class="text-center" style="width: 120px;">DNI</th>
+                            {% for tipo in tipos_calificacion %}
+                            <th class="text-center bg-primary text-white" style="min-width: 100px;">
+                                {{ tipo.tipo }}
                             </th>
                             {% endfor %}
-                            <th class="text-center bg-light">Promedio</th>
+                            <th class="text-center bg-success text-white" style="width: 100px;">Promedio</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for alumno in alumnos %}
+                        {% for fila in matriz_calificaciones %}
                         <tr>
-                            <td style="position: sticky; left: 0; background: white; z-index: 1;">
-                                <strong>{{ alumno.estudiante.user.get_full_name }}</strong>
-                                <br>
-                                <small class="text-muted">{{ alumno.estudiante.user.username }}</small>
+                            <td class="text-center">{{ forloop.counter }}</td>
+                            <td>
+                                <div>
+                                    <strong>{{ fila.alumno.apellido }}, {{ fila.alumno.nombre }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ fila.alumno.email|default:"Sin email" }}</small>
+                                </div>
                             </td>
-                            {% for evaluacion in evaluaciones %}
+                            <td class="text-center">{{ fila.alumno.dni|default:"-" }}</td>
+                            {% for tipo in tipos_calificacion %}
                             <td class="text-center">
-                                <input type="number" class="form-control form-control-sm calificacion-input" 
-                                       min="0" max="{{ evaluacion.puntaje_maximo }}" 
-                                       data-alumno-id="{{ alumno.id }}" 
-                                       data-evaluacion-id="{{ evaluacion.id }}"
-                                       value="{% for cal in calificaciones %}{% if cal.estudiante.id == alumno.estudiante.id and cal.evaluacion.id == evaluacion.id %}{{ cal.puntaje }}{% endif %}{% endfor %}">
+                                {% if tipo.tipo in fila.calificaciones %}
+                                    <span class="badge
+                                        {% if fila.calificaciones|get_item:tipo.tipo|get_item:'nota' >= 7 %}bg-success
+                                        {% elif fila.calificaciones|get_item:tipo.tipo|get_item:'nota' >= 4 %}bg-warning text-dark
+                                        {% else %}bg-danger
+                                        {% endif %}">
+                                        {{ fila.calificaciones|get_item:tipo.tipo|get_item:'nota' }}
+                                    </span>
+                                    <br>
+                                    <small class="text-muted">
+                                        {{ fila.calificaciones|get_item:tipo.tipo|get_item:'fecha'|date:"d/m/Y" }}
+                                    </small>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
                             </td>
                             {% endfor %}
-                            <td class="text-center bg-light">
-                                <strong class="promedio-alumno" data-alumno-id="{{ alumno.id }}">
-                                    {% for promedio in promedios %}
-                                        {% if promedio.estudiante_id == alumno.estudiante.id %}
-                                            {{ promedio.promedio|floatformat:1 }}
-                                        {% endif %}
-                                    {% endfor %}
-                                </strong>
+                            <td class="text-center">
+                                {% if fila.promedio > 0 %}
+                                    <strong class="
+                                        {% if fila.promedio >= 7 %}text-success
+                                        {% elif fila.promedio >= 4 %}text-warning
+                                        {% else %}text-danger
+                                        {% endif %}">
+                                        {{ fila.promedio }}
+                                    </strong>
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
                             </td>
                         </tr>
                         {% endfor %}
                     </tbody>
-                    {% if evaluaciones %}
-                    <tfoot>
+                    <tfoot class="table-light">
                         <tr>
-                            <td class="text-end"><strong>Promedio del grupo:</strong></td>
-                            {% for evaluacion in evaluaciones %}
-                            <td class="text-center">
-                                <strong>
-                                    {% for stat in estadisticas_evaluaciones %}
-                                        {% if stat.evaluacion_id == evaluacion.id %}
-                                            {{ stat.promedio|floatformat:1 }}
-                                        {% endif %}
-                                    {% endfor %}
-                                </strong>
-                            </td>
+                            <th colspan="3" class="text-end">Promedio por evaluación:</th>
+                            {% for tipo in tipos_calificacion %}
+                            <th class="text-center">
+                                {{ promedios_por_tipo|get_item:tipo.tipo|default:"-" }}
+                            </th>
                             {% endfor %}
-                            <td class="text-center bg-light">
-                                <strong>{{ promedio_general|floatformat:1 }}</strong>
-                            </td>
+                            <th class="text-center bg-success text-white">
+                                {{ promedio_general }}
+                            </th>
                         </tr>
                     </tfoot>
-                    {% endif %}
                 </table>
             </div>
-            <div class="card-footer bg-white text-end">
-                <button id="guardarCalificaciones" class="btn btn-success">
-                    <i class="bi bi-check-circle"></i> Guardar todas las calificaciones
-                </button>
-            </div>
             {% else %}
-            <div class="text-center py-4 text-muted">
-                <i class="bi bi-people display-4 d-block mb-2"></i>
-                <p>No hay alumnos inscritos en este curso.</p>
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-journal-x display-1 d-block mb-3"></i>
+                <h5>No hay calificaciones registradas</h5>
+                <p>Comience agregando calificaciones para los alumnos de este curso.</p>
+                <a href="{% url 'crear_calificacion' codigo=comision.codigo %}"
+                   class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Agregar Primera Calificación
+                </a>
             </div>
             {% endif %}
         </div>
     </div>
-</div>
 
-<!-- Modal Nueva Evaluación -->
-<div class="modal fade" id="nuevaEvaluacionModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Nueva Evaluación</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form method="post" action="{% url 'crear_calificacion' codigo=comision.codigo %}">
-                {% csrf_token %}
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="nombre" class="form-label">Nombre de la evaluación</label>
-                        <input type="text" class="form-control" id="nombre" name="nombre" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="tipo" class="form-label">Tipo</label>
-                        <select class="form-select" id="tipo" name="tipo" required>
-                            <option value="">Seleccionar tipo...</option>
-                            <option value="P">Parcial</option>
-                            <option value="T">Trabajo Práctico</option>
-                            <option value="E">Examen Final</option>
-                            <option value="Q">Quiz</option>
-                            <option value="O">Otro</option>
-                        </select>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="fecha" class="form-label">Fecha</label>
-                                <input type="date" class="form-control" id="fecha" name="fecha" required>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="puntaje_maximo" class="form-label">Puntaje máximo</label>
-                                <input type="number" class="form-control" id="puntaje_maximo" name="puntaje_maximo" min="1" value="10" required>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="ponderacion" class="form-label">Ponderación (%)</label>
-                        <input type="number" class="form-control" id="ponderacion" name="ponderacion" min="1" max="100" required>
-                        <div class="form-text">Porcentaje que representa esta evaluación en la calificación final.</div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Crear evaluación</button>
-                </div>
-            </form>
+    <!-- Leyenda -->
+    {% if matriz_calificaciones %}
+    <div class="card mt-3">
+        <div class="card-body">
+            <small class="text-muted">
+                <strong>Leyenda:</strong>
+                <span class="badge bg-success ms-2">7-10: Aprobado</span>
+                <span class="badge bg-warning text-dark ms-2">4-6.99: Regular</span>
+                <span class="badge bg-danger ms-2">0-3.99: Desaprobado</span>
+            </small>
         </div>
     </div>
-</div>
-
-<!-- Modal Editar Evaluación (vacio, se llenará con JavaScript) -->
-<div class="modal fade" id="editarEvaluacionModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Editar Evaluación</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="formEditarEvaluacion" method="post" action="">
-                {% csrf_token %}
-                <div class="modal-body">
-                    <!-- Se llenará con JavaScript -->
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar cambios</button>
-                </div>
-            </form>
-        </div>
-    </div>
+    {% endif %}
 </div>
 {% endblock %}
+
 {% block extra_css %}
 <style>
-.calificacion-input {
-    width: 60px;
-    display: inline-block;
-    text-align: center;
-}
 .table th, .table td {
     vertical-align: middle;
 }
-.sticky-top {
-    position: sticky;
-    top: 0;
-    z-index: 10;
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.025);
+}
+@media print {
+    .btn, .breadcrumb, nav {
+        display: none;
+    }
 }
 </style>
 {% endblock %}

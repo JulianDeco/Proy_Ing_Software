@@ -87,17 +87,16 @@
                             <td>{{ comision.aula|default:"Sin asignar" }}</td>
                             <td>
                                 <div class="btn-group btn-group-sm">
-                                    <a href="{% url 'seleccionar_clase_asistencia' %}" 
-                                       class="btn btn-outline-primary">
+                                    <a href="{% url 'asistencia_curso' comision.codigo %}"
+                                       class="btn btn-outline-primary"
+                                       title="Registrar asistencia">
                                         <i class="bi bi-clipboard-check"></i> Asistencia
                                     </a>
-                                    <a href="{% url 'calificaciones_curso' comision.codigo %}" 
-                                       class="btn btn-outline-success">
+                                    <a href="{% url 'calificaciones_curso' comision.codigo %}"
+                                       class="btn btn-outline-success"
+                                       title="Ver y gestionar calificaciones">
                                         <i class="bi bi-journal-check"></i> Calificaciones
                                     </a>
-                                    <button class="btn btn-outline-info">
-                                        <i class="bi bi-eye"></i> Detalles
-                                    </button>
                                 </div>
                             </td>
                         </tr>
