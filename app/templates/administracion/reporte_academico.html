@@ -297,12 +297,16 @@
                 <div class="value">{{ datos.estadisticas.porcentaje_asistencia_general }}%</div>
             </div>
             <div class="stat-card">
-                <h4>Aprobados</h4>
+                <h4>Aprobados (≥6)</h4>
                 <div class="value">{{ datos.estadisticas.aprobados }}</div>
             </div>
             <div class="stat-card">
-                <h4>Desaprobados</h4>
+                <h4>Desaprobados (<6)</h4>
                 <div class="value">{{ datos.estadisticas.desaprobados }}</div>
+            </div>
+            <div class="stat-card">
+                <h4>En Curso (sin notas)</h4>
+                <div class="value">{{ datos.estadisticas.regulares }}</div>
             </div>
         </div>
 
@@ -322,6 +326,9 @@
             {% if datos.estadisticas.aprobados or datos.estadisticas.desaprobados or datos.estadisticas.regulares %}
             <div class="chart-container">
                 <h3>Distribución de Estados Académicos</h3>
+                <p style="text-align: center; color: #666; font-size: 13px; margin-bottom: 10px;">
+                    Aprobados: promedio ≥6 | Desaprobados: promedio <6 | En Curso: sin calificaciones
+                </p>
                 <div class="chart-wrapper">
                     <canvas id="chartEstados"></canvas>
                 </div>
@@ -447,7 +454,7 @@
         new Chart(ctxEstados, {
             type: 'pie',
             data: {
-                labels: ['Aprobados', 'Desaprobados', 'Regulares'],
+                labels: ['Aprobados (≥6)', 'Desaprobados (<6)', 'En Curso'],
                 datasets: [{
                     data: [
                         {{ datos.estadisticas.aprobados }},

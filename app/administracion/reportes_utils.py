@@ -238,18 +238,42 @@ def obtener_datos_reporte_academico(filtros=None):
     ]
 
     # 3. ESTADOS ACADÉMICOS (OPTIMIZADO con agregación)
-    calificaciones_finales = Calificacion.objects.filter(
+    # Calcular estados basándose en:
+    # 1. Si tiene nota FINAL: usar esa nota
+    # 2. Si NO tiene nota FINAL pero tiene otras notas: calcular promedio
+    # 3. Si NO tiene notas: considerarlo "Regular/En Curso"
+
+    # Inscripciones con nota FINAL
+    inscripciones_con_final = Calificacion.objects.filter(
         alumno_comision__in=inscripciones,
         tipo=TipoCalificacion.FINAL
-    ).select_related('alumno_comision')
+    ).values('alumno_comision_id').annotate(
+        nota_final=Avg('nota')
+    )
 
-    aprobados = calificaciones_finales.filter(nota__gte=6).count()
-    desaprobados = calificaciones_finales.filter(nota__lt=6).count()
-    regulares = inscripciones.filter(
-        estado_inscripcion='REGULAR'
+    ids_con_final = [item['alumno_comision_id'] for item in inscripciones_con_final]
+    aprobados_final = sum(1 for item in inscripciones_con_final if item['nota_final'] >= 6)
+    desaprobados_final = sum(1 for item in inscripciones_con_final if item['nota_final'] < 6)
+
+    # Inscripciones SIN nota final pero CON otras notas (usar promedio)
+    inscripciones_sin_final = Calificacion.objects.filter(
+        alumno_comision__in=inscripciones
     ).exclude(
-        id__in=calificaciones_finales.values_list('alumno_comision_id', flat=True)
-    ).count()
+        alumno_comision_id__in=ids_con_final
+    ).values('alumno_comision_id').annotate(
+        promedio=Avg('nota')
+    )
+
+    aprobados_promedio = sum(1 for item in inscripciones_sin_final if item['promedio'] >= 6)
+    desaprobados_promedio = sum(1 for item in inscripciones_sin_final if item['promedio'] < 6)
+
+    # Total de aprobados y desaprobados
+    aprobados = aprobados_final + aprobados_promedio
+    desaprobados = desaprobados_final + desaprobados_promedio
+
+    # Regulares/En curso: inscripciones sin ninguna calificación
+    ids_con_calificaciones = set(ids_con_final + [item['alumno_comision_id'] for item in inscripciones_sin_final])
+    regulares = inscripciones.exclude(id__in=ids_con_calificaciones).count()
 
     # 4. ASISTENCIAS POR MES (OPTIMIZADO con agregación)
     asistencias_query = Asistencia.objects.filter(
