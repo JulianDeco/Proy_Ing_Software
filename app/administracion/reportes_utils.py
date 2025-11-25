@@ -18,10 +18,12 @@ from openpyxl.chart import BarChart, PieChart, LineChart, Reference
 from openpyxl.styles import Font, Alignment, PatternFill
 from openpyxl.utils import get_column_letter
 
-from django.db.models import Avg, Count, Q, Max, Min
+from django.db import models
+from django.db.models import Avg, Count, Q, Max, Min, F, Case, When, IntegerField, FloatField
+from django.db.models.functions import ExtractMonth
 from academico.models import (
     Alumno, Materia, Comision, InscripcionAlumnoComision,
-    Calificacion, Asistencia, TipoCalificacion
+    Calificacion, Asistencia, TipoCalificacion, AnioAcademico
 )
 
 
@@ -181,7 +183,7 @@ def grafico_comparativo_alumnos(alumnos_data, metrica='promedio'):
 
 def obtener_datos_reporte_academico(filtros=None):
     """
-    Obtiene y procesa datos para el reporte académico completo
+    Obtiene y procesa datos para el reporte académico completo (OPTIMIZADO)
 
     filtros: dict con opciones {
         'comision_id': int,
@@ -194,6 +196,13 @@ def obtener_datos_reporte_academico(filtros=None):
     Retorna: dict con todos los datos procesados y listos para gráficos
     """
     filtros = filtros or {}
+
+    # VALIDACIÓN: Al menos un filtro debe estar presente para evitar sobrecarga
+    if not any([filtros.get('comision_id'), filtros.get('materia_id'), filtros.get('anio_academico')]):
+        # Sin filtros, usar solo el año académico activo
+        anio_activo = AnioAcademico.objects.filter(activo=True).first()
+        if anio_activo:
+            filtros['anio_academico'] = anio_activo.id
 
     # Base queryset de inscripciones
     inscripciones = InscripcionAlumnoComision.objects.select_related(
@@ -210,135 +219,140 @@ def obtener_datos_reporte_academico(filtros=None):
     if filtros.get('anio_academico'):
         inscripciones = inscripciones.filter(comision__anio_academico=filtros['anio_academico'])
 
-    # 1. DATOS DE ALUMNOS
-    alumnos = Alumno.objects.filter(
-        inscripcionalumnocomision__in=inscripciones
-    ).distinct()
+    # 1. DATOS DE ALUMNOS (con límite)
+    total_alumnos = inscripciones.values('alumno').distinct().count()
 
-    # 2. CALIFICACIONES POR MATERIA
-    calificaciones_por_materia = {}
-    materias_set = set()
-
-    for inscripcion in inscripciones:
-        materia = inscripcion.comision.materia
-        materias_set.add(materia)
-
-        calificaciones = Calificacion.objects.filter(
-            alumno_comision=inscripcion
-        )
-
-        if calificaciones.exists():
-            promedio = calificaciones.aggregate(Avg('nota'))['nota__avg']
-            if materia.nombre not in calificaciones_por_materia:
-                calificaciones_por_materia[materia.nombre] = []
-            calificaciones_por_materia[materia.nombre].append(promedio)
-
-    # Calcular promedios por materia
-    promedios_materias = [
-        (materia, np.mean(notas))
-        for materia, notas in calificaciones_por_materia.items()
-    ]
-    promedios_materias.sort(key=lambda x: x[1], reverse=True)
-
-    # 3. ESTADOS ACADÉMICOS (Aprobados, Desaprobados, Regulares)
-    aprobados = 0
-    desaprobados = 0
-    regulares = 0
-
-    for inscripcion in inscripciones:
-        calificacion_final = Calificacion.objects.filter(
-            alumno_comision=inscripcion,
-            tipo=TipoCalificacion.FINAL
-        ).first()
-
-        if calificacion_final:
-            if calificacion_final.nota >= 6:
-                aprobados += 1
-            else:
-                desaprobados += 1
-        elif inscripcion.estado_inscripcion == 'REGULAR':
-            regulares += 1
-
-    # 4. ASISTENCIAS POR MES
-    asistencias = Asistencia.objects.filter(
+    # 2. CALIFICACIONES POR MATERIA (OPTIMIZADO con agregación)
+    # Limitar a top 15 materias para evitar gráficos ilegibles
+    promedios_materias_query = Calificacion.objects.filter(
         alumno_comision__in=inscripciones
+    ).values(
+        'alumno_comision__comision__materia__nombre'
+    ).annotate(
+        promedio=Avg('nota')
+    ).order_by('-promedio')[:15]
+
+    promedios_materias = [
+        (item['alumno_comision__comision__materia__nombre'], item['promedio'])
+        for item in promedios_materias_query
+    ]
+
+    # 3. ESTADOS ACADÉMICOS (OPTIMIZADO con agregación)
+    calificaciones_finales = Calificacion.objects.filter(
+        alumno_comision__in=inscripciones,
+        tipo=TipoCalificacion.FINAL
     ).select_related('alumno_comision')
 
-    if filtros.get('fecha_inicio'):
-        asistencias = asistencias.filter(fecha_asistencia__gte=filtros['fecha_inicio'])
+    aprobados = calificaciones_finales.filter(nota__gte=6).count()
+    desaprobados = calificaciones_finales.filter(nota__lt=6).count()
+    regulares = inscripciones.filter(
+        estado_inscripcion='REGULAR'
+    ).exclude(
+        id__in=calificaciones_finales.values_list('alumno_comision_id', flat=True)
+    ).count()
 
-    if filtros.get('fecha_fin'):
-        asistencias = asistencias.filter(fecha_asistencia__lte=filtros['fecha_fin'])
-
-    asistencias_por_mes = defaultdict(lambda: {'presentes': 0, 'total': 0})
-
-    for asistencia in asistencias:
-        mes = asistencia.fecha_asistencia.strftime('%b')
-        asistencias_por_mes[mes]['total'] += 1
-        if asistencia.esta_presente:
-            asistencias_por_mes[mes]['presentes'] += 1
-
-    porcentajes_por_mes = {
-        mes: (datos['presentes'] / datos['total'] * 100) if datos['total'] > 0 else 0
-        for mes, datos in asistencias_por_mes.items()
-    }
-
-    # 5. DATOS COMPARATIVOS DE ALUMNOS
-    alumnos_promedios = []
-    alumnos_asistencias = []
-    alumnos_materias_aprobadas = []
-
-    for alumno in alumnos[:10]:  # Top 10 para legibilidad
-        inscripciones_alumno = inscripciones.filter(alumno=alumno)
-
-        # Promedio
-        calificaciones = Calificacion.objects.filter(
-            alumno_comision__in=inscripciones_alumno
-        )
-        if calificaciones.exists():
-            promedio = calificaciones.aggregate(Avg('nota'))['nota__avg']
-            alumnos_promedios.append((f"{alumno.apellido} {alumno.nombre}", promedio))
-
-        # Asistencia
-        asistencias_alumno = Asistencia.objects.filter(
-            alumno_comision__in=inscripciones_alumno
-        )
-        if asistencias_alumno.exists():
-            total = asistencias_alumno.count()
-            presentes = asistencias_alumno.filter(esta_presente=True).count()
-            porcentaje = (presentes / total * 100) if total > 0 else 0
-            alumnos_asistencias.append((f"{alumno.apellido} {alumno.nombre}", porcentaje))
-
-        # Materias aprobadas
-        aprobadas = Calificacion.objects.filter(
-            alumno_comision__in=inscripciones_alumno,
-            tipo=TipoCalificacion.FINAL,
-            nota__gte=6
-        ).count()
-        alumnos_materias_aprobadas.append((f"{alumno.apellido} {alumno.nombre}", aprobadas))
-
-    # Ordenar por valor
-    alumnos_promedios.sort(key=lambda x: x[1], reverse=True)
-    alumnos_asistencias.sort(key=lambda x: x[1], reverse=True)
-    alumnos_materias_aprobadas.sort(key=lambda x: x[1], reverse=True)
-
-    # 6. ESTADÍSTICAS GENERALES
-    total_alumnos = alumnos.count()
-    total_materias = len(materias_set)
-    total_comisiones = inscripciones.values('comision').distinct().count()
-
-    promedio_general = 0
-    total_calificaciones = Calificacion.objects.filter(
+    # 4. ASISTENCIAS POR MES (OPTIMIZADO con agregación)
+    asistencias_query = Asistencia.objects.filter(
         alumno_comision__in=inscripciones
     )
-    if total_calificaciones.exists():
-        promedio_general = total_calificaciones.aggregate(Avg('nota'))['nota__avg']
 
-    porcentaje_asistencia_general = 0
-    if asistencias.exists():
-        total_asist = asistencias.count()
-        presentes = asistencias.filter(esta_presente=True).count()
-        porcentaje_asistencia_general = (presentes / total_asist * 100) if total_asist > 0 else 0
+    if filtros.get('fecha_inicio'):
+        asistencias_query = asistencias_query.filter(fecha_asistencia__gte=filtros['fecha_inicio'])
+    if filtros.get('fecha_fin'):
+        asistencias_query = asistencias_query.filter(fecha_asistencia__lte=filtros['fecha_fin'])
+
+    # Usar SQL agregado en lugar de iterar
+    from django.db.models.functions import TruncMonth, ExtractMonth
+    from django.db.models import Case, When, IntegerField
+
+    asistencias_mes = asistencias_query.annotate(
+        mes=ExtractMonth('fecha_asistencia')
+    ).values('mes').annotate(
+        total=Count('id'),
+        presentes=Count(Case(When(esta_presente=True, then=1), output_field=IntegerField()))
+    ).order_by('mes')
+
+    # Mapeo de números de mes a nombres
+    meses_nombres = {1: 'Ene', 2: 'Feb', 3: 'Mar', 4: 'Abr', 5: 'May', 6: 'Jun',
+                     7: 'Jul', 8: 'Ago', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dic'}
+
+    porcentajes_por_mes = {
+        meses_nombres[item['mes']]: (item['presentes'] / item['total'] * 100) if item['total'] > 0 else 0
+        for item in asistencias_mes
+    }
+
+    # 5. TOP ALUMNOS (OPTIMIZADO con una sola query por métrica)
+    # Top 10 alumnos por promedio
+    alumnos_promedios_query = Calificacion.objects.filter(
+        alumno_comision__in=inscripciones
+    ).values(
+        'alumno_comision__alumno__apellido',
+        'alumno_comision__alumno__nombre'
+    ).annotate(
+        promedio=Avg('nota')
+    ).order_by('-promedio')[:10]
+
+    alumnos_promedios = [
+        (f"{item['alumno_comision__alumno__apellido']} {item['alumno_comision__alumno__nombre']}",
+         item['promedio'])
+        for item in alumnos_promedios_query
+    ]
+
+    # Top 10 alumnos por asistencia
+    alumnos_asistencias_query = Asistencia.objects.filter(
+        alumno_comision__in=inscripciones
+    ).values(
+        'alumno_comision__alumno__apellido',
+        'alumno_comision__alumno__nombre'
+    ).annotate(
+        total=Count('id'),
+        presentes=Count(Case(When(esta_presente=True, then=1), output_field=IntegerField()))
+    ).annotate(
+        porcentaje=Case(
+            When(total__gt=0, then=100.0 * models.F('presentes') / models.F('total')),
+            default=0,
+            output_field=models.FloatField()
+        )
+    ).order_by('-porcentaje')[:10]
+
+    alumnos_asistencias = [
+        (f"{item['alumno_comision__alumno__apellido']} {item['alumno_comision__alumno__nombre']}",
+         item['porcentaje'])
+        for item in alumnos_asistencias_query
+    ]
+
+    # Top 10 alumnos por materias aprobadas
+    alumnos_materias_query = Calificacion.objects.filter(
+        alumno_comision__in=inscripciones,
+        tipo=TipoCalificacion.FINAL,
+        nota__gte=6
+    ).values(
+        'alumno_comision__alumno__apellido',
+        'alumno_comision__alumno__nombre'
+    ).annotate(
+        aprobadas=Count('id')
+    ).order_by('-aprobadas')[:10]
+
+    alumnos_materias_aprobadas = [
+        (f"{item['alumno_comision__alumno__apellido']} {item['alumno_comision__alumno__nombre']}",
+         item['aprobadas'])
+        for item in alumnos_materias_query
+    ]
+
+    # 6. ESTADÍSTICAS GENERALES (OPTIMIZADO)
+    total_materias = inscripciones.values('comision__materia').distinct().count()
+    total_comisiones = inscripciones.values('comision').distinct().count()
+
+    promedio_general = Calificacion.objects.filter(
+        alumno_comision__in=inscripciones
+    ).aggregate(Avg('nota'))['nota__avg'] or 0
+
+    # Asistencia general
+    asist_stats = asistencias_query.aggregate(
+        total=Count('id'),
+        presentes=Count(Case(When(esta_presente=True, then=1), output_field=IntegerField()))
+    )
+    porcentaje_asistencia_general = (asist_stats['presentes'] / asist_stats['total'] * 100) if asist_stats['total'] > 0 else 0
 
     return {
         'filtros_aplicados': filtros,
@@ -364,10 +378,6 @@ def obtener_datos_reporte_academico(filtros=None):
         'alumnos_top_asistencia': alumnos_asistencias[:10],
         'alumnos_materias_aprobadas': alumnos_materias_aprobadas[:10],
 
-        # Listas de entidades
-        'alumnos': alumnos,
-        'materias': list(materias_set),
-        'inscripciones': inscripciones,
     }
 
 
