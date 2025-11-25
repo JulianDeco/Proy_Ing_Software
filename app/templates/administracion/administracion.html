@@ -182,16 +182,37 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-4 mb-4">
-                        <div class="card h-100">
+                        <div class="card h-100 border-primary">
                             <div class="card-body text-center">
-                                <i class="bi bi-people-fill display-4 text-primary mb-3"></i>
-                                <h5>Reporte de Matrícula</h5>
-                                <p class="text-muted">Genera reportes detallados de matrícula por nivel, grado o sección</p>
-                                <button class="btn btn-outline-primary">Generar</button>
+                                <i class="bi bi-graph-up-arrow display-4 text-primary mb-3"></i>
+                                <h5>Reporte Académico Completo</h5>
+                                <p class="text-muted">Reporte con múltiples entidades: alumnos, notas, asistencias y gráficos interactivos</p>
+                                <a href="{% url 'reporte_academico' %}" class="btn btn-primary">
+                                    <i class="bi bi-bar-chart-line"></i> Ver Reporte
+                                </a>
                             </div>
                         </div>
                     </div>
-                    <!-- Más opciones de reporte... -->
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="bi bi-people-fill display-4 text-success mb-3"></i>
+                                <h5>Reporte de Matrícula</h5>
+                                <p class="text-muted">Genera reportes detallados de matrícula por nivel, grado o sección</p>
+                                <button class="btn btn-outline-success">Generar</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <i class="bi bi-clipboard-data display-4 text-info mb-3"></i>
+                                <h5>Reporte de Asistencias</h5>
+                                <p class="text-muted">Estadísticas detalladas de asistencias por período académico</p>
+                                <button class="btn btn-outline-info">Generar</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
