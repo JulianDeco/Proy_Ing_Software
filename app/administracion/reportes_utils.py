@@ -262,18 +262,18 @@ def obtener_datos_reporte_academico(filtros=None):
     # 4. ASISTENCIAS POR MES
     asistencias = Asistencia.objects.filter(
         alumno_comision__in=inscripciones
-    ).select_related('clase')
+    ).select_related('alumno_comision')
 
     if filtros.get('fecha_inicio'):
-        asistencias = asistencias.filter(clase__fecha__gte=filtros['fecha_inicio'])
+        asistencias = asistencias.filter(fecha_asistencia__gte=filtros['fecha_inicio'])
 
     if filtros.get('fecha_fin'):
-        asistencias = asistencias.filter(clase__fecha__lte=filtros['fecha_fin'])
+        asistencias = asistencias.filter(fecha_asistencia__lte=filtros['fecha_fin'])
 
     asistencias_por_mes = defaultdict(lambda: {'presentes': 0, 'total': 0})
 
     for asistencia in asistencias:
-        mes = asistencia.clase.fecha.strftime('%b')
+        mes = asistencia.fecha_asistencia.strftime('%b')
         asistencias_por_mes[mes]['total'] += 1
         if asistencia.esta_presente:
             asistencias_por_mes[mes]['presentes'] += 1
