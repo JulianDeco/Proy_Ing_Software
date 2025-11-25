@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte Académico</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 11pt;
+            line-height: 1.4;
+            color: #333;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 15px;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 24pt;
+            margin: 0 0 10px 0;
+        }
+
+        .header .subtitle {
+            color: #666;
+            font-size: 10pt;
+        }
+
+        .section {
+            margin-bottom: 25px;
+            page-break-inside: avoid;
+        }
+
+        .section h2 {
+            color: #667eea;
+            font-size: 16pt;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 5px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+
+        .stat-box .label {
+            font-size: 9pt;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-box .value {
+            font-size: 20pt;
+            font-weight: bold;
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        table th {
+            background: #667eea;
+            color: white;
+            padding: 10px;
+            text-align: left;
+            font-size: 10pt;
+        }
+
+        table td {
+            padding: 8px;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 9pt;
+        }
+
+        table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+
+        .chart-image {
+            width: 100%;
+            max-width: 600px;
+            margin: 15px auto;
+            display: block;
+            page-break-inside: avoid;
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #e9ecef;
+            text-align: center;
+            font-size: 9pt;
+            color: #666;
+        }
+
+        .highlight-success {
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .highlight-danger {
+            color: #dc3545;
+            font-weight: bold;
+        }
+
+        .highlight-warning {
+            color: #ffc107;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <!-- ENCABEZADO -->
+    <div class="header">
+        <h1>REPORTE ACADÉMICO COMPLETO</h1>
+        <p class="subtitle">Generado el {{ fecha_generacion }}</p>
+    </div>
+
+    <!-- ESTADÍSTICAS GENERALES -->
+    <div class="section">
+        <h2>Resumen Ejecutivo</h2>
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="label">Total Alumnos</div>
+                <div class="value">{{ datos.estadisticas.total_alumnos }}</div>
+            </div>
+            <div class="stat-box">
+                <div class="label">Total Materias</div>
+                <div class="value">{{ datos.estadisticas.total_materias }}</div>
+            </div>
+            <div class="stat-box">
+                <div class="label">Total Comisiones</div>
+                <div class="value">{{ datos.estadisticas.total_comisiones }}</div>
+            </div>
+            <div class="stat-box">
+                <div class="label">Promedio General</div>
+                <div class="value">{{ datos.estadisticas.promedio_general }}</div>
+            </div>
+            <div class="stat-box">
+                <div class="label">Asistencia General</div>
+                <div class="value">{{ datos.estadisticas.porcentaje_asistencia_general }}%</div>
+            </div>
+            <div class="stat-box">
+                <div class="label">Materias Aprobadas</div>
+                <div class="value">{{ datos.estadisticas.aprobados }}</div>
+            </div>
+        </div>
+
+        <table>
+            <tr>
+                <th>Concepto</th>
+                <th style="text-align: right;">Cantidad</th>
+                <th style="text-align: right;">Porcentaje</th>
+            </tr>
+            <tr>
+                <td>Aprobados</td>
+                <td style="text-align: right;" class="highlight-success">{{ datos.estadisticas.aprobados }}</td>
+                <td style="text-align: right;">
+                    {% widthratio datos.estadisticas.aprobados datos.estadisticas.total_alumnos 100 %}%
+                </td>
+            </tr>
+            <tr>
+                <td>Desaprobados</td>
+                <td style="text-align: right;" class="highlight-danger">{{ datos.estadisticas.desaprobados }}</td>
+                <td style="text-align: right;">
+                    {% widthratio datos.estadisticas.desaprobados datos.estadisticas.total_alumnos 100 %}%
+                </td>
+            </tr>
+            <tr>
+                <td>Regulares</td>
+                <td style="text-align: right;" class="highlight-warning">{{ datos.estadisticas.regulares }}</td>
+                <td style="text-align: right;">
+                    {% widthratio datos.estadisticas.regulares datos.estadisticas.total_alumnos 100 %}%
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <!-- GRÁFICO 1: DISTRIBUCIÓN DE NOTAS -->
+    {% if graficos.distribucion_notas %}
+    <div class="section">
+        <h2>Distribución de Notas por Materia</h2>
+        <img src="data:image/png;base64,{{ graficos.distribucion_notas }}" class="chart-image" alt="Distribución de Notas">
+    </div>
+    {% endif %}
+
+    <!-- TABLA DE PROMEDIOS POR MATERIA -->
+    {% if datos.promedios_materias %}
+    <div class="section">
+        <h2>Detalle de Promedios por Materia</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Materia</th>
+                    <th style="text-align: center;">Promedio</th>
+                    <th style="text-align: center;">Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for materia, promedio in datos.promedios_materias %}
+                <tr>
+                    <td>{{ materia }}</td>
+                    <td style="text-align: center;">{{ promedio|floatformat:2 }}</td>
+                    <td style="text-align: center;">
+                        {% if promedio >= 6 %}
+                        <span class="highlight-success">✓ Aprobado</span>
+                        {% else %}
+                        <span class="highlight-danger">✗ Desaprobado</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- GRÁFICO 2: ESTADOS ACADÉMICOS -->
+    {% if graficos.estados %}
+    <div class="section" style="page-break-before: always;">
+        <h2>Distribución de Estados Académicos</h2>
+        <img src="data:image/png;base64,{{ graficos.estados }}" class="chart-image" alt="Estados Académicos">
+    </div>
+    {% endif %}
+
+    <!-- GRÁFICO 3: EVOLUCIÓN ASISTENCIAS -->
+    {% if graficos.asistencias %}
+    <div class="section">
+        <h2>Evolución de Asistencias</h2>
+        <img src="data:image/png;base64,{{ graficos.asistencias }}" class="chart-image" alt="Evolución Asistencias">
+
+        <table style="margin-top: 20px;">
+            <thead>
+                <tr>
+                    <th>Mes</th>
+                    <th style="text-align: center;">Porcentaje de Asistencia</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for mes, porcentaje in datos.asistencias_por_mes.items %}
+                <tr>
+                    <td>{{ mes }}</td>
+                    <td style="text-align: center;">{{ porcentaje|floatformat:2 }}%</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- GRÁFICO 4: TOP ALUMNOS -->
+    {% if graficos.comparativo_alumnos %}
+    <div class="section" style="page-break-before: always;">
+        <h2>Top 10 Alumnos por Promedio</h2>
+        <img src="data:image/png;base64,{{ graficos.comparativo_alumnos }}" class="chart-image" alt="Top Alumnos">
+
+        <table style="margin-top: 20px;">
+            <thead>
+                <tr>
+                    <th style="text-align: center;">Posición</th>
+                    <th>Alumno</th>
+                    <th style="text-align: center;">Promedio</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for nombre, promedio in datos.alumnos_top_promedio|slice:":10" %}
+                <tr>
+                    <td style="text-align: center;">{{ forloop.counter }}</td>
+                    <td>{{ nombre }}</td>
+                    <td style="text-align: center;">{{ promedio|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- PIE DE PÁGINA -->
+    <div class="footer">
+        <p>Este reporte fue generado automáticamente por el Sistema de Gestión Académica</p>
+        <p>Fecha y hora de generación: {{ fecha_generacion }}</p>
+    </div>
+</body>
+</html>
