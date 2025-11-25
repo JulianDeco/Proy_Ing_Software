@@ -66,7 +66,7 @@ def crear_contexto_certificado(alumno, tipo_certificado, institucion, curso=None
         })
 
     elif tipo_certificado.lower() in ['certificado de aprobación', 'aprobacion']:
-        # Obtener materias aprobadas (nota >= 7 en FINAL)
+        # Obtener materias aprobadas (nota >= 6 en FINAL)
         materias_aprobadas = []
         for inscripcion in inscripciones:
             calificacion_final = Calificacion.objects.filter(
@@ -74,7 +74,7 @@ def crear_contexto_certificado(alumno, tipo_certificado, institucion, curso=None
                 tipo=TipoCalificacion.FINAL
             ).first()
 
-            if calificacion_final and calificacion_final.nota >= 7:
+            if calificacion_final and calificacion_final.nota >= 6:
                 materias_aprobadas.append({
                     'materia': inscripcion.comision.materia,
                     'nota': calificacion_final.nota,
@@ -101,7 +101,7 @@ def crear_contexto_certificado(alumno, tipo_certificado, institucion, curso=None
                     'tipo': calif.get_tipo_display(),
                     'nota': calif.nota,
                     'fecha': calif.fecha_creacion,
-                    'resultado': 'Aprobado' if calif.nota >= 7 else 'No Aprobado'
+                    'resultado': 'Aprobado' if calif.nota >= 6 else 'No Aprobado'
                 })
 
         contexto.update({

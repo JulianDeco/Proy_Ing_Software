@@ -100,7 +100,7 @@
                             <td class="text-center">
                                 {% if tipo.tipo in fila.calificaciones %}
                                     <span class="badge
-                                        {% if fila.calificaciones|get_item:tipo.tipo|get_item:'nota' >= 7 %}bg-success
+                                        {% if fila.calificaciones|get_item:tipo.tipo|get_item:'nota' >= 6 %}bg-success
                                         {% elif fila.calificaciones|get_item:tipo.tipo|get_item:'nota' >= 4 %}bg-warning text-dark
                                         {% else %}bg-danger
                                         {% endif %}">
@@ -118,7 +118,7 @@
                             <td class="text-center">
                                 {% if fila.promedio > 0 %}
                                     <strong class="
-                                        {% if fila.promedio >= 7 %}text-success
+                                        {% if fila.promedio >= 6 %}text-success
                                         {% elif fila.promedio >= 4 %}text-warning
                                         {% else %}text-danger
                                         {% endif %}">
@@ -166,8 +166,8 @@
         <div class="card-body">
             <small class="text-muted">
                 <strong>Leyenda:</strong>
-                <span class="badge bg-success ms-2">7-10: Aprobado</span>
-                <span class="badge bg-warning text-dark ms-2">4-6.99: Regular</span>
+                <span class="badge bg-success ms-2">6-10: Aprobado</span>
+                <span class="badge bg-warning text-dark ms-2">4-5.99: Regular</span>
                 <span class="badge bg-danger ms-2">0-3.99: Desaprobado</span>
             </small>
         </div>
