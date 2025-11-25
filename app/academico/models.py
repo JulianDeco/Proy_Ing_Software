@@ -1,5 +1,5 @@
 import datetime
-from django.db import models
+from django.db import models, transaction
 from django.core.exceptions import ValidationError
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -147,6 +147,7 @@ class InscripcionAlumnoComision(models.Model):
         return dias_clase.count()
 
 @receiver(post_save, sender=InscripcionAlumnoComision)
+@transaction.atomic
 def crear_asistencias_al_inscribir(sender, instance, created, **kwargs):
     if created:
         cantidad_creada = instance.crear_asistencias_automaticas()

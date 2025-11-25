@@ -1,11 +1,13 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.db import transaction
 from datetime import timedelta, date
 import holidays
 
 from .models import AnioAcademico, CalendarioAcademico
 
 @receiver(post_save, sender=AnioAcademico)
+@transaction.atomic
 def crear_calendario_academico(sender, instance, created, **kwargs):
     if not created:
         return
