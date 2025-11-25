@@ -6,12 +6,20 @@ from django.contrib.auth.decorators import login_required
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import transaction
+from django.contrib import messages
+from django.core.exceptions import ValidationError
 
 from academico.services import ServiciosAcademico
 from main.services import ActionFlag, LogAction
 from main.utils import group_required
 from .models import CalendarioAcademico, Calificacion, Materia, Comision, InscripcionAlumnoComision, Asistencia, Alumno
 from institucional.models import Empleado, Persona
+from .exceptions import (
+    TipoCalificacionInvalidoError,
+    RangoCalificacionInvalidoError,
+    AsistenciaNoExisteError,
+    FechaNoClaseError
+)
 
 
 class DocenteRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
@@ -74,12 +82,14 @@ class GestionAsistenciaView(DocenteRequiredMixin, View):
                 fecha_seleccionada = fecha_guardado
 
             for alummo_comision in alumnos_comision:
-                asistencia = self.servicios_academico.obtener_asistencia_alumno_hoy(alummo_comision, fecha_seleccionada)
-                if asistencia:
+                try:
+                    asistencia = self.servicios_academico.obtener_asistencia_alumno_hoy(alummo_comision, fecha_seleccionada)
                     alummo_comision.alumno.presente = asistencia.esta_presente
-                
+                except AsistenciaNoExisteError:
+                    alummo_comision.alumno.presente = False
+
                 alummo_comision.alumno.porcentaje_asistencia = self.servicios_academico.obtener_porcentaje_asistencia(alummo_comision, fecha_seleccionada)
-            
+
             if fecha_seleccionada:
                 try:
                     fechas_clase, _= self.servicios_academico.obtener_fechas_clases(comision)
@@ -88,7 +98,7 @@ class GestionAsistenciaView(DocenteRequiredMixin, View):
                     fecha_seleccionada = None
             else:
                 fechas_clase, fecha_seleccionada = self.servicios_academico.obtener_fechas_clases(comision)
-            
+
             contexto = {
                     'comision': comision,
                     'alumnos_comision': alumnos_comision,
@@ -99,33 +109,55 @@ class GestionAsistenciaView(DocenteRequiredMixin, View):
 
     @transaction.atomic
     def post(self, request, codigo):
-        datos = request.POST
-        comision = self.servicios_academico.obtener_comision_por_codigo(codigo)
-        fecha_asistencia = datos['fecha_asistencia']
-        for d in datos:
-            if d.startswith('asistencia_'):
-                alumno_id = int(d.replace('asistencia_',''))
-                estado_alumno_asistencia = datos[d]
+        try:
+            datos = request.POST
+            comision = self.servicios_academico.obtener_comision_por_codigo(codigo)
+            fecha_asistencia = datos.get('fecha_asistencia')
 
-                alumno = get_object_or_404(Alumno, id = alumno_id)
+            if not fecha_asistencia:
+                messages.error(request, 'Debe especificar una fecha de asistencia.')
+                return redirect('asistencia_curso', codigo=codigo)
 
-                if estado_alumno_asistencia == 'PRESENTE':
-                    estado_alumno_asistencia = True
-                elif estado_alumno_asistencia == 'AUSENTE':
-                    estado_alumno_asistencia = False
-                asistencia, _ = self.servicios_academico.registrar_asistencia(alumno, comision, estado_alumno_asistencia, fecha_asistencia)
-                if asistencia.esta_presente:
-                    asistencia.esta_presente = 'Presente'
-                else:
-                    asistencia.esta_presente = 'Ausente'
-                LogAction(
-                    user=request.user,
-                    model_instance_or_queryset=asistencia,
-                    action=ActionFlag.CHANGE,
-                    change_message="Cambio de estado de asistencia"
+            for d in datos:
+                if d.startswith('asistencia_'):
+                    alumno_id = int(d.replace('asistencia_',''))
+                    estado_alumno_asistencia = datos[d]
+
+                    alumno = get_object_or_404(Alumno, id=alumno_id)
+
+                    if estado_alumno_asistencia == 'PRESENTE':
+                        estado_alumno_asistencia = True
+                    elif estado_alumno_asistencia == 'AUSENTE':
+                        estado_alumno_asistencia = False
+
+                    asistencia, _ = self.servicios_academico.registrar_asistencia(
+                        alumno, comision, estado_alumno_asistencia, fecha_asistencia
+                    )
+
+                    if asistencia.esta_presente:
+                        asistencia.esta_presente = 'Presente'
+                    else:
+                        asistencia.esta_presente = 'Ausente'
+
+                    LogAction(
+                        user=request.user,
+                        model_instance_or_queryset=asistencia,
+                        action=ActionFlag.CHANGE,
+                        change_message="Cambio de estado de asistencia"
                     ).log()
-        param_asistencia = True
-        return self.get(request, codigo, fecha_asistencia)
+
+            messages.success(request, 'Asistencias registradas correctamente.')
+            return self.get(request, codigo, fecha_asistencia)
+
+        except FechaNoClaseError as e:
+            messages.error(request, str(e))
+            return redirect('asistencia_curso', codigo=codigo)
+        except ValueError as e:
+            messages.error(request, f'Error en los datos enviados: {str(e)}')
+            return redirect('asistencia_curso', codigo=codigo)
+        except Exception as e:
+            messages.error(request, f'Error inesperado al registrar asistencias: {str(e)}')
+            return redirect('asistencia_curso', codigo=codigo)
 
 class GestionClasesView(DocenteRequiredMixin, View):
     servicios_academico = ServiciosAcademico()
@@ -167,20 +199,52 @@ class GestionCalificacionesView(DocenteRequiredMixin, View):
 
     @transaction.atomic
     def post(self, request, codigo):
-        datos = request.POST
-        fecha = datos.get('fecha')
-        tipo_calificacion = datos.get('tipo')
-        alumnos_comision = self.servicios_academico.obtener_alumnos_comision(codigo)
-        for dato in datos:
-            if dato.startswith('nota_'):
-                alumno_id = int(dato.replace('nota_', ''))
-                calificacion = int(datos[dato][0])
-                alumno = alumnos_comision.get(alumno__id = alumno_id)
-                calificacion_nuevo = self.servicios_academico.crear_calificacion(alumno, fecha, tipo_calificacion, calificacion)
-                LogAction(
-                    user=request.user,
-                    model_instance_or_queryset=calificacion_nuevo,
-                    action=ActionFlag.ADDITION,
-                    change_message="Se crea calificación"
+        try:
+            datos = request.POST
+            fecha = datos.get('fecha')
+            tipo_calificacion = datos.get('tipo')
+
+            if not fecha or not tipo_calificacion:
+                messages.error(request, 'Debe especificar fecha y tipo de calificación.')
+                return redirect('crear_calificacion', codigo=codigo)
+
+            alumnos_comision = self.servicios_academico.obtener_alumnos_comision(codigo)
+            calificaciones_creadas = 0
+
+            for dato in datos:
+                if dato.startswith('nota_'):
+                    alumno_id = int(dato.replace('nota_', ''))
+                    calificacion = int(datos[dato][0])
+                    alumno = alumnos_comision.get(alumno__id=alumno_id)
+
+                    calificacion_nuevo = self.servicios_academico.crear_calificacion(
+                        alumno, fecha, tipo_calificacion, calificacion
+                    )
+
+                    LogAction(
+                        user=request.user,
+                        model_instance_or_queryset=calificacion_nuevo,
+                        action=ActionFlag.ADDITION,
+                        change_message="Se crea calificación"
                     ).log()
-        return CalificacionesCursoView.get(request, codigo)
+
+                    calificaciones_creadas += 1
+
+            messages.success(
+                request,
+                f'Se crearon {calificaciones_creadas} calificaciones correctamente.'
+            )
+            return redirect('calificaciones_curso', codigo=codigo)
+
+        except TipoCalificacionInvalidoError as e:
+            messages.error(request, str(e))
+            return redirect('crear_calificacion', codigo=codigo)
+        except RangoCalificacionInvalidoError as e:
+            messages.error(request, str(e))
+            return redirect('crear_calificacion', codigo=codigo)
+        except ValueError as e:
+            messages.error(request, f'Error en el formato de las calificaciones: {str(e)}')
+            return redirect('crear_calificacion', codigo=codigo)
+        except Exception as e:
+            messages.error(request, f'Error inesperado al crear calificaciones: {str(e)}')
+            return redirect('crear_calificacion', codigo=codigo)
