@@ -226,6 +226,7 @@ class Asistencia(models.Model):
     class Meta:
         verbose_name = 'Asistencia'
         verbose_name_plural = 'Asistencias'
+        unique_together = ('alumno_comision', 'fecha_asistencia')
         indexes = [
             models.Index(fields=['alumno_comision', 'fecha_asistencia'], name='asist_alumno_fecha_idx'),
             models.Index(fields=['fecha_asistencia', 'esta_presente'], name='asist_fecha_presente_idx'),
