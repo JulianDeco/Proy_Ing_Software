@@ -162,3 +162,149 @@ class ServiciosAcademico:
             'clases_hoy': clases_hoy,
             'total_alumnos': total_alumnos
         }
+
+    @staticmethod
+    def calcular_nota_final(inscripcion):
+        """
+        Calcula la nota final de un alumno en una comisión.
+
+        Lógica:
+        1. Si tiene nota FINAL: usa esa nota
+        2. Si NO tiene FINAL pero tiene otras calificaciones: promedio de todas
+        3. Si NO tiene calificaciones: retorna None
+
+        Args:
+            inscripcion: InscripcionAlumnoComision
+
+        Returns:
+            Decimal o None
+        """
+        from academico.models import Calificacion, TipoCalificacion
+        from django.db.models import Avg
+
+        # Buscar si tiene calificación FINAL
+        calificacion_final = Calificacion.objects.filter(
+            alumno_comision=inscripcion,
+            tipo=TipoCalificacion.FINAL
+        ).first()
+
+        if calificacion_final:
+            return calificacion_final.nota
+
+        # Si no tiene FINAL, calcular promedio de todas las calificaciones
+        calificaciones = Calificacion.objects.filter(alumno_comision=inscripcion)
+
+        if calificaciones.exists():
+            promedio = calificaciones.aggregate(Avg('nota'))['nota__avg']
+            return round(promedio, 2) if promedio else None
+
+        return None
+
+    @staticmethod
+    def cerrar_inscripcion(inscripcion, usuario):
+        """
+        Cierra una inscripción individual calculando la nota final y actualizando el estado.
+
+        Args:
+            inscripcion: InscripcionAlumnoComision
+            usuario: User que realiza el cierre
+
+        Returns:
+            tuple: (success: bool, mensaje: str)
+        """
+        from django.utils import timezone
+
+        # Calcular nota final
+        nota_final = ServiciosAcademico.calcular_nota_final(inscripcion)
+
+        if nota_final is None:
+            return False, f"El alumno {inscripcion.alumno} no tiene calificaciones registradas."
+
+        # Determinar estado según nota
+        if nota_final >= 6:
+            nuevo_estado = 'APROBADA'
+        else:
+            nuevo_estado = 'DESAPROBADA'
+
+        # Actualizar inscripción
+        inscripcion.nota_final = nota_final
+        inscripcion.estado_inscripcion = nuevo_estado
+        inscripcion.fecha_cierre = timezone.now()
+        inscripcion.cerrada_por = usuario
+        inscripcion.save()
+
+        return True, f"Inscripción cerrada. Nota final: {nota_final} - Estado: {nuevo_estado}"
+
+    @staticmethod
+    def cerrar_comision(comision, usuario):
+        """
+        Cierra una comisión completa procesando todas las inscripciones.
+
+        Args:
+            comision: Comision
+            usuario: User que realiza el cierre
+
+        Returns:
+            dict: {
+                'success': bool,
+                'mensaje': str,
+                'procesadas': int,
+                'aprobadas': int,
+                'desaprobadas': int,
+                'sin_calificaciones': int
+            }
+        """
+        from academico.models import InscripcionAlumnoComision, EstadoComision
+        from django.db import transaction
+
+        inscripciones = InscripcionAlumnoComision.objects.filter(
+            comision=comision,
+            estado_inscripcion='REGULAR'  # Solo procesar las que están en curso
+        )
+
+        if not inscripciones.exists():
+            return {
+                'success': False,
+                'mensaje': 'No hay inscripciones en estado REGULAR para cerrar.',
+                'procesadas': 0,
+                'aprobadas': 0,
+                'desaprobadas': 0,
+                'sin_calificaciones': 0
+            }
+
+        procesadas = 0
+        aprobadas = 0
+        desaprobadas = 0
+        sin_calificaciones = 0
+
+        with transaction.atomic():
+            for inscripcion in inscripciones:
+                success, mensaje = ServiciosAcademico.cerrar_inscripcion(inscripcion, usuario)
+
+                if success:
+                    procesadas += 1
+                    if inscripcion.estado_inscripcion == 'APROBADA':
+                        aprobadas += 1
+                    elif inscripcion.estado_inscripcion == 'DESAPROBADA':
+                        desaprobadas += 1
+                else:
+                    sin_calificaciones += 1
+
+            # Actualizar estado de la comisión
+            comision.estado = EstadoComision.FINALIZADA
+            comision.save()
+
+        mensaje = (
+            f"Comisión cerrada exitosamente.\n"
+            f"Procesadas: {procesadas} | Aprobadas: {aprobadas} | "
+            f"Desaprobadas: {desaprobadas} | Sin calificaciones: {sin_calificaciones}"
+        )
+
+        return {
+            'success': True,
+            'mensaje': mensaje,
+            'procesadas': procesadas,
+            'aprobadas': aprobadas,
+            'desaprobadas': desaprobadas,
+            'sin_calificaciones': sin_calificaciones
+        }

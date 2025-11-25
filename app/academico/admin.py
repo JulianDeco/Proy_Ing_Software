@@ -20,8 +20,34 @@ class MateriaAdmin(admin.ModelAdmin):
 
 @admin.register(Comision)
 class ComisionAdmin(admin.ModelAdmin):
-    list_display = ('codigo', 'materia', 'horario_inicio', 'horario_fin', 'turno')
+    list_display = ('codigo', 'materia', 'horario_inicio', 'horario_fin', 'turno', 'estado')
     search_fields = ('codigo', 'materia__nombre')
+    list_filter = ('estado', 'turno')
+    actions = ['cerrar_comision_action']
+
+    def cerrar_comision_action(self, request, queryset):
+        """Acción para cerrar comisiones seleccionadas"""
+        from academico.services import ServiciosAcademico
+
+        if queryset.count() > 1:
+            self.message_user(request, 'Solo puede cerrar una comisión a la vez.', level='warning')
+            return
+
+        comision = queryset.first()
+
+        if comision.estado == 'FINALIZADA':
+            self.message_user(request, f'La comisión {comision.codigo} ya está finalizada.', level='warning')
+            return
+
+        # Cerrar la comisión
+        resultado = ServiciosAcademico.cerrar_comision(comision, request.user)
+
+        if resultado['success']:
+            self.message_user(request, resultado['mensaje'], level='success')
+        else:
+            self.message_user(request, resultado['mensaje'], level='error')
+
+    cerrar_comision_action.short_description = "Cerrar comisión y calcular notas finales"
     
 @admin.register(EstadosAlumno)
 class EstadosAlumnoAdmin(admin.ModelAdmin):
@@ -30,8 +56,10 @@ class EstadosAlumnoAdmin(admin.ModelAdmin):
     
 @admin.register(InscripcionAlumnoComision)
 class InscripcionesAlumnosComisionesAdmin(admin.ModelAdmin):
-    list_display = ('alumno','comision',)
-    search_fields = ('alumno','comision','creado',)
+    list_display = ('alumno', 'comision', 'estado_inscripcion', 'nota_final', 'fecha_cierre')
+    search_fields = ('alumno__nombre', 'alumno__apellido', 'comision__codigo')
+    list_filter = ('estado_inscripcion', 'comision__materia')
+    readonly_fields = ('nota_final', 'fecha_cierre', 'cerrada_por')
 
 @admin.register(Calificacion)
 class CalificacionAdmin(admin.ModelAdmin):

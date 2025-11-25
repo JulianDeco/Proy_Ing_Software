@@ -3,6 +3,7 @@ from django.db import models, transaction
 from django.core.exceptions import ValidationError
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.conf import settings
 
 from administracion.models import PlanEstudio
 from institucional.models import Persona
@@ -113,6 +114,8 @@ class Alumno(Persona):
 class EstadoMateria(models.TextChoices):
     REGULAR = 'REGULAR', 'Regular'
     LIBRE = 'LIBRE', 'Libre'
+    APROBADA = 'APROBADA', 'Aprobada'
+    DESAPROBADA = 'DESAPROBADA', 'Desaprobada'
 
 class InscripcionAlumnoComision(models.Model):
     alumno = models.ForeignKey(Alumno, on_delete=models.CASCADE)
@@ -122,6 +125,28 @@ class InscripcionAlumnoComision(models.Model):
         max_length=20,
         choices=EstadoMateria.choices,
         default='REGULAR'
+    )
+
+    # Campos para cierre de materia
+    nota_final = models.DecimalField(
+        max_digits=4,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text='Nota final calculada al cerrar la materia'
+    )
+    fecha_cierre = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='Fecha en que se cerró la materia'
+    )
+    cerrada_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='cierres_realizados',
+        help_text='Usuario que realizó el cierre'
     )
 
     class Meta:
