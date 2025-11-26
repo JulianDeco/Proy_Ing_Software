@@ -1,7 +1,10 @@
 from django import forms
 from django.utils import timezone
 
-from academico.models import InscripcionAlumnoComision, Materia, TipoCalificacion
+from academico.models import (
+    InscripcionAlumnoComision, Materia, TipoCalificacion,
+    Calificacion, InscripcionMesaExamen, MesaExamen
+)
 
 class MateriaAdminForm(forms.ModelForm):
     class Meta:
@@ -120,3 +123,97 @@ class NotaIndividualForm(forms.Form):
             'max_value': 'La nota no puede ser mayor a 10.'
         }
     )
+
+
+# ============================================
+# Forms para Admin con validaciones del modelo
+# ============================================
+
+class CalificacionAdminForm(forms.ModelForm):
+    """Form para el admin que ejecuta las validaciones del modelo"""
+    class Meta:
+        model = Calificacion
+        fields = '__all__'
+
+    def clean(self):
+        cleaned_data = super().clean()
+        # Crear instancia temporal para validar
+        instance = Calificacion(
+            alumno_comision=cleaned_data.get('alumno_comision'),
+            tipo=cleaned_data.get('tipo'),
+            nota=cleaned_data.get('nota'),
+            fecha_creacion=cleaned_data.get('fecha_creacion')
+        )
+        if self.instance.pk:
+            instance.pk = self.instance.pk
+        # Ejecutar validaciones del modelo
+        instance.clean()
+        return cleaned_data
+
+
+class InscripcionAlumnoComisionAdminForm(forms.ModelForm):
+    """Form para el admin que ejecuta las validaciones del modelo"""
+    class Meta:
+        model = InscripcionAlumnoComision
+        fields = '__all__'
+
+    def clean(self):
+        cleaned_data = super().clean()
+        # Crear instancia temporal para validar
+        instance = InscripcionAlumnoComision(
+            alumno=cleaned_data.get('alumno'),
+            comision=cleaned_data.get('comision'),
+            estado_inscripcion=cleaned_data.get('estado_inscripcion', 'REGULAR')
+        )
+        if self.instance.pk:
+            instance.pk = self.instance.pk
+        # Ejecutar validaciones del modelo
+        instance.clean()
+        return cleaned_data
+
+
+class InscripcionMesaExamenAdminForm(forms.ModelForm):
+    """Form para el admin que ejecuta las validaciones del modelo"""
+    class Meta:
+        model = InscripcionMesaExamen
+        fields = '__all__'
+
+    def clean(self):
+        cleaned_data = super().clean()
+        # Crear instancia temporal para validar
+        instance = InscripcionMesaExamen(
+            mesa_examen=cleaned_data.get('mesa_examen'),
+            alumno=cleaned_data.get('alumno'),
+            condicion=cleaned_data.get('condicion'),
+            estado_inscripcion=cleaned_data.get('estado_inscripcion', 'INSCRIPTO'),
+            nota_examen=cleaned_data.get('nota_examen')
+        )
+        if self.instance.pk:
+            instance.pk = self.instance.pk
+        # Ejecutar validaciones del modelo
+        instance.clean()
+        return cleaned_data
+
+
+class MesaExamenAdminForm(forms.ModelForm):
+    """Form para el admin que ejecuta las validaciones del modelo"""
+    class Meta:
+        model = MesaExamen
+        fields = '__all__'
+
+    def clean(self):
+        cleaned_data = super().clean()
+        # Crear instancia temporal para validar
+        instance = MesaExamen(
+            materia=cleaned_data.get('materia'),
+            anio_academico=cleaned_data.get('anio_academico'),
+            fecha_examen=cleaned_data.get('fecha_examen'),
+            fecha_limite_inscripcion=cleaned_data.get('fecha_limite_inscripcion'),
+            estado=cleaned_data.get('estado', 'ABIERTA'),
+            cupo_maximo=cleaned_data.get('cupo_maximo', 50)
+        )
+        if self.instance.pk:
+            instance.pk = self.instance.pk
+        # Ejecutar validaciones del modelo
+        instance.clean()
+        return cleaned_data

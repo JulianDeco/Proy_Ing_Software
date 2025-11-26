@@ -7,9 +7,13 @@ from academico.models import (
     Alumno, AnioAcademico, Asistencia, CalendarioAcademico, Calificacion, Comision,
     EstadosAlumno, Materia, InscripcionAlumnoComision, MesaExamen, InscripcionMesaExamen
 )
-from academico.forms import MateriaAdminForm
+from academico.forms import (
+    MateriaAdminForm, CalificacionAdminForm, InscripcionAlumnoComisionAdminForm,
+    InscripcionMesaExamenAdminForm, MesaExamenAdminForm
+)
 from administracion.models import Certificado, TipoCertificado
 from institucional.models import Institucion
+from institucional.auditoria import AuditoriaMixin
 from main.utils import crear_contexto_certificado, generar_certificado_pdf
 
 @admin.register(Materia)
@@ -58,14 +62,16 @@ class EstadosAlumnoAdmin(admin.ModelAdmin):
     search_fields = ('descripcion',)
     
 @admin.register(InscripcionAlumnoComision)
-class InscripcionesAlumnosComisionesAdmin(admin.ModelAdmin):
+class InscripcionesAlumnosComisionesAdmin(AuditoriaMixin, admin.ModelAdmin):
+    form = InscripcionAlumnoComisionAdminForm
     list_display = ('alumno', 'comision', 'estado_inscripcion', 'nota_final', 'fecha_cierre')
     search_fields = ('alumno__nombre', 'alumno__apellido', 'comision__codigo')
     list_filter = ('estado_inscripcion', 'comision__materia')
     readonly_fields = ('nota_final', 'fecha_cierre', 'cerrada_por')
 
 @admin.register(Calificacion)
-class CalificacionAdmin(admin.ModelAdmin):
+class CalificacionAdmin(AuditoriaMixin, admin.ModelAdmin):
+    form = CalificacionAdminForm
     list_display = ('alumno_comision', 'tipo' ,'nota',)
     search_fields = ('alumno_comision', 'tipo' ,'nota',)
 
@@ -93,7 +99,7 @@ class CalendarioAcademico(admin.ModelAdmin):
     search_fields= ('anio_academico','fecha','es_dia_clase','descripcion',)
 
 @admin.register(Alumno)
-class AlumnoAdmin(admin.ModelAdmin):
+class AlumnoAdmin(AuditoriaMixin, admin.ModelAdmin):
     list_display = ('legajo', 'nombre_completo', 'dni', 'email', 'promedio', 'estado')
     search_fields = ('nombre', 'apellido', 'dni', 'legajo', 'email')
     list_filter = ('estado',)
@@ -171,7 +177,8 @@ class AlumnoAdmin(admin.ModelAdmin):
 
 
 @admin.register(MesaExamen)
-class MesaExamenAdmin(admin.ModelAdmin):
+class MesaExamenAdmin(AuditoriaMixin, admin.ModelAdmin):
+    form = MesaExamenAdminForm
     list_display = ('materia', 'fecha_examen', 'fecha_limite_inscripcion', 'estado', 'inscripciones_count', 'cupos_disponibles')
     list_filter = ('estado', 'anio_academico', 'materia')
     search_fields = ('materia__nombre', 'materia__codigo')
@@ -201,6 +208,7 @@ class MesaExamenAdmin(admin.ModelAdmin):
     def save_model(self, request, obj, form, change):
         if not change:  # Solo al crear
             obj.creado_por = request.user
+        # Llama al mixin de auditoría que a su vez llama a super()
         super().save_model(request, obj, form, change)
 
     def cerrar_inscripciones(self, request, queryset):
@@ -246,7 +254,8 @@ class MesaExamenAdmin(admin.ModelAdmin):
 
 
 @admin.register(InscripcionMesaExamen)
-class InscripcionMesaExamenAdmin(admin.ModelAdmin):
+class InscripcionMesaExamenAdmin(AuditoriaMixin, admin.ModelAdmin):
+    form = InscripcionMesaExamenAdminForm
     list_display = ('alumno', 'mesa_examen', 'condicion', 'estado_inscripcion', 'nota_examen', 'fecha_inscripcion')
     list_filter = ('condicion', 'estado_inscripcion', 'mesa_examen__materia')
     search_fields = ('alumno__nombre', 'alumno__apellido', 'alumno__dni', 'mesa_examen__materia__nombre')

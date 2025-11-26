@@ -242,6 +242,25 @@ class Calificacion(models.Model):
 
     def __str__(self):
         return f"{self.alumno_comision.alumno} - {self.tipo}: {self.nota}"
+
+    def clean(self):
+        """Validaciones de calificación"""
+        super().clean()
+
+        # Validar rango de nota (0-10)
+        if self.nota is not None:
+            if self.nota < 0 or self.nota > 10:
+                raise ValidationError({
+                    'nota': 'La nota debe estar entre 0 y 10.'
+                })
+
+        # Validar que la comisión no esté finalizada (excepto para notas finales)
+        if self.alumno_comision and self.alumno_comision.comision:
+            if self.alumno_comision.comision.estado == EstadoComision.FINALIZADA:
+                if self.tipo != TipoCalificacion.FINAL:
+                    raise ValidationError(
+                        'No se pueden agregar calificaciones a una comisión finalizada.'
+                    )
     
 class Asistencia(models.Model):
     alumno_comision = models.ForeignKey(InscripcionAlumnoComision, on_delete=models.CASCADE, related_name='asistencias')
@@ -417,36 +436,45 @@ class InscripcionMesaExamen(models.Model):
         """Validaciones de inscripción"""
         from django.utils import timezone
 
-        # Validar que la mesa esté abierta
-        if not self.mesa_examen.puede_inscribirse:
-            raise ValidationError('Esta mesa no acepta inscripciones.')
+        # Validar nota de examen si se proporciona
+        if self.nota_examen is not None:
+            if self.nota_examen < 0 or self.nota_examen > 10:
+                raise ValidationError({
+                    'nota_examen': 'La nota debe estar entre 0 y 10.'
+                })
 
-        # Validar cupo
-        if self.mesa_examen.cupos_disponibles <= 0:
-            raise ValidationError('No hay cupos disponibles en esta mesa.')
+        # Solo validar inscripción si es nueva (no tiene pk) o si no está siendo editada para cargar nota
+        if not self.pk:
+            # Validar que la mesa esté abierta
+            if not self.mesa_examen.puede_inscribirse:
+                raise ValidationError('Esta mesa no acepta inscripciones.')
 
-        # Validar que el alumno tenga cursada para esta materia
-        cursada = InscripcionAlumnoComision.objects.filter(
-            alumno=self.alumno,
-            comision__materia=self.mesa_examen.materia
-        ).first()
+            # Validar cupo
+            if self.mesa_examen.cupos_disponibles <= 0:
+                raise ValidationError('No hay cupos disponibles en esta mesa.')
 
-        if not cursada:
-            raise ValidationError(
-                f'El alumno no tiene cursada registrada para {self.mesa_examen.materia.nombre}.'
-            )
+            # Validar que el alumno tenga cursada para esta materia
+            cursada = InscripcionAlumnoComision.objects.filter(
+                alumno=self.alumno,
+                comision__materia=self.mesa_examen.materia
+            ).first()
 
-        # Determinar automáticamente la condición según el estado de la cursada
-        if cursada.estado_inscripcion == EstadoMateria.APROBADA:
-            raise ValidationError(
-                'El alumno ya aprobó esta materia y no puede inscribirse al examen.'
-            )
-        elif cursada.estado_inscripcion == EstadoMateria.REGULAR:
-            # Regular: tiene la materia en condición regular
-            self.condicion = CondicionAlumnoMesa.REGULAR
-        else:
-            # Libre: desaprobó o perdió la regularidad
-            self.condicion = CondicionAlumnoMesa.LIBRE
+            if not cursada:
+                raise ValidationError(
+                    f'El alumno no tiene cursada registrada para {self.mesa_examen.materia.nombre}.'
+                )
+
+            # Determinar automáticamente la condición según el estado de la cursada
+            if cursada.estado_inscripcion == EstadoMateria.APROBADA:
+                raise ValidationError(
+                    'El alumno ya aprobó esta materia y no puede inscribirse al examen.'
+                )
+            elif cursada.estado_inscripcion == EstadoMateria.REGULAR:
+                # Regular: tiene la materia en condición regular
+                self.condicion = CondicionAlumnoMesa.REGULAR
+            else:
+                # Libre: desaprobó o perdió la regularidad
+                self.condicion = CondicionAlumnoMesa.LIBRE
 
 
 
