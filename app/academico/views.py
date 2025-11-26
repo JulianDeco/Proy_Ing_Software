@@ -8,11 +8,17 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db import transaction
 from django.contrib import messages
 from django.core.exceptions import ValidationError
+from django.http import HttpResponse
+from django.template.loader import render_to_string
+from weasyprint import HTML
 
 from academico.services import ServiciosAcademico
 from main.services import ActionFlag, LogAction
 from main.utils import group_required
-from .models import CalendarioAcademico, Calificacion, Materia, Comision, InscripcionAlumnoComision, Asistencia, Alumno
+from .models import (
+    CalendarioAcademico, Calificacion, Materia, Comision, InscripcionAlumnoComision,
+    Asistencia, Alumno, MesaExamen, InscripcionMesaExamen
+)
 from institucional.models import Empleado, Persona
 from .exceptions import (
     TipoCalificacionInvalidoError,
@@ -359,3 +365,224 @@ class GestionCalificacionesView(DocenteRequiredMixin, View):
         except Exception as e:
             messages.error(request, f'Error inesperado al crear calificaciones: {str(e)}')
             return redirect('crear_calificacion', codigo=codigo)
+
+
+class MesasExamenDocenteView(DocenteRequiredMixin, View):
+    """Vista para que docentes vean las mesas donde son parte del tribunal"""
+
+    def get(self, request):
+        docente = get_object_or_404(Empleado, usuario=request.user)
+
+        # Obtener mesas donde el docente es parte del tribunal
+        mesas = MesaExamen.objects.filter(
+            tribunal=docente
+        ).select_related('materia', 'anio_academico').prefetch_related('inscripciones_mesa__alumno')
+
+        # Agregar información de inscripciones a cada mesa
+        mesas_con_info = []
+        for mesa in mesas:
+            inscripciones = mesa.inscripciones_mesa.select_related('alumno').all()
+
+            mesas_con_info.append({
+                'mesa': mesa,
+                'total_inscriptos': inscripciones.filter(estado_inscripcion='INSCRIPTO').count(),
+                'aprobados': inscripciones.filter(estado_inscripcion='APROBADO').count(),
+                'desaprobados': inscripciones.filter(estado_inscripcion='DESAPROBADO').count(),
+                'ausentes': inscripciones.filter(estado_inscripcion='AUSENTE').count(),
+            })
+
+        return render(request, 'academico/mesas_examen_docente.html', {
+            'mesas_con_info': mesas_con_info,
+            'docente': docente
+        })
+
+
+class DetalleInscriptosMesaView(DocenteRequiredMixin, View):
+    """Vista para ver el detalle de alumnos inscriptos a una mesa"""
+
+    def get(self, request, mesa_id):
+        mesa = get_object_or_404(MesaExamen, id=mesa_id)
+        docente = get_object_or_404(Empleado, usuario=request.user)
+
+        # Verificar que el docente sea parte del tribunal
+        if not mesa.tribunal.filter(id=docente.id).exists():
+            messages.error(request, 'No tiene permisos para ver esta mesa.')
+            return redirect('mesas_examen_docente')
+
+        # Obtener inscripciones ordenadas por apellido
+        inscripciones = InscripcionMesaExamen.objects.filter(
+            mesa_examen=mesa
+        ).select_related('alumno').order_by('alumno__apellido', 'alumno__nombre')
+
+        # Separar por condición
+        inscripciones_regulares = inscripciones.filter(condicion='REGULAR')
+        inscripciones_libres = inscripciones.filter(condicion='LIBRE')
+
+        return render(request, 'academico/detalle_inscriptos_mesa.html', {
+            'mesa': mesa,
+            'inscripciones_regulares': inscripciones_regulares,
+            'inscripciones_libres': inscripciones_libres,
+            'total_inscriptos': inscripciones.count(),
+            'puede_editar': mesa.estado != 'FINALIZADA'
+        })
+
+    @transaction.atomic
+    def post(self, request, mesa_id):
+        """Procesar carga de notas de examen"""
+        mesa = get_object_or_404(MesaExamen, id=mesa_id)
+        docente = get_object_or_404(Empleado, usuario=request.user)
+
+        # Verificar permisos
+        if not mesa.tribunal.filter(id=docente.id).exists():
+            messages.error(request, 'No tiene permisos para modificar esta mesa.')
+            return redirect('mesas_examen_docente')
+
+        if mesa.estado == 'FINALIZADA':
+            messages.error(request, 'Esta mesa ya está finalizada.')
+            return redirect('detalle_inscriptos_mesa', mesa_id=mesa_id)
+
+        try:
+            notas_cargadas = 0
+            errores = []
+
+            for key, value in request.POST.items():
+                if key.startswith('nota_'):
+                    inscripcion_id = int(key.replace('nota_', ''))
+
+                    try:
+                        inscripcion = InscripcionMesaExamen.objects.get(id=inscripcion_id)
+
+                        if value and value.strip():
+                            nota = float(value)
+
+                            if nota < 0 or nota > 10:
+                                errores.append(f'{inscripcion.alumno}: La nota debe estar entre 0 y 10')
+                                continue
+
+                            # Cargar nota usando el servicio
+                            success, mensaje = ServiciosAcademico.cargar_nota_examen_final(
+                                inscripcion, nota, request.user
+                            )
+
+                            if success:
+                                notas_cargadas += 1
+                            else:
+                                errores.append(f'{inscripcion.alumno}: {mensaje}')
+
+                    except InscripcionMesaExamen.DoesNotExist:
+                        errores.append(f'Inscripción {inscripcion_id} no encontrada')
+                    except ValueError:
+                        errores.append(f'{inscripcion.alumno}: Formato de nota inválido')
+
+            if notas_cargadas > 0:
+                messages.success(request, f'Se cargaron {notas_cargadas} notas correctamente.')
+
+            if errores:
+                for error in errores:
+                    messages.warning(request, error)
+
+            return redirect('detalle_inscriptos_mesa', mesa_id=mesa_id)
+
+        except Exception as e:
+            messages.error(request, f'Error al procesar notas: {str(e)}')
+            return redirect('detalle_inscriptos_mesa', mesa_id=mesa_id)
+
+
+class ActaExamenPDFView(DocenteRequiredMixin, View):
+    """Vista para generar el acta de examen en PDF"""
+
+    def get(self, request, mesa_id):
+        mesa = get_object_or_404(MesaExamen, id=mesa_id)
+        docente = get_object_or_404(Empleado, usuario=request.user)
+
+        # Verificar que el docente sea parte del tribunal
+        if not mesa.tribunal.filter(id=docente.id).exists():
+            messages.error(request, 'No tiene permisos para generar el acta de esta mesa.')
+            return redirect('mesas_examen_docente')
+
+        # Obtener inscripciones
+        inscripciones = InscripcionMesaExamen.objects.filter(
+            mesa_examen=mesa
+        ).select_related('alumno').order_by('alumno__apellido', 'alumno__nombre')
+
+        inscripciones_regulares = inscripciones.filter(condicion='REGULAR')
+        inscripciones_libres = inscripciones.filter(condicion='LIBRE')
+
+        # Calcular estadísticas
+        total_inscriptos = inscripciones.count()
+        total_regulares = inscripciones_regulares.count()
+        total_libres = inscripciones_libres.count()
+        total_aprobados = inscripciones.filter(estado_inscripcion='APROBADO').count()
+        total_desaprobados = inscripciones.filter(estado_inscripcion='DESAPROBADO').count()
+        total_ausentes = inscripciones.filter(estado_inscripcion='AUSENTE').count()
+
+        # Contexto para el template
+        context = {
+            'mesa': mesa,
+            'tribunal': mesa.tribunal.all(),
+            'inscripciones_regulares': inscripciones_regulares,
+            'inscripciones_libres': inscripciones_libres,
+            'total_inscriptos': total_inscriptos,
+            'total_regulares': total_regulares,
+            'total_libres': total_libres,
+            'total_aprobados': total_aprobados,
+            'total_desaprobados': total_desaprobados,
+            'total_ausentes': total_ausentes,
+            'fecha_generacion': timezone.now(),
+        }
+
+        # Renderizar HTML
+        html_string = render_to_string('academico/acta_examen_pdf.html', context)
+
+        # Generar PDF
+        html = HTML(string=html_string)
+        pdf = html.write_pdf()
+
+        # Crear respuesta HTTP
+        response = HttpResponse(pdf, content_type='application/pdf')
+        filename = f'acta_examen_{mesa.materia.codigo}_{mesa.fecha_examen.strftime("%Y%m%d")}.pdf'
+        response['Content-Disposition'] = f'inline; filename="{filename}"'
+
+        return response
+
+
+class HistoricoMesasAlumnoView(DocenteRequiredMixin, View):
+    """Vista para ver el histórico de mesas rendidas por un alumno"""
+
+    def get(self, request, alumno_id):
+        alumno = get_object_or_404(Alumno, id=alumno_id)
+
+        # Obtener todas las inscripciones a mesas del alumno
+        inscripciones = InscripcionMesaExamen.objects.filter(
+            alumno=alumno
+        ).select_related('mesa_examen__materia', 'mesa_examen__anio_academico').order_by('-mesa_examen__fecha_examen')
+
+        # Separar por estado
+        mesas_aprobadas = inscripciones.filter(estado_inscripcion='APROBADO')
+        mesas_desaprobadas = inscripciones.filter(estado_inscripcion='DESAPROBADO')
+        mesas_ausentes = inscripciones.filter(estado_inscripcion='AUSENTE')
+        mesas_inscriptas = inscripciones.filter(estado_inscripcion='INSCRIPTO')
+
+        # Calcular estadísticas
+        total_mesas = inscripciones.count()
+        total_aprobadas = mesas_aprobadas.count()
+        total_desaprobadas = mesas_desaprobadas.count()
+        total_ausentes = mesas_ausentes.count()
+
+        # Calcular promedio de notas en exámenes
+        notas = [i.nota_examen for i in inscripciones if i.nota_examen]
+        promedio_examenes = sum(notas) / len(notas) if notas else 0
+
+        return render(request, 'academico/historico_mesas_alumno.html', {
+            'alumno': alumno,
+            'inscripciones': inscripciones,
+            'mesas_aprobadas': mesas_aprobadas,
+            'mesas_desaprobadas': mesas_desaprobadas,
+            'mesas_ausentes': mesas_ausentes,
+            'mesas_inscriptas': mesas_inscriptas,
+            'total_mesas': total_mesas,
+            'total_aprobadas': total_aprobadas,
+            'total_desaprobadas': total_desaprobadas,
+            'total_ausentes': total_ausentes,
+            'promedio_examenes': round(promedio_examenes, 2)
+        })

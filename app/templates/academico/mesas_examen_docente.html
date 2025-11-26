@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Mis Mesas de Examen{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-clipboard-check"></i> Mis Mesas de Examen</h1>
+        <a href="{% url 'docentes' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver al Dashboard
+        </a>
+    </div>
+
+    <!-- Filtros de Estado -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="btn-group" role="group">
+                <input type="radio" class="btn-check" name="estado-filter" id="todas" autocomplete="off" checked>
+                <label class="btn btn-outline-primary" for="todas">Todas</label>
+
+                <input type="radio" class="btn-check" name="estado-filter" id="abiertas" autocomplete="off">
+                <label class="btn btn-outline-success" for="abiertas">Abiertas</label>
+
+                <input type="radio" class="btn-check" name="estado-filter" id="cerradas" autocomplete="off">
+                <label class="btn btn-outline-warning" for="cerradas">Cerradas</label>
+
+                <input type="radio" class="btn-check" name="estado-filter" id="finalizadas" autocomplete="off">
+                <label class="btn btn-outline-secondary" for="finalizadas">Finalizadas</label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Mesas -->
+    <div class="row">
+        {% for info in mesas_con_info %}
+        <div class="col-md-6 mb-4 mesa-item" data-estado="{{ info.mesa.estado }}">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ info.mesa.materia.nombre }}</h5>
+                    {% if info.mesa.estado == 'ABIERTA' %}
+                        <span class="badge bg-success">{{ info.mesa.get_estado_display }}</span>
+                    {% elif info.mesa.estado == 'CERRADA' %}
+                        <span class="badge bg-warning text-dark">{{ info.mesa.get_estado_display }}</span>
+                    {% else %}
+                        <span class="badge bg-secondary">{{ info.mesa.get_estado_display }}</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <!-- Información de la Mesa -->
+                    <div class="mb-3">
+                        <p class="mb-2">
+                            <i class="bi bi-calendar-event"></i>
+                            <strong>Fecha del Examen:</strong>
+                            {{ info.mesa.fecha_examen|date:"d/m/Y H:i" }}
+                        </p>
+                        <p class="mb-2">
+                            <i class="bi bi-calendar-x"></i>
+                            <strong>Cierre Inscripciones:</strong>
+                            {{ info.mesa.fecha_limite_inscripcion|date:"d/m/Y H:i" }}
+                        </p>
+                        <p class="mb-2">
+                            <i class="bi bi-door-open"></i>
+                            <strong>Aula:</strong>
+                            {{ info.mesa.aula|default:"No asignada" }}
+                        </p>
+                        <p class="mb-0">
+                            <i class="bi bi-people"></i>
+                            <strong>Tribunal:</strong>
+                            {% for docente in info.mesa.tribunal.all %}
+                                {{ docente.nombre }} {{ docente.apellido }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        </p>
+                    </div>
+
+                    <!-- Estadísticas de Inscriptos -->
+                    <div class="row text-center mb-3">
+                        <div class="col-3">
+                            <div class="p-2 bg-primary bg-opacity-10 rounded">
+                                <h4 class="mb-0 text-primary">{{ info.total_inscriptos }}</h4>
+                                <small class="text-muted">Inscriptos</small>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="p-2 bg-success bg-opacity-10 rounded">
+                                <h4 class="mb-0 text-success">{{ info.aprobados }}</h4>
+                                <small class="text-muted">Aprobados</small>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="p-2 bg-danger bg-opacity-10 rounded">
+                                <h4 class="mb-0 text-danger">{{ info.desaprobados }}</h4>
+                                <small class="text-muted">Desaprobados</small>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="p-2 bg-warning bg-opacity-10 rounded">
+                                <h4 class="mb-0 text-warning">{{ info.ausentes }}</h4>
+                                <small class="text-muted">Ausentes</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Barra de Progreso -->
+                    {% if info.total_inscriptos > 0 %}
+                    <div class="mb-3">
+                        <div class="progress" style="height: 20px;">
+                            {% widthratio info.aprobados info.total_inscriptos 100 as porcentaje_aprobados %}
+                            {% widthratio info.desaprobados info.total_inscriptos 100 as porcentaje_desaprobados %}
+                            {% widthratio info.ausentes info.total_inscriptos 100 as porcentaje_ausentes %}
+
+                            {% if porcentaje_aprobados > 0 %}
+                            <div class="progress-bar bg-success" role="progressbar"
+                                 style="width: {{ porcentaje_aprobados }}%">
+                                {{ porcentaje_aprobados }}%
+                            </div>
+                            {% endif %}
+                            {% if porcentaje_desaprobados > 0 %}
+                            <div class="progress-bar bg-danger" role="progressbar"
+                                 style="width: {{ porcentaje_desaprobados }}%">
+                                {{ porcentaje_desaprobados }}%
+                            </div>
+                            {% endif %}
+                            {% if porcentaje_ausentes > 0 %}
+                            <div class="progress-bar bg-warning" role="progressbar"
+                                 style="width: {{ porcentaje_ausentes }}%">
+                                {{ porcentaje_ausentes }}%
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Acciones -->
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'detalle_inscriptos_mesa' info.mesa.id %}"
+                           class="btn btn-primary">
+                            <i class="bi bi-list-ul"></i> Ver Inscriptos y Cargar Notas
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-clipboard-x display-1 text-muted"></i>
+                    <p class="mt-3 text-muted">No está asignado a ninguna mesa de examen.</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const filtros = document.querySelectorAll('input[name="estado-filter"]');
+    const mesas = document.querySelectorAll('.mesa-item');
+
+    filtros.forEach(filtro => {
+        filtro.addEventListener('change', function() {
+            const estadoSeleccionado = this.id;
+
+            mesas.forEach(mesa => {
+                const estadoMesa = mesa.getAttribute('data-estado');
+
+                if (estadoSeleccionado === 'todas') {
+                    mesa.style.display = 'block';
+                } else if (estadoSeleccionado === 'abiertas' && estadoMesa === 'ABIERTA') {
+                    mesa.style.display = 'block';
+                } else if (estadoSeleccionado === 'cerradas' && estadoMesa === 'CERRADA') {
+                    mesa.style.display = 'block';
+                } else if (estadoSeleccionado === 'finalizadas' && estadoMesa === 'FINALIZADA') {
+                    mesa.style.display = 'block';
+                } else {
+                    mesa.style.display = 'none';
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    border-bottom: 2px solid rgba(0, 0, 0, 0.125);
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,306 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Inscriptos - {{ mesa.materia.nombre }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1><i class="bi bi-people-fill"></i> Inscriptos a Mesa de Examen</h1>
+            <p class="text-muted mb-0">{{ mesa.materia.nombre }} - {{ mesa.fecha_examen|date:"d/m/Y H:i" }}</p>
+        </div>
+        <div>
+            <a href="{% url 'mesas_examen_docente' %}" class="btn btn-outline-secondary me-2">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+            <a href="{% url 'acta_examen_pdf' mesa.id %}" class="btn btn-danger" target="_blank">
+                <i class="bi bi-file-pdf"></i> Generar Acta PDF
+            </a>
+        </div>
+    </div>
+
+    <!-- Información de la Mesa -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <p class="mb-2">
+                        <i class="bi bi-calendar-event"></i>
+                        <strong>Fecha Examen:</strong><br>
+                        {{ mesa.fecha_examen|date:"d/m/Y H:i" }}
+                    </p>
+                </div>
+                <div class="col-md-3">
+                    <p class="mb-2">
+                        <i class="bi bi-door-open"></i>
+                        <strong>Aula:</strong><br>
+                        {{ mesa.aula|default:"No asignada" }}
+                    </p>
+                </div>
+                <div class="col-md-3">
+                    <p class="mb-2">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Estado:</strong><br>
+                        {% if mesa.estado == 'ABIERTA' %}
+                            <span class="badge bg-success">{{ mesa.get_estado_display }}</span>
+                        {% elif mesa.estado == 'CERRADA' %}
+                            <span class="badge bg-warning text-dark">{{ mesa.get_estado_display }}</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ mesa.get_estado_display }}</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="col-md-3">
+                    <p class="mb-2">
+                        <i class="bi bi-people"></i>
+                        <strong>Total Inscriptos:</strong><br>
+                        <span class="badge bg-primary fs-6">{{ total_inscriptos }}</span>
+                    </p>
+                </div>
+            </div>
+            <hr>
+            <p class="mb-0">
+                <i class="bi bi-person-badge"></i>
+                <strong>Tribunal:</strong>
+                {% for docente in mesa.tribunal.all %}
+                    {{ docente.nombre }} {{ docente.apellido }}{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            </p>
+        </div>
+    </div>
+
+    <!-- Formulario para Cargar Notas -->
+    <form method="post" id="form-notas">
+        {% csrf_token %}
+
+        <!-- Alumnos Regulares -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-mortarboard-fill"></i>
+                    Alumnos Regulares ({{ inscripciones_regulares.count }})
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                {% if inscripciones_regulares %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="50">#</th>
+                                <th>Legajo</th>
+                                <th>Apellido y Nombre</th>
+                                <th>DNI</th>
+                                <th width="150">Estado</th>
+                                <th width="150">Nota</th>
+                                <th width="100">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for inscripcion in inscripciones_regulares %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td><strong>{{ inscripcion.alumno.legajo }}</strong></td>
+                                <td>
+                                    {{ inscripcion.alumno.apellido }}, {{ inscripcion.alumno.nombre }}
+                                    <a href="{% url 'historico_mesas_alumno' inscripcion.alumno.id %}"
+                                       class="ms-2" title="Ver histórico de mesas">
+                                        <i class="bi bi-clock-history"></i>
+                                    </a>
+                                </td>
+                                <td>{{ inscripcion.alumno.dni }}</td>
+                                <td>
+                                    {% if inscripcion.estado_inscripcion == 'INSCRIPTO' %}
+                                        <span class="badge bg-primary">{{ inscripcion.get_estado_inscripcion_display }}</span>
+                                    {% elif inscripcion.estado_inscripcion == 'APROBADO' %}
+                                        <span class="badge bg-success">{{ inscripcion.get_estado_inscripcion_display }}</span>
+                                    {% elif inscripcion.estado_inscripcion == 'DESAPROBADO' %}
+                                        <span class="badge bg-danger">{{ inscripcion.get_estado_inscripcion_display }}</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">{{ inscripcion.get_estado_inscripcion_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if puede_editar and inscripcion.estado_inscripcion == 'INSCRIPTO' %}
+                                        <input type="number"
+                                               step="0.01"
+                                               min="0"
+                                               max="10"
+                                               class="form-control form-control-sm"
+                                               name="nota_{{ inscripcion.id }}"
+                                               placeholder="0-10"
+                                               value="{{ inscripcion.nota_examen|default:'' }}">
+                                    {% else %}
+                                        <strong>{{ inscripcion.nota_examen|default:"-" }}</strong>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if inscripcion.estado_inscripcion == 'APROBADO' %}
+                                        <i class="bi bi-check-circle-fill text-success fs-4"></i>
+                                    {% elif inscripcion.estado_inscripcion == 'DESAPROBADO' %}
+                                        <i class="bi bi-x-circle-fill text-danger fs-4"></i>
+                                    {% elif inscripcion.estado_inscripcion == 'AUSENTE' %}
+                                        <i class="bi bi-dash-circle-fill text-warning fs-4"></i>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-inbox"></i> No hay alumnos regulares inscriptos
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Alumnos Libres -->
+        <div class="card mb-4">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0">
+                    <i class="bi bi-mortarboard"></i>
+                    Alumnos Libres ({{ inscripciones_libres.count }})
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                {% if inscripciones_libres %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="50">#</th>
+                                <th>Legajo</th>
+                                <th>Apellido y Nombre</th>
+                                <th>DNI</th>
+                                <th width="150">Estado</th>
+                                <th width="150">Nota</th>
+                                <th width="100">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for inscripcion in inscripciones_libres %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td><strong>{{ inscripcion.alumno.legajo }}</strong></td>
+                                <td>
+                                    {{ inscripcion.alumno.apellido }}, {{ inscripcion.alumno.nombre }}
+                                    <a href="{% url 'historico_mesas_alumno' inscripcion.alumno.id %}"
+                                       class="ms-2" title="Ver histórico de mesas">
+                                        <i class="bi bi-clock-history"></i>
+                                    </a>
+                                </td>
+                                <td>{{ inscripcion.alumno.dni }}</td>
+                                <td>
+                                    {% if inscripcion.estado_inscripcion == 'INSCRIPTO' %}
+                                        <span class="badge bg-primary">{{ inscripcion.get_estado_inscripcion_display }}</span>
+                                    {% elif inscripcion.estado_inscripcion == 'APROBADO' %}
+                                        <span class="badge bg-success">{{ inscripcion.get_estado_inscripcion_display }}</span>
+                                    {% elif inscripcion.estado_inscripcion == 'DESAPROBADO' %}
+                                        <span class="badge bg-danger">{{ inscripcion.get_estado_inscripcion_display }}</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">{{ inscripcion.get_estado_inscripcion_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if puede_editar and inscripcion.estado_inscripcion == 'INSCRIPTO' %}
+                                        <input type="number"
+                                               step="0.01"
+                                               min="0"
+                                               max="10"
+                                               class="form-control form-control-sm"
+                                               name="nota_{{ inscripcion.id }}"
+                                               placeholder="0-10"
+                                               value="{{ inscripcion.nota_examen|default:'' }}">
+                                    {% else %}
+                                        <strong>{{ inscripcion.nota_examen|default:"-" }}</strong>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if inscripcion.estado_inscripcion == 'APROBADO' %}
+                                        <i class="bi bi-check-circle-fill text-success fs-4"></i>
+                                    {% elif inscripcion.estado_inscripcion == 'DESAPROBADO' %}
+                                        <i class="bi bi-x-circle-fill text-danger fs-4"></i>
+                                    {% elif inscripcion.estado_inscripcion == 'AUSENTE' %}
+                                        <i class="bi bi-dash-circle-fill text-warning fs-4"></i>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-inbox"></i> No hay alumnos libres inscriptos
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        {% if puede_editar and total_inscriptos > 0 %}
+        <div class="d-flex justify-content-end gap-2 mb-4">
+            <button type="submit" class="btn btn-success btn-lg">
+                <i class="bi bi-save"></i> Guardar Notas
+            </button>
+        </div>
+        {% endif %}
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.table th {
+    font-weight: 600;
+    background-color: #f8f9fa;
+}
+
+input[type="number"] {
+    text-align: center;
+    font-weight: bold;
+}
+
+.card-header {
+    border-bottom: 2px solid rgba(0, 0, 0, 0.125);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('form-notas');
+
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const inputs = form.querySelectorAll('input[type="number"]');
+            let hasValue = false;
+
+            inputs.forEach(input => {
+                if (input.value && input.value.trim() !== '') {
+                    hasValue = true;
+                }
+            });
+
+            if (!hasValue) {
+                e.preventDefault();
+                alert('Debe cargar al menos una nota antes de guardar.');
+                return false;
+            }
+
+            return confirm('¿Está seguro de guardar las notas? Esta acción no se puede deshacer.');
+        });
+    }
+});
+</script>
+{% endblock %}
