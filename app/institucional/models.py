@@ -73,6 +73,72 @@ class TipoAccion(models.TextChoices):
     LOGIN_FALLIDO = 'LOGIN_FALLIDO', 'Intento de Login Fallido'
 
 
+class TipoAccionDatos(models.TextChoices):
+    CREAR = 'CREAR', 'Creación'
+    MODIFICAR = 'MODIFICAR', 'Modificación'
+    ELIMINAR = 'ELIMINAR', 'Eliminación'
+
+
+class AuditoriaDatos(models.Model):
+    """
+    Modelo para auditar cambios en los datos del sistema.
+    Registra quién hizo qué cambio, cuándo y qué valores cambiaron.
+    """
+    usuario = models.ForeignKey(
+        'Usuario',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='cambios_realizados'
+    )
+    tipo_accion = models.CharField(max_length=20, choices=TipoAccionDatos.choices)
+    fecha_hora = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    # Información del modelo afectado
+    modelo = models.CharField(max_length=100, db_index=True)
+    objeto_id = models.CharField(max_length=100)
+    objeto_repr = models.CharField(max_length=255)
+
+    # Valores antes y después del cambio (JSON)
+    valores_anteriores = models.JSONField(null=True, blank=True)
+    valores_nuevos = models.JSONField(null=True, blank=True)
+
+    # Información adicional
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    detalles = models.TextField(blank=True, null=True)
+
+    class Meta:
+        db_table = 'institucional_auditoria_datos'
+        verbose_name = 'Auditoría de Datos'
+        verbose_name_plural = 'Auditoría de Datos'
+        ordering = ['-fecha_hora']
+        indexes = [
+            models.Index(fields=['-fecha_hora'], name='audit_datos_fecha_idx'),
+            models.Index(fields=['usuario', '-fecha_hora'], name='audit_datos_usuario_idx'),
+            models.Index(fields=['modelo', '-fecha_hora'], name='audit_datos_modelo_idx'),
+            models.Index(fields=['tipo_accion', '-fecha_hora'], name='audit_datos_tipo_idx'),
+        ]
+
+    def __str__(self):
+        return f"{self.modelo} - {self.get_tipo_accion_display()} - {self.fecha_hora.strftime('%d/%m/%Y %H:%M:%S')}"
+
+    @property
+    def cambios_resumidos(self):
+        """Retorna un resumen de los campos que cambiaron"""
+        if self.tipo_accion == TipoAccionDatos.CREAR:
+            return "Registro creado"
+        elif self.tipo_accion == TipoAccionDatos.ELIMINAR:
+            return "Registro eliminado"
+        elif self.valores_anteriores and self.valores_nuevos:
+            cambios = []
+            for key in self.valores_nuevos:
+                if key in self.valores_anteriores:
+                    if self.valores_anteriores[key] != self.valores_nuevos[key]:
+                        cambios.append(f"{key}: '{self.valores_anteriores[key]}' → '{self.valores_nuevos[key]}'")
+            return "; ".join(cambios) if cambios else "Sin cambios detectados"
+        return "Sin detalles"
+
+
 class AuditoriaAcceso(models.Model):
     usuario = models.ForeignKey('Usuario', on_delete=models.SET_NULL, null=True, blank=True)
     email = models.EmailField()

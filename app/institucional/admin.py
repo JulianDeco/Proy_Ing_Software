@@ -5,7 +5,8 @@ from django.utils.html import format_html
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from institucional.models import Institucion, Usuario, Persona, Empleado, AuditoriaAcceso
+from institucional.models import Institucion, Usuario, Persona, Empleado, AuditoriaAcceso, AuditoriaDatos
+from institucional.auditoria import AuditoriaMixin
 
 @admin.register(Institucion)
 class InstitucionAdmin(admin.ModelAdmin):
@@ -64,4 +65,52 @@ class AuditoriaAccesoAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         # No permitir modificar registros (solo lectura)
+        return False
+
+
+@admin.register(AuditoriaDatos)
+class AuditoriaDatosAdmin(admin.ModelAdmin):
+    list_display = ('fecha_hora', 'usuario_display', 'tipo_accion', 'modelo', 'objeto_repr', 'cambios_cortos')
+    list_filter = ('tipo_accion', 'modelo', 'fecha_hora')
+    search_fields = ('modelo', 'objeto_repr', 'detalles', 'usuario__email')
+    readonly_fields = (
+        'usuario', 'tipo_accion', 'fecha_hora', 'modelo', 'objeto_id',
+        'objeto_repr', 'valores_anteriores', 'valores_nuevos', 'ip_address', 'detalles'
+    )
+    date_hierarchy = 'fecha_hora'
+    ordering = ('-fecha_hora',)
+
+    fieldsets = (
+        ('Información General', {
+            'fields': ('fecha_hora', 'usuario', 'tipo_accion', 'ip_address')
+        }),
+        ('Objeto Afectado', {
+            'fields': ('modelo', 'objeto_id', 'objeto_repr')
+        }),
+        ('Cambios Realizados', {
+            'fields': ('valores_anteriores', 'valores_nuevos', 'detalles'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def usuario_display(self, obj):
+        if obj.usuario:
+            return obj.usuario.email
+        return '(Sistema/Anónimo)'
+    usuario_display.short_description = 'Usuario'
+
+    def cambios_cortos(self, obj):
+        resumen = obj.cambios_resumidos
+        if len(resumen) > 80:
+            return resumen[:80] + '...'
+        return resumen
+    cambios_cortos.short_description = 'Cambios'
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+    def has_change_permission(self, request, obj=None):
         return False
