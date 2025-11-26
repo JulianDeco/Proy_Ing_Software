@@ -264,6 +264,191 @@ class Asistencia(models.Model):
             return f"{self.alumno_comision.alumno} - Ausente - {self.fecha_asistencia}"
 
 
+class EstadoMesaExamen(models.TextChoices):
+    ABIERTA = 'ABIERTA', 'Abierta para inscripciones'
+    CERRADA = 'CERRADA', 'Cerrada (no acepta más inscripciones)'
+    FINALIZADA = 'FINALIZADA', 'Finalizada (examen tomado)'
+
+
+class MesaExamen(models.Model):
+    """
+    Representa una mesa de examen para una materia específica.
+    Los administrativos crean las mesas y los alumnos se inscriben según su condición.
+    """
+    materia = models.ForeignKey(Materia, on_delete=models.CASCADE, related_name='mesas_examen')
+    anio_academico = models.ForeignKey(AnioAcademico, on_delete=models.CASCADE)
+    fecha_examen = models.DateTimeField(
+        help_text='Fecha y hora del examen'
+    )
+    fecha_limite_inscripcion = models.DateTimeField(
+        help_text='Fecha límite para inscribirse a la mesa'
+    )
+    tribunal = models.ManyToManyField(
+        'institucional.Persona',
+        related_name='tribunales_examen',
+        help_text='Docentes que conforman el tribunal'
+    )
+    aula = models.CharField(max_length=50, blank=True, null=True)
+    estado = models.CharField(
+        max_length=20,
+        choices=EstadoMesaExamen.choices,
+        default=EstadoMesaExamen.ABIERTA
+    )
+    cupo_maximo = models.PositiveIntegerField(
+        default=50,
+        help_text='Cantidad máxima de alumnos que pueden rendir'
+    )
+    creado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='mesas_creadas'
+    )
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'academico_mesas_examen'
+        verbose_name = 'Mesa de Examen'
+        verbose_name_plural = 'Mesas de Examen'
+        ordering = ['-fecha_examen']
+        indexes = [
+            models.Index(fields=['materia', 'fecha_examen'], name='mesa_materia_fecha_idx'),
+            models.Index(fields=['estado', 'fecha_examen'], name='mesa_estado_fecha_idx'),
+        ]
+
+    def __str__(self):
+        return f"{self.materia.nombre} - {self.fecha_examen.strftime('%d/%m/%Y %H:%M')}"
+
+    def clean(self):
+        """Validaciones de negocio"""
+        from django.utils import timezone
+
+        if self.fecha_limite_inscripcion >= self.fecha_examen:
+            raise ValidationError(
+                'La fecha límite de inscripción debe ser anterior a la fecha del examen.'
+            )
+
+        if self.fecha_examen < timezone.now():
+            raise ValidationError(
+                'No se puede crear una mesa de examen con fecha pasada.'
+            )
+
+    @property
+    def inscripciones_count(self):
+        """Cantidad de alumnos inscriptos"""
+        return self.inscripciones_mesa.filter(estado_inscripcion='INSCRIPTO').count()
+
+    @property
+    def cupos_disponibles(self):
+        """Cupos disponibles"""
+        return self.cupo_maximo - self.inscripciones_count
+
+    @property
+    def puede_inscribirse(self):
+        """Verifica si la mesa acepta inscripciones"""
+        from django.utils import timezone
+        return (
+            self.estado == EstadoMesaExamen.ABIERTA and
+            timezone.now() < self.fecha_limite_inscripcion and
+            self.cupos_disponibles > 0
+        )
+
+
+class CondicionAlumnoMesa(models.TextChoices):
+    """
+    Condición con la que el alumno se presenta al examen
+    """
+    REGULAR = 'REGULAR', 'Regular (aprobó cursada)'
+    LIBRE = 'LIBRE', 'Libre (no aprobó cursada o perdió regularidad)'
+
+
+class EstadoInscripcionMesa(models.TextChoices):
+    INSCRIPTO = 'INSCRIPTO', 'Inscripto'
+    AUSENTE = 'AUSENTE', 'Ausente'
+    APROBADO = 'APROBADO', 'Aprobado'
+    DESAPROBADO = 'DESAPROBADO', 'Desaprobado'
+
+
+class InscripcionMesaExamen(models.Model):
+    """
+    Inscripción de un alumno a una mesa de examen.
+    """
+    mesa_examen = models.ForeignKey(
+        MesaExamen,
+        on_delete=models.CASCADE,
+        related_name='inscripciones_mesa'
+    )
+    alumno = models.ForeignKey(Alumno, on_delete=models.CASCADE)
+    condicion = models.CharField(
+        max_length=20,
+        choices=CondicionAlumnoMesa.choices,
+        help_text='Condición con la que rinde (Regular o Libre)'
+    )
+    estado_inscripcion = models.CharField(
+        max_length=20,
+        choices=EstadoInscripcionMesa.choices,
+        default=EstadoInscripcionMesa.INSCRIPTO
+    )
+    nota_examen = models.DecimalField(
+        max_digits=4,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text='Nota del examen final'
+    )
+    fecha_inscripcion = models.DateTimeField(auto_now_add=True)
+    observaciones = models.TextField(blank=True, null=True)
+
+    class Meta:
+        db_table = 'academico_inscripciones_mesa_examen'
+        verbose_name = 'Inscripción a Mesa de Examen'
+        verbose_name_plural = 'Inscripciones a Mesas de Examen'
+        unique_together = ('mesa_examen', 'alumno')
+        ordering = ['-fecha_inscripcion']
+        indexes = [
+            models.Index(fields=['mesa_examen', 'alumno'], name='insc_mesa_alumno_idx'),
+            models.Index(fields=['estado_inscripcion'], name='insc_mesa_estado_idx'),
+        ]
+
+    def __str__(self):
+        return f"{self.alumno} - {self.mesa_examen.materia.nombre} ({self.condicion})"
+
+    def clean(self):
+        """Validaciones de inscripción"""
+        from django.utils import timezone
+
+        # Validar que la mesa esté abierta
+        if not self.mesa_examen.puede_inscribirse:
+            raise ValidationError('Esta mesa no acepta inscripciones.')
+
+        # Validar cupo
+        if self.mesa_examen.cupos_disponibles <= 0:
+            raise ValidationError('No hay cupos disponibles en esta mesa.')
+
+        # Validar que el alumno tenga cursada para esta materia
+        cursada = InscripcionAlumnoComision.objects.filter(
+            alumno=self.alumno,
+            comision__materia=self.mesa_examen.materia
+        ).first()
+
+        if not cursada:
+            raise ValidationError(
+                f'El alumno no tiene cursada registrada para {self.mesa_examen.materia.nombre}.'
+            )
+
+        # Determinar automáticamente la condición según el estado de la cursada
+        if cursada.estado_inscripcion == EstadoMateria.APROBADA:
+            raise ValidationError(
+                'El alumno ya aprobó esta materia y no puede inscribirse al examen.'
+            )
+        elif cursada.estado_inscripcion == EstadoMateria.REGULAR:
+            # Regular: tiene la materia en condición regular
+            self.condicion = CondicionAlumnoMesa.REGULAR
+        else:
+            # Libre: desaprobó o perdió la regularidad
+            self.condicion = CondicionAlumnoMesa.LIBRE
+
+
 
 class CalendarioAcademico(models.Model):
     anio_academico = models.ForeignKey(AnioAcademico, on_delete=models.CASCADE)

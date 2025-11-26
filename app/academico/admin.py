@@ -3,7 +3,10 @@ from django.http import HttpResponse
 from django.contrib import messages
 from django.utils.html import format_html
 
-from academico.models import Alumno, AnioAcademico, Asistencia, CalendarioAcademico, Calificacion, Comision, EstadosAlumno, Materia, InscripcionAlumnoComision
+from academico.models import (
+    Alumno, AnioAcademico, Asistencia, CalendarioAcademico, Calificacion, Comision,
+    EstadosAlumno, Materia, InscripcionAlumnoComision, MesaExamen, InscripcionMesaExamen
+)
 from academico.forms import MateriaAdminForm
 from administracion.models import Certificado, TipoCertificado
 from institucional.models import Institucion
@@ -165,3 +168,101 @@ class AlumnoAdmin(admin.ModelAdmin):
                 f"Error al generar certificados: {str(e)}",
                 messages.ERROR
             )
+
+
+@admin.register(MesaExamen)
+class MesaExamenAdmin(admin.ModelAdmin):
+    list_display = ('materia', 'fecha_examen', 'fecha_limite_inscripcion', 'estado', 'inscripciones_count', 'cupos_disponibles')
+    list_filter = ('estado', 'anio_academico', 'materia')
+    search_fields = ('materia__nombre', 'materia__codigo')
+    filter_horizontal = ('tribunal',)
+    readonly_fields = ('inscripciones_count', 'cupos_disponibles', 'creado_por', 'fecha_creacion')
+    actions = ['cerrar_inscripciones', 'finalizar_mesa']
+
+    fieldsets = (
+        ('Información Básica', {
+            'fields': ('materia', 'anio_academico', 'aula')
+        }),
+        ('Fechas', {
+            'fields': ('fecha_examen', 'fecha_limite_inscripcion')
+        }),
+        ('Tribunal y Configuración', {
+            'fields': ('tribunal', 'cupo_maximo', 'estado')
+        }),
+        ('Información de Inscripciones', {
+            'fields': ('inscripciones_count', 'cupos_disponibles')
+        }),
+        ('Auditoría', {
+            'fields': ('creado_por', 'fecha_creacion'),
+            'classes': ('collapse',)
+        }),
+    )
+
+    def save_model(self, request, obj, form, change):
+        if not change:  # Solo al crear
+            obj.creado_por = request.user
+        super().save_model(request, obj, form, change)
+
+    def cerrar_inscripciones(self, request, queryset):
+        """Cierra las inscripciones de las mesas seleccionadas"""
+        contador = 0
+        for mesa in queryset:
+            if mesa.estado == 'ABIERTA':
+                mesa.estado = 'CERRADA'
+                mesa.save()
+                contador += 1
+
+        self.message_user(
+            request,
+            f'Se cerraron las inscripciones de {contador} mesa(s).',
+            messages.SUCCESS
+        )
+
+    cerrar_inscripciones.short_description = "Cerrar inscripciones"
+
+    def finalizar_mesa(self, request, queryset):
+        """Finaliza las mesas de examen seleccionadas"""
+        from academico.services import ServiciosAcademico
+
+        if queryset.count() > 1:
+            self.message_user(request, 'Solo puede finalizar una mesa a la vez.', messages.WARNING)
+            return
+
+        mesa = queryset.first()
+
+        resultado = ServiciosAcademico.finalizar_mesa_examen(mesa, request.user)
+
+        mensaje = (
+            f"Mesa finalizada. "
+            f"Inscriptos: {resultado['total_inscriptos']} | "
+            f"Aprobados: {resultado['aprobados']} | "
+            f"Desaprobados: {resultado['desaprobados']} | "
+            f"Ausentes: {resultado['ausentes']}"
+        )
+
+        self.message_user(request, mensaje, messages.SUCCESS)
+
+    finalizar_mesa.short_description = "Finalizar mesa de examen"
+
+
+@admin.register(InscripcionMesaExamen)
+class InscripcionMesaExamenAdmin(admin.ModelAdmin):
+    list_display = ('alumno', 'mesa_examen', 'condicion', 'estado_inscripcion', 'nota_examen', 'fecha_inscripcion')
+    list_filter = ('condicion', 'estado_inscripcion', 'mesa_examen__materia')
+    search_fields = ('alumno__nombre', 'alumno__apellido', 'alumno__dni', 'mesa_examen__materia__nombre')
+    readonly_fields = ('condicion', 'fecha_inscripcion')
+
+    fieldsets = (
+        ('Información de Inscripción', {
+            'fields': ('mesa_examen', 'alumno', 'condicion', 'fecha_inscripcion')
+        }),
+        ('Resultado del Examen', {
+            'fields': ('estado_inscripcion', 'nota_examen', 'observaciones')
+        }),
+    )
+
+    def get_readonly_fields(self, request, obj=None):
+        """Si ya está inscripto, no permitir cambiar mesa ni alumno"""
+        if obj:  # Editando
+            return self.readonly_fields + ('mesa_examen', 'alumno')
+        return self.readonly_fields

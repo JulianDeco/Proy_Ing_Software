@@ -308,3 +308,102 @@ class ServiciosAcademico:
             'desaprobadas': desaprobadas,
             'sin_calificaciones': sin_calificaciones
         }
+
+    @staticmethod
+    def cargar_nota_examen_final(inscripcion_mesa, nota, usuario):
+        """
+        Carga la nota de un examen final y actualiza el estado del alumno.
+
+        Args:
+            inscripcion_mesa: InscripcionMesaExamen
+            nota: Decimal (nota del examen)
+            usuario: User que carga la nota
+
+        Returns:
+            tuple: (success: bool, mensaje: str)
+        """
+        from academico.models import InscripcionAlumnoComision, EstadoMateria
+        from django.utils import timezone
+
+        if nota < 0 or nota > 10:
+            return False, "La nota debe estar entre 0 y 10."
+
+        # Actualizar nota en la inscripción a la mesa
+        inscripcion_mesa.nota_examen = nota
+
+        # Determinar estado según nota
+        if nota >= 6:
+            inscripcion_mesa.estado_inscripcion = 'APROBADO'
+            nuevo_estado_materia = EstadoMateria.APROBADA
+        else:
+            inscripcion_mesa.estado_inscripcion = 'DESAPROBADO'
+            nuevo_estado_materia = EstadoMateria.DESAPROBADA
+
+        inscripcion_mesa.save()
+
+        # Actualizar el estado de la cursada del alumno
+        cursada = InscripcionAlumnoComision.objects.filter(
+            alumno=inscripcion_mesa.alumno,
+            comision__materia=inscripcion_mesa.mesa_examen.materia
+        ).first()
+
+        if cursada:
+            cursada.nota_final = nota
+            cursada.estado_inscripcion = nuevo_estado_materia
+            cursada.fecha_cierre = timezone.now()
+            cursada.cerrada_por = usuario
+            cursada.save()
+
+        mensaje = (
+            f"Nota cargada: {nota}. "
+            f"Estado: {'APROBADO' if nota >= 6 else 'DESAPROBADO'}"
+        )
+
+        return True, mensaje
+
+    @staticmethod
+    def finalizar_mesa_examen(mesa, usuario):
+        """
+        Finaliza una mesa de examen y marca como ausentes a quienes no rindieron.
+
+        Args:
+            mesa: MesaExamen
+            usuario: User que finaliza
+
+        Returns:
+            dict con estadísticas
+        """
+        from academico.models import InscripcionMesaExamen, EstadoMesaExamen
+
+        inscripciones = InscripcionMesaExamen.objects.filter(
+            mesa_examen=mesa,
+            estado_inscripcion='INSCRIPTO'  # Solo los que no tienen nota
+        )
+
+        ausentes = 0
+        for inscripcion in inscripciones:
+            inscripcion.estado_inscripcion = 'AUSENTE'
+            inscripcion.save()
+            ausentes += 1
+
+        # Cambiar estado de la mesa
+        mesa.estado = EstadoMesaExamen.FINALIZADA
+        mesa.save()
+
+        total_inscriptos = InscripcionMesaExamen.objects.filter(mesa_examen=mesa).count()
+        aprobados = InscripcionMesaExamen.objects.filter(
+            mesa_examen=mesa,
+            estado_inscripcion='APROBADO'
+        ).count()
+        desaprobados = InscripcionMesaExamen.objects.filter(
+            mesa_examen=mesa,
+            estado_inscripcion='DESAPROBADO'
+        ).count()
+
+        return {
+            'success': True,
+            'total_inscriptos': total_inscriptos,
+            'aprobados': aprobados,
+            'desaprobados': desaprobados,
+            'ausentes': ausentes
+        }
