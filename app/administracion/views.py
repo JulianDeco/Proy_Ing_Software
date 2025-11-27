@@ -13,7 +13,7 @@ from .reportes_utils import (
     generar_excel_reporte_academico
 )
 from main.utils import generar_certificado_pdf
-from academico.models import Comision, Materia, AnioAcademico
+from academico.models import Comision, AnioAcademico
 
 @login_required
 @group_required('Administrativo')
@@ -27,18 +27,23 @@ def reporte_academico(request):
     """
     Vista principal del reporte académico con múltiples entidades y gráficos
     Muestra HTML interactivo con Chart.js
+
+    Filtros:
+    - Año Académico: obligatorio para filtrar el período
+    - Comisión: opcional, para ver detalle de una comisión específica
     """
     # Obtener filtros desde request
     filtros = {}
 
     comision_id = request.GET.get('comision')
-    materia_id = request.GET.get('materia')
     anio_academico = request.GET.get('anio')
+
+    # Convertir a int para comparaciones en template
+    comision_seleccionada = int(comision_id) if comision_id else None
+    anio_seleccionado = int(anio_academico) if anio_academico else None
 
     if comision_id:
         filtros['comision_id'] = int(comision_id)
-    if materia_id:
-        filtros['materia_id'] = int(materia_id)
     if anio_academico:
         filtros['anio_academico'] = int(anio_academico)
 
@@ -70,18 +75,24 @@ def reporte_academico(request):
             metrica='promedio'
         )
 
-    # Datos para filtros
-    comisiones = Comision.objects.all().select_related('materia', 'anio_academico')
-    materias = Materia.objects.all()
+    # Datos para filtros - filtrar comisiones por año si se seleccionó
+    comisiones = Comision.objects.select_related('materia', 'anio_academico')
+    if anio_seleccionado:
+        comisiones = comisiones.filter(anio_academico_id=anio_seleccionado)
+
+    comisiones = comisiones.order_by('materia__nombre', 'codigo')
+
     anios = AnioAcademico.objects.all().order_by('-fecha_inicio')
 
     contexto = {
         'datos': datos_reporte,
         'graficos': graficos,
         'comisiones': comisiones,
-        'materias': materias,
         'anios': anios,
         'filtros_aplicados': filtros,
+        # Variables para mantener selección en template
+        'anio_seleccionado': anio_seleccionado,
+        'comision_seleccionada': comision_seleccionada,
     }
 
     return render(request, 'administracion/reporte_academico.html', contexto)
@@ -97,8 +108,6 @@ def exportar_reporte_pdf(request):
     filtros = {}
     if request.GET.get('comision'):
         filtros['comision_id'] = int(request.GET.get('comision'))
-    if request.GET.get('materia'):
-        filtros['materia_id'] = int(request.GET.get('materia'))
     if request.GET.get('anio'):
         filtros['anio_academico'] = int(request.GET.get('anio'))
 
@@ -161,8 +170,6 @@ def exportar_reporte_excel(request):
     filtros = {}
     if request.GET.get('comision'):
         filtros['comision_id'] = int(request.GET.get('comision'))
-    if request.GET.get('materia'):
-        filtros['materia_id'] = int(request.GET.get('materia'))
     if request.GET.get('anio'):
         filtros['anio_academico'] = int(request.GET.get('anio'))
 

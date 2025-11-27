@@ -233,41 +233,29 @@
         <div class="filters">
             <h3>Filtrar Reporte</h3>
             <div class="alert alert-info">
-                <strong>Nota:</strong> Los gráficos muestran un máximo de 15 materias y 10 alumnos para mejor visualización.
-                Use los filtros para enfocarse en datos específicos.
+                <strong>Tip:</strong> Seleccione solo el Año para ver el rendimiento general de la institución,
+                o seleccione también una Comisión para ver el detalle de esa comisión específica.
             </div>
             <form method="get">
                 <div class="filter-group">
-                    <label>Comisión</label>
-                    <select name="comision">
-                        <option value="">Todas las comisiones</option>
-                        {% for comision in comisiones %}
-                        <option value="{{ comision.id }}" {% if filtros_aplicados.comision_id == comision.id %}selected{% endif %}>
-                            {{ comision.materia.nombre }} - {{ comision.codigo }} ({{ comision.anio_academico.nombre }})
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div class="filter-group">
-                    <label>Materia</label>
-                    <select name="materia">
-                        <option value="">Todas las materias</option>
-                        {% for materia in materias %}
-                        <option value="{{ materia.id }}" {% if filtros_aplicados.materia_id == materia.id %}selected{% endif %}>
-                            {{ materia.nombre }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div class="filter-group">
                     <label>Año Académico</label>
-                    <select name="anio">
-                        <option value="">Todos los años</option>
+                    <select name="anio" id="filtro-anio" onchange="this.form.submit()">
+                        <option value="">-- Seleccione un año --</option>
                         {% for anio in anios %}
-                        <option value="{{ anio.id }}" {% if filtros_aplicados.anio_academico == anio.id %}selected{% endif %}>
+                        <option value="{{ anio.id }}" {% if anio_seleccionado == anio.id %}selected{% endif %}>
                             {{ anio.nombre }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <label>Comisión (opcional)</label>
+                    <select name="comision" id="filtro-comision">
+                        <option value="">Todas las comisiones (vista general)</option>
+                        {% for comision in comisiones %}
+                        <option value="{{ comision.id }}" {% if comision_seleccionada == comision.id %}selected{% endif %}>
+                            {{ comision.codigo }} - {{ comision.materia.nombre }} ({{ comision.turno }})
                         </option>
                         {% endfor %}
                     </select>
