@@ -42,36 +42,49 @@ def logout_view(request):
 
 @staff_member_required
 def download_backup(request):
-    """Vista para descargar backup completo del sistema"""
+    """Vista para descargar backup completo del sistema (opcionalmente encriptado)"""
     try:
-        zip_buffer, filename = crear_backup_completo()
+        # Obtener contraseña del formulario (si se proporcionó)
+        password = request.GET.get('password', '') or request.POST.get('password', '')
 
-        response = HttpResponse(zip_buffer.getvalue(), content_type='application/zip')
+        zip_buffer, filename = crear_backup_completo(password if password else None)
+
+        # Determinar el content type según si está encriptado
+        if filename.endswith('.enc'):
+            content_type = 'application/octet-stream'
+            messages.success(request, 'Backup encriptado generado exitosamente. Guarde la contraseña en un lugar seguro.')
+        else:
+            content_type = 'application/zip'
+            messages.success(request, 'Backup generado exitosamente.')
+
+        response = HttpResponse(zip_buffer.getvalue(), content_type=content_type)
         response['Content-Disposition'] = f'attachment; filename="{filename}"'
 
-        messages.success(request, 'Backup generado exitosamente.')
         return response
 
     except Exception as e:
         messages.error(request, f'Error al generar el backup: {str(e)}')
         return redirect('/admin/')
 
+
 @staff_member_required
 def upload_restore_backup(request):
-    """Vista para subir y restaurar un backup del sistema"""
+    """Vista para subir y restaurar un backup del sistema (puede estar encriptado)"""
     if request.method == 'POST':
         if 'backup_file' not in request.FILES:
             messages.error(request, 'No se ha seleccionado ningún archivo.')
             return redirect('/admin/')
 
         archivo_backup = request.FILES['backup_file']
+        password = request.POST.get('restore_password', '')
 
-        if not archivo_backup.name.endswith('.zip'):
-            messages.error(request, 'El archivo debe ser un ZIP.')
+        # Validar extensión
+        if not (archivo_backup.name.endswith('.zip') or archivo_backup.name.endswith('.enc')):
+            messages.error(request, 'El archivo debe ser un ZIP o un archivo encriptado (.enc).')
             return redirect('/admin/')
 
         try:
-            success, mensaje = restaurar_backup(archivo_backup)
+            success, mensaje = restaurar_backup(archivo_backup, password if password else None)
 
             if success:
                 messages.success(request, mensaje)

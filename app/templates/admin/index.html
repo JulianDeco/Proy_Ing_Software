@@ -38,14 +38,27 @@
         <tbody>
             <tr>
                 <td style="padding: 15px;">
-                    <a href="{% url 'admin_backup' %}" class="button" style="background-color: #417690; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block; margin-right: 10px;">
-                        <strong>📦 Descargar Backup Completo del Sistema</strong>
-                    </a>
-                    <p style="margin-top: 10px; color: #666; font-size: 13px;">
-                        Descarga un archivo ZIP con toda la información del sistema: base de datos, configuración y archivos media.
-                        <br>
-                        <em>Nota: Solo usuarios administradores pueden realizar esta acción.</em>
-                    </p>
+                    <form method="get" action="{% url 'admin_backup' %}" style="display: inline-block;">
+                        <div style="margin-bottom: 10px;">
+                            <label style="font-weight: bold; display: block; margin-bottom: 5px;">
+                                📦 Descargar Backup del Sistema
+                            </label>
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <input type="password" name="password" placeholder="Contraseña (opcional)"
+                                       style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 200px;">
+                                <button type="submit" class="button" style="background-color: #417690; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">
+                                    <strong>Descargar Backup</strong>
+                                </button>
+                            </div>
+                        </div>
+                        <p style="margin-top: 10px; color: #666; font-size: 13px;">
+                            Descarga un archivo con toda la información del sistema: base de datos, configuración y archivos media.
+                            <br>
+                            <em>Si proporciona una contraseña, el backup será <strong>encriptado</strong> para mayor seguridad.</em>
+                            <br>
+                            <em>Sin contraseña: archivo ZIP normal. Con contraseña: archivo .enc encriptado.</em>
+                        </p>
+                    </form>
                 </td>
             </tr>
             <tr>
@@ -56,7 +69,11 @@
                             <label for="backup_file" style="font-weight: bold; display: block; margin-bottom: 5px;">
                                 🔄 Restaurar Backup del Sistema
                             </label>
-                            <input type="file" name="backup_file" id="backup_file" accept=".zip" required style="margin-bottom: 10px;">
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px;">
+                                <input type="file" name="backup_file" id="backup_file" accept=".zip,.enc" required>
+                                <input type="password" name="restore_password" placeholder="Contraseña (si está encriptado)"
+                                       style="padding: 8px; border: 1px solid #ccc; border-radius: 4px; width: 220px;">
+                            </div>
                         </div>
                         <button type="submit" class="button" style="background-color: #ba2121; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">
                             <strong>Restaurar Backup</strong>
@@ -66,7 +83,7 @@
                             <br>
                             Asegúrese de tener un backup reciente antes de proceder.
                             <br>
-                            <em>Solo archivos .zip generados por este sistema son válidos.</em>
+                            <em>Acepta archivos .zip (sin encriptar) o .enc (encriptados). Si el archivo está encriptado, ingrese la contraseña.</em>
                         </p>
                     </form>
                 </td>
