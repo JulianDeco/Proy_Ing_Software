@@ -1,5 +1,4 @@
 from django.db import models
-from django.db import models
 from django.conf import settings
 
 class PlanEstudio(models.Model):
@@ -59,12 +58,3 @@ class Certificado(models.Model):
         super().save(*args, **kwargs)
 
 
-class BackupManager(models.Model):
-    """
-    Modelo proxy para gestionar backups en el admin.
-    No representa una tabla real en la base de datos.
-    """
-    class Meta:
-        managed = False
-        verbose_name = 'Gestión de Backup'
-        verbose_name_plural = 'Gestión de Backups'

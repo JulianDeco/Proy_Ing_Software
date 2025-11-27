@@ -359,13 +359,16 @@
         <!-- TABLA DE PROMEDIOS POR MATERIA -->
         {% if datos.promedios_materias %}
         <div class="chart-container">
-            <h3>Detalle de Promedios por Materia</h3>
+            <h3>Promedio de Calificaciones por Materia</h3>
+            <p style="text-align: center; color: #666; font-size: 13px; margin-bottom: 15px;">
+                Promedio general de todas las calificaciones registradas en cada materia
+            </p>
             <table>
                 <thead>
                     <tr>
                         <th>Materia</th>
-                        <th>Promedio</th>
-                        <th>Estado</th>
+                        <th>Promedio General</th>
+                        <th>Rendimiento</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -375,9 +378,9 @@
                         <td>{{ promedio|floatformat:2 }}</td>
                         <td>
                             {% if promedio >= 6 %}
-                            <span style="color: #28a745; font-weight: bold;">✓ Aprobado</span>
+                            <span style="color: #28a745; font-weight: bold;">✓ Satisfactorio</span>
                             {% else %}
-                            <span style="color: #dc3545; font-weight: bold;">✗ Desaprobado</span>
+                            <span style="color: #dc3545; font-weight: bold;">✗ Bajo</span>
                             {% endif %}
                         </td>
                     </tr>

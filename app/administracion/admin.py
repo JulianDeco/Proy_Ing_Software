@@ -5,7 +5,7 @@ from django.utils.html import format_html
 from django.contrib import messages
 from django.urls import path
 
-from administracion.models import Certificado, PlanEstudio, Reporte, TipoCertificado, BackupManager
+from administracion.models import Certificado, PlanEstudio, Reporte, TipoCertificado
 from main.utils import crear_contexto_certificado, generar_certificado_pdf
 
 @admin.register(PlanEstudio)
@@ -69,24 +69,3 @@ class CertificadoAdmin(admin.ModelAdmin):
             return HttpResponse(f'Error: {str(e)}', status=500)
 
 
-@admin.register(BackupManager)
-class BackupManagerAdmin(admin.ModelAdmin):
-    """
-    Administrador personalizado para gestionar backups del sistema
-    """
-
-    def has_add_permission(self, request):
-        return False
-
-    def has_delete_permission(self, request, obj=None):
-        return False
-
-    def has_change_permission(self, request, obj=None):
-        return False
-
-    def changelist_view(self, request, extra_context=None):
-        extra_context = extra_context or {}
-        extra_context['title'] = 'Gestión de Backups del Sistema'
-        extra_context['has_add_permission'] = False
-
-        return render(request, 'admin/backup_manager.html', extra_context)

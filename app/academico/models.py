@@ -111,6 +111,37 @@ class Alumno(Persona):
     def __str__(self):
         return f"{self.dni} - {self.nombre} {self.apellido}"
 
+    def save(self, *args, **kwargs):
+        # Generar legajo automáticamente si no tiene
+        if not self.legajo:
+            self.legajo = self._generar_legajo()
+        super().save(*args, **kwargs)
+
+    def _generar_legajo(self):
+        """
+        Genera un legajo único con formato: AÑO + NÚMERO SECUENCIAL
+        Ejemplo: 2025-00001, 2025-00002, etc.
+        """
+        anio_actual = datetime.datetime.now().year
+        prefijo = str(anio_actual)
+
+        # Buscar el último legajo del año actual
+        ultimo_alumno = Alumno.objects.filter(
+            legajo__startswith=prefijo
+        ).order_by('-legajo').first()
+
+        if ultimo_alumno and ultimo_alumno.legajo:
+            try:
+                # Extraer el número secuencial del último legajo
+                ultimo_numero = int(ultimo_alumno.legajo.split('-')[1])
+                nuevo_numero = ultimo_numero + 1
+            except (ValueError, IndexError):
+                nuevo_numero = 1
+        else:
+            nuevo_numero = 1
+
+        return f"{prefijo}-{nuevo_numero:05d}"
+
 class EstadoMateria(models.TextChoices):
     REGULAR = 'REGULAR', 'Regular'
     LIBRE = 'LIBRE', 'Libre'
