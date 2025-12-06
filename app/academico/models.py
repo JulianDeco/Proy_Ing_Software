@@ -497,6 +497,7 @@ class InscripcionMesaExamen(models.Model):
     def clean(self):
         """Validaciones de inscripción"""
         from django.utils import timezone
+        from academico.models import CondicionInscripcion # Importar la nueva CondicionInscripcion
 
         # Validar nota de examen si se proporciona
         if self.nota_examen is not None:
@@ -527,15 +528,13 @@ class InscripcionMesaExamen(models.Model):
                 )
 
             # Determinar automáticamente la condición según el estado de la cursada
-            if cursada.estado_inscripcion == EstadoMateria.APROBADA:
+            if cursada.estado_inscripcion == EstadoMateria.APROBADA: # Estado final de la MATERIA
                 raise ValidationError(
                     'El alumno ya aprobó esta materia y no puede inscribirse al examen.'
                 )
-            elif cursada.estado_inscripcion == EstadoMateria.REGULAR:
-                # Regular: tiene la materia en condición regular
+            elif cursada.condicion == CondicionInscripcion.REGULAR: # Estado de la CURSADA
                 self.condicion = CondicionAlumnoMesa.REGULAR
-            else:
-                # Libre: desaprobó o perdió la regularidad
+            else: # Condicion CURSANDO o LIBRE para la cursada
                 self.condicion = CondicionAlumnoMesa.LIBRE
 
 

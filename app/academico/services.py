@@ -423,3 +423,43 @@ class ServiciosAcademico:
             'desaprobados': desaprobados,
             'ausentes': ausentes
         }
+
+    @staticmethod
+    def inscribir_alumno_mesa(alumno, mesa):
+        """
+        Inscribe un alumno a una mesa de examen validando las reglas de negocio.
+
+        Args:
+            alumno: Alumno
+            mesa: MesaExamen
+
+        Returns:
+            tuple: (success: bool, mensaje: str)
+        """
+        from academico.models import InscripcionMesaExamen, EstadoMateria, CondicionAlumnoMesa
+        from django.core.exceptions import ValidationError
+
+        try:
+            # Crear instancia (se ejecutará clean() automáticamente al guardar o manual)
+            inscripcion = InscripcionMesaExamen(
+                alumno=alumno,
+                mesa_examen=mesa
+            )
+            
+            # Ejecutar validaciones de modelo (clean)
+            inscripcion.clean()
+
+            # Si pasó validaciones, guardar
+            inscripcion.save()
+            
+            return True, "Inscripción realizada con éxito."
+
+        except ValidationError as e:
+            # Extraer mensajes de error
+            if hasattr(e, 'message_dict'):
+                errores = [v[0] for k, v in e.message_dict.items()]
+                return False, " | ".join(errores)
+            else:
+                return False, str(e.message)
+        except Exception as e:
+            return False, f"Error inesperado: {str(e)}"
