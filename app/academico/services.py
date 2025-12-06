@@ -164,14 +164,10 @@ class ServiciosAcademico:
         }
 
     @staticmethod
-    def calcular_nota_final(inscripcion):
+    def calcular_promedio_cursada(inscripcion):
         """
-        Calcula la nota final de un alumno en una comisión.
-
-        Lógica:
-        1. Si tiene nota FINAL: usa esa nota
-        2. Si NO tiene FINAL pero tiene otras calificaciones: promedio de todas
-        3. Si NO tiene calificaciones: retorna None
+        Calcula el promedio de notas de PARCIAL y TP de un alumno en una comisión.
+        Ignora la nota FINAL ya que esa es posterior a la cursada.
 
         Args:
             inscripcion: InscripcionAlumnoComision
@@ -180,19 +176,14 @@ class ServiciosAcademico:
             Decimal o None
         """
         from academico.models import Calificacion, TipoCalificacion
-        from django.db.models import Avg
+        from django.db.models import Avg, Q
 
-        # Buscar si tiene calificación FINAL
-        calificacion_final = Calificacion.objects.filter(
-            alumno_comision=inscripcion,
-            tipo=TipoCalificacion.FINAL
-        ).first()
-
-        if calificacion_final:
-            return calificacion_final.nota
-
-        # Si no tiene FINAL, calcular promedio de todas las calificaciones
-        calificaciones = Calificacion.objects.filter(alumno_comision=inscripcion)
+        # Calcular promedio solo de PARCIAL y TP
+        calificaciones = Calificacion.objects.filter(
+            alumno_comision=inscripcion
+        ).filter(
+            Q(tipo=TipoCalificacion.PARCIAL) | Q(tipo=TipoCalificacion.TRABAJO_PRACTICO)
+        )
 
         if calificaciones.exists():
             promedio = calificaciones.aggregate(Avg('nota'))['nota__avg']
@@ -201,118 +192,131 @@ class ServiciosAcademico:
         return None
 
     @staticmethod
-    def cerrar_inscripcion(inscripcion, usuario):
+    def regularizar_alumno(inscripcion, usuario, nota_aprobacion, porcentaje_asistencia_req):
         """
-        Cierra una inscripción individual calculando la nota final y actualizando el estado.
+        Determina la condición de un alumno (Regular/Libre) al cerrar la cursada.
 
         Args:
             inscripcion: InscripcionAlumnoComision
-            usuario: User que realiza el cierre
+            usuario: User que realiza la acción
+            nota_aprobacion: Decimal (del AnioAcademico)
+            porcentaje_asistencia_req: int (del AnioAcademico)
 
         Returns:
-            tuple: (success: bool, mensaje: str)
+            tuple: (condicion: str, mensaje: str)
         """
         from django.utils import timezone
+        from academico.models import CondicionInscripcion
 
-        # Calcular nota final
-        nota_final = ServiciosAcademico.calcular_nota_final(inscripcion)
+        # Calcular promedio de cursada
+        promedio = ServiciosAcademico.calcular_promedio_cursada(inscripcion)
+        
+        # Obtener porcentaje de asistencia (asumimos fecha actual como corte)
+        porcentaje_asistencia = ServiciosAcademico.obtener_porcentaje_asistencia(
+            inscripcion, 
+            timezone.now().date()
+        )
 
-        if nota_final is None:
-            return False, f"El alumno {inscripcion.alumno} no tiene calificaciones registradas."
-
-        # Determinar estado según nota
-        if nota_final >= 6:
-            nuevo_estado = 'APROBADA'
+        if promedio is None:
+            condicion = CondicionInscripcion.LIBRE
+            mensaje = "Libre por falta de calificaciones."
         else:
-            nuevo_estado = 'DESAPROBADA'
+            # Lógica de regularización
+            cumple_nota = promedio >= nota_aprobacion
+            cumple_asistencia = porcentaje_asistencia >= porcentaje_asistencia_req
+
+            if cumple_nota and cumple_asistencia:
+                condicion = CondicionInscripcion.REGULAR
+                mensaje = f"Regular (Prom: {promedio}, Asist: {porcentaje_asistencia}%)"
+            else:
+                condicion = CondicionInscripcion.LIBRE
+                motivo = []
+                if not cumple_nota: motivo.append(f"Nota insuficiente ({promedio})")
+                if not cumple_asistencia: motivo.append(f"Faltas ({porcentaje_asistencia}%)")
+                mensaje = f"Libre por: {', '.join(motivo)}"
 
         # Actualizar inscripción
-        inscripcion.nota_final = nota_final
-        inscripcion.estado_inscripcion = nuevo_estado
-        inscripcion.fecha_cierre = timezone.now()
-        inscripcion.cerrada_por = usuario
+        inscripcion.condicion = condicion
+        inscripcion.nota_cursada = promedio
+        inscripcion.fecha_regularizacion = timezone.now()
+        # Nota: No cambiamos estado_inscripcion a APROBADA/DESAPROBADA aún.
+        # Eso sucede en el final.
         inscripcion.save()
 
-        return True, f"Inscripción cerrada. Nota final: {nota_final} - Estado: {nuevo_estado}"
+        return condicion, mensaje
 
     @staticmethod
-    def cerrar_comision(comision, usuario):
+    def regularizar_comision(comision, usuario):
         """
-        Cierra una comisión completa procesando todas las inscripciones.
+        Cierra la cursada de una comisión completa, asignando la condición (Regular/Libre)
+        a cada alumno basándose en las reglas del Año Académico.
 
         Args:
             comision: Comision
             usuario: User que realiza el cierre
 
         Returns:
-            dict: {
-                'success': bool,
-                'mensaje': str,
-                'procesadas': int,
-                'aprobadas': int,
-                'desaprobadas': int,
-                'sin_calificaciones': int
-            }
+            dict con estadísticas
         """
-        from academico.models import InscripcionAlumnoComision, EstadoComision
+        from academico.models import InscripcionAlumnoComision, EstadoComision, CondicionInscripcion
         from django.db import transaction
+
+        # Verificar configuración del año académico
+        anio = comision.anio_academico
+        if not anio.cierre_cursada_habilitado:
+            return {
+                'success': False,
+                'mensaje': 'El cierre de cursada no está habilitado para este Año Académico.',
+            }
 
         inscripciones = InscripcionAlumnoComision.objects.filter(
             comision=comision,
-            estado_inscripcion='REGULAR'  # Solo procesar las que están en curso
+            estado_inscripcion='REGULAR' # Filtramos los que siguen activos
         )
 
         if not inscripciones.exists():
             return {
                 'success': False,
-                'mensaje': 'No hay inscripciones en estado REGULAR para cerrar.',
-                'procesadas': 0,
-                'aprobadas': 0,
-                'desaprobadas': 0,
-                'sin_calificaciones': 0
+                'mensaje': 'No hay alumnos activos para regularizar.',
             }
 
-        procesadas = 0
-        aprobadas = 0
-        desaprobadas = 0
-        sin_calificaciones = 0
-
+        regulares = 0
+        libres = 0
+        
         with transaction.atomic():
             for inscripcion in inscripciones:
-                success, mensaje = ServiciosAcademico.cerrar_inscripcion(inscripcion, usuario)
+                condicion, _ = ServiciosAcademico.regularizar_alumno(
+                    inscripcion, 
+                    usuario,
+                    anio.nota_aprobacion,
+                    anio.porcentaje_asistencia_req
+                )
 
-                if success:
-                    procesadas += 1
-                    if inscripcion.estado_inscripcion == 'APROBADA':
-                        aprobadas += 1
-                    elif inscripcion.estado_inscripcion == 'DESAPROBADA':
-                        desaprobadas += 1
+                if condicion == CondicionInscripcion.REGULAR:
+                    regulares += 1
                 else:
-                    sin_calificaciones += 1
+                    libres += 1
 
             # Actualizar estado de la comisión
             comision.estado = EstadoComision.FINALIZADA
             comision.save()
 
         mensaje = (
-            f"Comisión cerrada exitosamente.\n"
-            f"Procesadas: {procesadas} | Aprobadas: {aprobadas} | "
-            f"Desaprobadas: {desaprobadas} | Sin calificaciones: {sin_calificaciones}"
+            f"Cursada cerrada exitosamente.\n"
+            f"Alumnos Regulares: {regulares} | Alumnos Libres: {libres}"
         )
 
         return {
             'success': True,
             'mensaje': mensaje,
-            'procesadas': procesadas,
-            'aprobadas': aprobadas,
-            'desaprobadas': desaprobadas,
-            'sin_calificaciones': sin_calificaciones
+            'regulares': regulares,
+            'libres': libres
         }
 
     @staticmethod
     def cargar_nota_examen_final(inscripcion_mesa, nota, usuario):
         """
-        Carga la nota de un examen final y actualiza el estado del alumno.
+        Carga la nota de un examen final y actualiza el estado definitivo del alumno en la materia.
 
         Args:
             inscripcion_mesa: InscripcionMesaExamen
@@ -328,26 +332,38 @@ class ServiciosAcademico:
         if nota < 0 or nota > 10:
             return False, "La nota debe estar entre 0 y 10."
 
+        # Obtener nota de aprobación del año académico correspondiente a la mesa
+        nota_aprobacion = inscripcion_mesa.mesa_examen.anio_academico.nota_aprobacion
+
         # Actualizar nota en la inscripción a la mesa
         inscripcion_mesa.nota_examen = nota
 
-        # Determinar estado según nota
-        if nota >= 6:
+        # Determinar resultado del examen
+        aprobado = nota >= nota_aprobacion
+        
+        if aprobado:
             inscripcion_mesa.estado_inscripcion = 'APROBADO'
+            # Si aprobó el examen, aprueba la materia definitivamente
             nuevo_estado_materia = EstadoMateria.APROBADA
         else:
             inscripcion_mesa.estado_inscripcion = 'DESAPROBADO'
-            nuevo_estado_materia = EstadoMateria.DESAPROBADA
+            # Si desaprobó, la materia queda en su estado anterior (ej: REGULAR) o pasa a DESAPROBADA?
+            # Generalmente si desaprueba el final, sigue debiendo la materia pero mantiene su regularidad
+            # hasta que se venza. Por ahora no tocamos el estado 'REGULAR' de la cursada,
+            # salvo que queramos marcar explícitamente que falló un intento.
+            # Pero el requerimiento dice: "si la nota examen final es mayor o igual a nota de aprobación que marque al alumno como aprobado"
+            # Implica que si no, no lo marca como aprobado.
+            nuevo_estado_materia = None 
 
         inscripcion_mesa.save()
 
-        # Actualizar el estado de la cursada del alumno
+        # Actualizar el estado de la cursada del alumno SOLO si aprobó
         cursada = InscripcionAlumnoComision.objects.filter(
             alumno=inscripcion_mesa.alumno,
             comision__materia=inscripcion_mesa.mesa_examen.materia
         ).first()
 
-        if cursada:
+        if cursada and aprobado:
             cursada.nota_final = nota
             cursada.estado_inscripcion = nuevo_estado_materia
             cursada.fecha_cierre = timezone.now()
@@ -356,7 +372,7 @@ class ServiciosAcademico:
 
         mensaje = (
             f"Nota cargada: {nota}. "
-            f"Estado: {'APROBADO' if nota >= 6 else 'DESAPROBADO'}"
+            f"Resultado: {'APROBADO' if aprobado else 'DESAPROBADO'}"
         )
 
         return True, mensaje
