@@ -47,6 +47,12 @@ class AnioAcademico(models.Model):
     fecha_fin = models.DateField()
     activo = models.BooleanField(default=False)
     
+    # Configuración de Cierre de Cursada
+    nota_aprobacion = models.DecimalField(max_digits=4, decimal_places=2, default=6.0)
+    porcentaje_asistencia_req = models.PositiveIntegerField(default=75, help_text="Porcentaje mínimo de asistencia para regularizar")
+    cierre_cursada_habilitado = models.BooleanField(default=False, help_text="Habilita a los docentes para cerrar notas de cursada")
+    fecha_limite_cierre = models.DateField(null=True, blank=True, help_text="Fecha límite para cierre de notas")
+    
     class Meta:
         verbose_name = 'Año Académico'
         verbose_name_plural = 'Años Académicos'
@@ -148,10 +154,35 @@ class EstadoMateria(models.TextChoices):
     APROBADA = 'APROBADA', 'Aprobada'
     DESAPROBADA = 'DESAPROBADA', 'Desaprobada'
 
+class CondicionInscripcion(models.TextChoices):
+    CURSANDO = 'CURSANDO', 'Cursando'
+    REGULAR = 'REGULAR', 'Regular'
+    LIBRE = 'LIBRE', 'Libre'
+
 class InscripcionAlumnoComision(models.Model):
     alumno = models.ForeignKey(Alumno, on_delete=models.CASCADE)
     comision = models.ForeignKey(Comision, on_delete=models.CASCADE)
     creado = models.DateTimeField(auto_now_add=True)
+    
+    # Nuevo campo para el estado de la cursada
+    condicion = models.CharField(
+        max_length=20,
+        choices=CondicionInscripcion.choices,
+        default=CondicionInscripcion.CURSANDO
+    )
+    nota_cursada = models.DecimalField(
+        max_digits=4,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text='Promedio obtenido en la cursada (parciales)'
+    )
+    fecha_regularizacion = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text='Fecha en que se determinó la condición (Regular/Libre)'
+    )
+
     estado_inscripcion = models.CharField(
         max_length=20,
         choices=EstadoMateria.choices,
