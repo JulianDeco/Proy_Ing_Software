@@ -187,22 +187,28 @@ def obtener_datos_reporte_academico(filtros=None):
 
     filtros: dict con opciones {
         'comision_id': int,
-        'materia_id': int,
         'anio_academico': int,
         'fecha_inicio': date,
         'fecha_fin': date
     }
 
     Retorna: dict con todos los datos procesados y listos para gráficos
+
+    NOTA: Los gráficos se adaptan según el contexto:
+    - Solo Año: Vista institucional (promedios por materia, comparativo general)
+    - Año + Comisión: Vista de comisión (promedios por alumno, detalle de la comisión)
     """
     filtros = filtros or {}
 
     # VALIDACIÓN: Al menos un filtro debe estar presente para evitar sobrecarga
-    if not any([filtros.get('comision_id'), filtros.get('materia_id'), filtros.get('anio_academico')]):
+    if not any([filtros.get('comision_id'), filtros.get('anio_academico')]):
         # Sin filtros, usar solo el año académico activo
         anio_activo = AnioAcademico.objects.filter(activo=True).first()
         if anio_activo:
             filtros['anio_academico'] = anio_activo.id
+
+    # Determinar si es vista de comisión específica o institucional
+    es_vista_comision = bool(filtros.get('comision_id'))
 
     # Base queryset de inscripciones
     inscripciones = InscripcionAlumnoComision.objects.select_related(
@@ -213,29 +219,47 @@ def obtener_datos_reporte_academico(filtros=None):
     if filtros.get('comision_id'):
         inscripciones = inscripciones.filter(comision_id=filtros['comision_id'])
 
-    if filtros.get('materia_id'):
-        inscripciones = inscripciones.filter(comision__materia_id=filtros['materia_id'])
-
     if filtros.get('anio_academico'):
         inscripciones = inscripciones.filter(comision__anio_academico=filtros['anio_academico'])
 
     # 1. DATOS DE ALUMNOS (con límite)
     total_alumnos = inscripciones.values('alumno').distinct().count()
 
-    # 2. CALIFICACIONES POR MATERIA (OPTIMIZADO con agregación)
-    # Limitar a top 15 materias para evitar gráficos ilegibles
-    promedios_materias_query = Calificacion.objects.filter(
-        alumno_comision__in=inscripciones
-    ).values(
-        'alumno_comision__comision__materia__nombre'
-    ).annotate(
-        promedio=Avg('nota')
-    ).order_by('-promedio')[:15]
+    # 2. DATOS PARA GRÁFICOS (según contexto)
+    if es_vista_comision:
+        # VISTA COMISIÓN: Mostrar promedios por alumno de esa comisión
+        promedios_query = Calificacion.objects.filter(
+            alumno_comision__in=inscripciones
+        ).values(
+            'alumno_comision__alumno__apellido',
+            'alumno_comision__alumno__nombre'
+        ).annotate(
+            promedio=Avg('nota')
+        ).order_by('-promedio')[:15]
 
-    promedios_materias = [
-        (item['alumno_comision__comision__materia__nombre'], item['promedio'])
-        for item in promedios_materias_query
-    ]
+        promedios_materias = [
+            (f"{item['alumno_comision__alumno__apellido']} {item['alumno_comision__alumno__nombre']}",
+             item['promedio'])
+            for item in promedios_query
+        ]
+        # Obtener nombre de la comisión para el título
+        comision_obj = Comision.objects.filter(id=filtros['comision_id']).select_related('materia').first()
+        nombre_comision = f"{comision_obj.materia.nombre} - {comision_obj.codigo}" if comision_obj else ""
+    else:
+        # VISTA INSTITUCIONAL: Mostrar promedios por materia
+        promedios_materias_query = Calificacion.objects.filter(
+            alumno_comision__in=inscripciones
+        ).values(
+            'alumno_comision__comision__materia__nombre'
+        ).annotate(
+            promedio=Avg('nota')
+        ).order_by('-promedio')[:15]
+
+        promedios_materias = [
+            (item['alumno_comision__comision__materia__nombre'], item['promedio'])
+            for item in promedios_materias_query
+        ]
+        nombre_comision = ""
 
     # 3. ESTADOS ACADÉMICOS (OPTIMIZADO con agregación)
     # Calcular estados basándose en:
@@ -401,7 +425,8 @@ def obtener_datos_reporte_academico(filtros=None):
         'alumnos_top_promedio': alumnos_promedios[:10],
         'alumnos_top_asistencia': alumnos_asistencias[:10],
         'alumnos_materias_aprobadas': alumnos_materias_aprobadas[:10],
-
+        'vista_detalle': es_vista_comision,
+        'nombre_comision': nombre_comision,
     }
 
 

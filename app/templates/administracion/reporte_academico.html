@@ -253,10 +253,15 @@
                     <label>Comisión (opcional)</label>
                     <select name="comision" id="filtro-comision">
                         <option value="">Todas las comisiones (vista general)</option>
-                        {% for comision in comisiones %}
-                        <option value="{{ comision.id }}" {% if comision_seleccionada == comision.id %}selected{% endif %}>
-                            {{ comision.codigo }} - {{ comision.materia.nombre }} ({{ comision.turno }})
-                        </option>
+                        {% regroup comisiones by materia.nombre as materia_list %}
+                        {% for materia in materia_list %}
+                        <optgroup label="{{ materia.grouper }}">
+                            {% for comision in materia.list %}
+                            <option value="{{ comision.id }}" {% if comision_seleccionada == comision.id %}selected{% endif %}>
+                                {{ comision.codigo }} ({{ comision.turno }})
+                            </option>
+                            {% endfor %}
+                        </optgroup>
                         {% endfor %}
                     </select>
                 </div>
@@ -303,7 +308,13 @@
             <!-- Gráfico 1: Distribución de Notas por Materia -->
             {% if datos.promedios_materias %}
             <div class="chart-container">
-                <h3>Promedios por Materia</h3>
+                <h3>
+                    {% if datos.vista_detalle %}
+                        Promedios por Alumno <small class="text-muted">({{ datos.nombre_comision }})</small>
+                    {% else %}
+                        Promedios por Materia
+                    {% endif %}
+                </h3>
                 <div class="chart-wrapper">
                     <canvas id="chartNotas"></canvas>
                 </div>
@@ -347,14 +358,20 @@
         <!-- TABLA DE PROMEDIOS POR MATERIA -->
         {% if datos.promedios_materias %}
         <div class="chart-container">
-            <h3>Promedio de Calificaciones por Materia</h3>
+            <h3>
+                {% if datos.vista_detalle %}
+                    Promedio de Calificaciones por Alumno
+                {% else %}
+                    Promedio de Calificaciones por Materia
+                {% endif %}
+            </h3>
             <p style="text-align: center; color: #666; font-size: 13px; margin-bottom: 15px;">
-                Promedio general de todas las calificaciones registradas en cada materia
+                Promedio general de todas las calificaciones registradas
             </p>
             <table>
                 <thead>
                     <tr>
-                        <th>Materia</th>
+                        <th>{% if datos.vista_detalle %}Alumno{% else %}Materia{% endif %}</th>
                         <th>Promedio General</th>
                         <th>Rendimiento</th>
                     </tr>
