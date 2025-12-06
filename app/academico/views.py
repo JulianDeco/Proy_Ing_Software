@@ -28,6 +28,83 @@ from .exceptions import (
 )
 from .forms import RegistroAsistenciaForm, CalificacionForm, NotaIndividualForm
 
+class CierreCursadaView(DocenteRequiredMixin, View):
+    """Vista para previsualizar y ejecutar el cierre de cursada (Regularización)"""
+    servicios_academico = ServiciosAcademico()
+
+    def get(self, request, codigo):
+        comision = get_object_or_404(Comision, codigo=codigo)
+        docente = get_object_or_404(Empleado, usuario=request.user)
+        
+        # Validar que el docente sea el titular
+        if comision.docente != docente:
+            messages.error(request, "No tiene permiso para cerrar esta comisión.")
+            return redirect('docentes')
+
+        if comision.estado == 'FINALIZADA':
+            messages.warning(request, "Esta comisión ya fue cerrada.")
+            return redirect('docentes')
+
+        # Simulación de resultados
+        inscripciones = InscripcionAlumnoComision.objects.filter(
+            comision=comision,
+            estado_inscripcion='REGULAR'
+        ).select_related('alumno')
+
+        anio = comision.anio_academico
+        simulacion = []
+        
+        for inscripcion in inscripciones:
+            promedio = self.servicios_academico.calcular_promedio_cursada(inscripcion)
+            asistencia = self.servicios_academico.obtener_porcentaje_asistencia(
+                inscripcion, timezone.now().date()
+            )
+            
+            cumple_nota = promedio is not None and promedio >= anio.nota_aprobacion
+            cumple_asistencia = asistencia >= anio.porcentaje_asistencia_req
+            
+            condicion = 'REGULAR' if cumple_nota and cumple_asistencia else 'LIBRE'
+            motivo = ""
+            if not cumple_nota: motivo += "Nota insuficiente. "
+            if not cumple_asistencia: motivo += "Faltas."
+
+            simulacion.append({
+                'alumno': inscripcion.alumno,
+                'promedio': promedio,
+                'asistencia': asistencia,
+                'condicion': condicion,
+                'motivo': motivo
+            })
+
+        return render(request, 'academico/cierre_cursada.html', {
+            'comision': comision,
+            'simulacion': simulacion
+        })
+
+    def post(self, request, codigo):
+        comision = get_object_or_404(Comision, codigo=codigo)
+        docente = get_object_or_404(Empleado, usuario=request.user)
+
+        if comision.docente != docente:
+            messages.error(request, "No tiene permiso para cerrar esta comisión.")
+            return redirect('docentes')
+
+        resultado = self.servicios_academico.regularizar_comision(comision, request.user)
+
+        if resultado['success']:
+            messages.success(request, resultado['mensaje'])
+            LogAction(
+                user=request.user,
+                model_instance_or_queryset=comision,
+                action=ActionFlag.CHANGE,
+                change_message=f"Cierre de cursada: {resultado['mensaje']}"
+            ).log()
+        else:
+            messages.error(request, resultado['mensaje'])
+            return redirect('cerrar_cursada', codigo=codigo)
+
+        return redirect('docentes')
+
 
 class DocenteRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     def test_func(self):

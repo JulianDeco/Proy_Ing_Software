@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">
+                        <i class="fas fa-clipboard-check me-2"></i>
+                        Cierre de Cursada - {{ comision.materia.nombre }}
+                    </h3>
+                    <span class="badge bg-light text-dark fs-6">{{ comision.codigo }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Reglas de Regularización (Año {{ comision.anio_academico.nombre }}):</strong><br>
+                        <ul>
+                            <li>Nota mínima de aprobación: <strong>{{ comision.anio_academico.nota_aprobacion }}</strong></li>
+                            <li>Asistencia mínima requerida: <strong>{{ comision.anio_academico.porcentaje_asistencia_req }}%</strong></li>
+                        </ul>
+                    </div>
+
+                    {% if error %}
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
+                    </div>
+                    {% endif %}
+
+                    {% if not comision.anio_academico.cierre_cursada_habilitado %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-lock me-2"></i>
+                        El cierre de cursada aún no está habilitado por la administración para este año académico.
+                    </div>
+                    {% else %}
+                        <form method="post" onsubmit="return confirm('¿Está seguro que desea cerrar la cursada? Esta acción determinará la condición (Regular/Libre) de todos los alumnos y no se puede deshacer fácilmente.');">
+                            {% csrf_token %}
+                            <div class="table-responsive mb-4">
+                                <table class="table table-hover align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Legajo</th>
+                                            <th>Alumno</th>
+                                            <th class="text-center">Promedio Parciales</th>
+                                            <th class="text-center">% Asistencia</th>
+                                            <th class="text-center">Condición Sugerida</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in simulacion %}
+                                        <tr class="{% if item.condicion == 'REGULAR' %}table-success{% else %}table-danger{% endif %}">
+                                            <td>{{ item.alumno.legajo }}</td>
+                                            <td>{{ item.alumno.apellido }}, {{ item.alumno.nombre }}</td>
+                                            <td class="text-center fw-bold">
+                                                {% if item.promedio %}{{ item.promedio }}{% else %}-{% endif %}
+                                            </td>
+                                            <td class="text-center">
+                                                {{ item.asistencia }}%
+                                            </td>
+                                            <td class="text-center">
+                                                {% if item.condicion == 'REGULAR' %}
+                                                    <span class="badge bg-success">REGULAR</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">LIBRE</span>
+                                                    <br>
+                                                    <small class="text-muted">{{ item.motivo }}</small>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'docentes' %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Volver
+                                </a>
+                                <button type="submit" class="btn btn-danger btn-lg">
+                                    <i class="fas fa-check-double me-2"></i>Confirmar Cierre de Cursada
+                                </button>
+                            </div>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

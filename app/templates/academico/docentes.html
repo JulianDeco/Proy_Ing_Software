@@ -127,6 +127,13 @@
                                        title="Ver y gestionar calificaciones">
                                         <i class="bi bi-journal-check"></i>
                                     </a>
+                                    {% if item.comision.anio_academico.cierre_cursada_habilitado %}
+                                    <a href="{% url 'cerrar_cursada' item.comision.codigo %}"
+                                       class="btn btn-outline-danger"
+                                       title="Cerrar Cursada / Regularizar">
+                                        <i class="bi bi-clipboard-x"></i>
+                                    </a>
+                                    {% endif %}
                                 </div>
                             </td>
                         </tr>
