@@ -149,6 +149,7 @@ class Alumno(Persona):
         return f"{prefijo}-{nuevo_numero:05d}"
 
 class EstadoMateria(models.TextChoices):
+    CURSANDO = 'CURSANDO', 'Cursando'
     REGULAR = 'REGULAR', 'Regular'
     LIBRE = 'LIBRE', 'Libre'
     APROBADA = 'APROBADA', 'Aprobada'
@@ -186,7 +187,7 @@ class InscripcionAlumnoComision(models.Model):
     estado_inscripcion = models.CharField(
         max_length=20,
         choices=EstadoMateria.choices,
-        default='REGULAR'
+        default='CURSANDO'
     )
 
     # Campos para cierre de materia

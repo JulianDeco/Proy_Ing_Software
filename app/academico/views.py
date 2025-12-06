@@ -28,6 +28,15 @@ from .exceptions import (
 )
 from .forms import RegistroAsistenciaForm, CalificacionForm, NotaIndividualForm
 
+
+class DocenteRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.groups.filter(name='Docente').exists()
+
+    def handle_no_permission(self):
+        return redirect('acceso-denegado')
+
+
 class CierreCursadaView(DocenteRequiredMixin, View):
     """Vista para previsualizar y ejecutar el cierre de cursada (Regularización)"""
     servicios_academico = ServiciosAcademico()
