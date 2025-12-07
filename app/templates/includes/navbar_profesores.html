@@ -1,7 +1,8 @@
+{% load i18n %}
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
     <div class="container">
         <a class="navbar-brand" href="{% url 'docentes' %}">
-            <i class="bi bi-person-video3"></i> Panel del Profesor
+            <i class="bi bi-person-video3"></i> {% trans "Panel del Profesor" %}
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarTeacher">
             <span class="navbar-toggler-icon"></span>
@@ -10,22 +11,22 @@
             <ul class="navbar-nav me-auto">
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'docentes' %}">
-                        <i class="bi bi-house-door"></i> Inicio
+                        <i class="bi bi-house-door"></i> {% trans "Inicio" %}
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'seleccionar_clase_asistencia' %}">
-                        <i class="bi bi-clipboard-check"></i> Asistencias
+                        <i class="bi bi-clipboard-check"></i> {% trans "Asistencias" %}
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'docentes' %}">
-                        <i class="bi bi-journal-check"></i> Calificaciones
+                        <i class="bi bi-journal-check"></i> {% trans "Calificaciones" %}
                     </a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'mesas_examen_docente' %}">
-                        <i class="bi bi-clipboard-check"></i> Mesas de Examen
+                        <i class="bi bi-clipboard-check"></i> {% trans "Mesas de Examen" %}
                     </a>
                 </li>
             </ul>
@@ -34,7 +35,6 @@
                     {% csrf_token %}
                     <input name="next" type="hidden" value="{{ request.path }}">
                     <select name="language" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto; background-color: transparent; color: white; border-color: rgba(255,255,255,0.5);">
-                        {% load i18n %}
                         {% get_current_language as LANGUAGE_CODE %}
                         {% get_available_languages as LANGUAGES %}
                         {% get_language_info_list for LANGUAGES as languages %}
@@ -52,11 +52,11 @@
                         Prof. {{ request.user.email }}
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li><h6 class="dropdown-header">Sesión activa</h6></li>
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-person"></i> Mi Perfil</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-gear"></i> Configuración</a></li>
+                        <li><h6 class="dropdown-header">{% trans "Sesión activa" %}</h6></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-person"></i> {% trans "Mi Perfil" %}</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-gear"></i> {% trans "Configuración" %}</a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right"></i> Cerrar Sesión</a></li>
+                        <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right"></i> {% trans "Cerrar Sesión" %}</a></li>
                     </ul>
                 </div>
             </div>

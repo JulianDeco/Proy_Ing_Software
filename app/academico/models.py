@@ -297,12 +297,13 @@ class TipoCalificacion(models.TextChoices):
 class Calificacion(models.Model):
     alumno_comision = models.ForeignKey(InscripcionAlumnoComision, on_delete=models.CASCADE, related_name='calificaciones')
     tipo = models.CharField(max_length=20, choices=TipoCalificacion.choices, db_index=True)
+    numero = models.PositiveIntegerField(default=1, verbose_name="Número")
     nota = models.DecimalField(max_digits=4, decimal_places=2)
     fecha_creacion = models.DateTimeField(db_index=True)
     dvh = models.CharField(max_length=255, blank=True, null=True, editable=False)
 
     class Meta:
-        unique_together = ('alumno_comision', 'tipo')
+        unique_together = ('alumno_comision', 'tipo', 'numero')
         verbose_name = 'Calificación'
         verbose_name_plural = 'Calificaciones'
         indexes = [
@@ -336,7 +337,7 @@ class Calificacion(models.Model):
 def calcular_dvh_calificacion(sender, instance, **kwargs):
     """Calcula el DVH antes de guardar"""
     from institucional.digitos_verificadores import GestorDigitosVerificadores
-    campos_criticos = ['nota', 'tipo', 'fecha_creacion']
+    campos_criticos = ['nota', 'tipo', 'numero', 'fecha_creacion']
     instance.dvh = GestorDigitosVerificadores.calcular_dvh(instance, campos_criticos)
 
 @receiver(models.signals.post_save, sender=Calificacion)

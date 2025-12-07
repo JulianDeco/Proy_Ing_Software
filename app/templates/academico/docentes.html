@@ -1,13 +1,14 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load i18n %}
 
-{% block title %}Panel del Profesor{% endblock %}
+{% block title %}{% trans "Panel del Profesor" %}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1><i class="bi bi-person-video3"></i> Panel del Profesor</h1>
+        <h1><i class="bi bi-person-video3"></i> {% trans "Panel del Profesor" %}</h1>
         <div class="text-muted">
             <i class="bi bi-person-circle"></i> {{ request.user.get_full_name }}
         </div>
@@ -22,7 +23,7 @@
                         <i class="bi bi-journal-bookmark text-primary fs-1"></i>
                     </div>
                     <h3 class="mb-0">{{ total_comisiones }}</h3>
-                    <p class="text-muted mb-0">Comisiones activas</p>
+                    <p class="text-muted mb-0">{% trans "Comisiones activas" %}</p>
                 </div>
             </div>
         </div>
@@ -34,7 +35,7 @@
                         <i class="bi bi-people-fill text-success fs-1"></i>
                     </div>
                     <h3 class="mb-0">{{ total_alumnos }}</h3>
-                    <p class="text-muted mb-0">Total de alumnos</p>
+                    <p class="text-muted mb-0">{% trans "Total de alumnos" %}</p>
                 </div>
             </div>
         </div>
@@ -46,7 +47,7 @@
                         <i class="bi bi-calendar-check text-info fs-1"></i>
                     </div>
                     <h3 class="mb-0">{{ clases_hoy }}</h3>
-                    <p class="text-muted mb-0">Clases hoy</p>
+                    <p class="text-muted mb-0">{% trans "Clases hoy" %}</p>
                 </div>
             </div>
         </div>
@@ -60,7 +61,7 @@
                     <h3 class="mb-0">
                         {% widthratio comisiones_hoy|length total_comisiones 100 %}%
                     </h3>
-                    <p class="text-muted mb-0">Carga del día</p>
+                    <p class="text-muted mb-0">{% trans "Carga del día" %}</p>
                 </div>
             </div>
         </div>
@@ -72,12 +73,12 @@
             <ul class="nav nav-tabs card-header-tabs" id="cursosTabs" role="tablist">
                 <li class="nav-item" role="presentation">
                     <button class="nav-link active" id="activos-tab" data-bs-toggle="tab" data-bs-target="#activos" type="button" role="tab" aria-controls="activos" aria-selected="true">
-                        <i class="bi bi-journal-bookmark"></i> Mis Cursos Activos
+                        <i class="bi bi-journal-bookmark"></i> {% trans "Mis Cursos Activos" %}
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="historial-tab" data-bs-toggle="tab" data-bs-target="#historial" type="button" role="tab" aria-controls="historial" aria-selected="false">
-                        <i class="bi bi-clock-history"></i> Historial / Finalizados
+                        <i class="bi bi-clock-history"></i> {% trans "Historial / Finalizados" %}
                     </button>
                 </li>
             </ul>
@@ -90,13 +91,13 @@
                         <table class="table table-hover mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Código</th>
-                                    <th>Materia</th>
-                                    <th>Horario</th>
-                                    <th>Aula</th>
-                                    <th class="text-center">Alumnos</th>
-                                    <th class="text-center">Estado</th>
-                                    <th>Acciones</th>
+                                    <th>{% trans "Código" %}</th>
+                                    <th>{% trans "Materia" %}</th>
+                                    <th>{% trans "Horario" %}</th>
+                                    <th>{% trans "Aula" %}</th>
+                                    <th class="text-center">{% trans "Alumnos" %}</th>
+                                    <th class="text-center">{% trans "Estado" %}</th>
+                                    <th>{% trans "Acciones" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -114,18 +115,18 @@
                                         {{ item.comision.get_dia_cursado_display }}<br>
                                         <small>{{ item.comision.horario_inicio|time:"H:i" }} - {{ item.comision.horario_fin|time:"H:i" }}</small>
                                     </td>
-                                    <td>{{ item.comision.aula|default:"Sin asignar" }}</td>
+                                    <td>{{ item.comision.aula|default:_("Sin asignar") }}</td>
                                     <td class="text-center">
                                         <span class="badge bg-secondary">{{ item.total_alumnos }}</span>
                                     </td>
                                     <td class="text-center">
                                         {% if item.tiene_pendientes %}
-                                            <span class="badge bg-warning text-dark" title="Calificaciones pendientes">
-                                                <i class="bi bi-exclamation-circle"></i> {{ item.calificaciones_pendientes }} pendiente{{ item.calificaciones_pendientes|pluralize }}
+                                            <span class="badge bg-warning text-dark" title="{% trans 'Calificaciones pendientes' %}">
+                                                <i class="bi bi-exclamation-circle"></i> {{ item.calificaciones_pendientes }} {% trans "pendiente" %}{{ item.calificaciones_pendientes|pluralize }}
                                             </span>
                                         {% else %}
-                                            <span class="badge bg-success" title="Todas las calificaciones cargadas">
-                                                <i class="bi bi-check-circle"></i> Al día
+                                            <span class="badge bg-success" title="{% trans 'Todas las calificaciones cargadas' %}">
+                                                <i class="bi bi-check-circle"></i> {% trans "Al día" %}
                                             </span>
                                         {% endif %}
                                     </td>
@@ -134,33 +135,33 @@
                                             <a href="{% url 'asistencia_curso' item.comision.codigo %}"
                                                class="btn btn-primary"
                                                data-bs-toggle="tooltip"
-                                               title="Registrar Asistencia">
+                                               title="{% trans 'Registrar Asistencia' %}">
                                                 <i class="bi bi-clipboard-check"></i>
-                                                <span class="d-none d-xl-inline ms-1">Asistencia</span>
+                                                <span class="d-none d-xl-inline ms-1">{% trans "Asistencia" %}</span>
                                             </a>
                                             <a href="{% url 'calificaciones_curso' item.comision.codigo %}"
                                                class="btn btn-success"
                                                data-bs-toggle="tooltip"
-                                               title="Gestionar Calificaciones">
+                                               title="{% trans 'Gestionar Calificaciones' %}">
                                                 <i class="bi bi-journal-check"></i>
-                                                <span class="d-none d-xl-inline ms-1">Notas</span>
+                                                <span class="d-none d-xl-inline ms-1">{% trans "Notas" %}</span>
                                             </a>
                                             {% if item.comision.anio_academico.cierre_cursada_habilitado %}
                                             <a href="{% url 'cerrar_cursada' item.comision.codigo %}"
                                                class="btn btn-danger"
                                                data-bs-toggle="tooltip"
-                                               title="Cerrar Cursada / Regularizar">
+                                               title="{% trans 'Cerrar Cursada / Regularizar' %}">
                                                 <i class="bi bi-file-earmark-lock"></i>
-                                                <span class="d-none d-xl-inline ms-1">Cerrar</span>
+                                                <span class="d-none d-xl-inline ms-1">{% trans "Cerrar" %}</span>
                                             </a>
                                             {% else %}
                                             <button type="button" 
                                                     class="btn btn-secondary" 
                                                     disabled
                                                     data-bs-toggle="tooltip" 
-                                                    title="El cierre de cursada aún no está habilitado por Administración">
+                                                    title="{% trans 'El cierre de cursada aún no está habilitado por Administración' %}">
                                                 <i class="bi bi-file-earmark-lock"></i>
-                                                <span class="d-none d-xl-inline ms-1">Cerrar</span>
+                                                <span class="d-none d-xl-inline ms-1">{% trans "Cerrar" %}</span>
                                             </button>
                                             {% endif %}
                                         </div>
@@ -170,7 +171,7 @@
                                 <tr>
                                     <td colspan="7" class="text-center py-4 text-muted">
                                         <i class="bi bi-journal-x display-4 d-block mb-2"></i>
-                                        No tiene comisiones activas.
+                                        {% trans "No tiene comisiones activas." %}
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -185,12 +186,12 @@
                         <table class="table table-hover mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Código</th>
-                                    <th>Año</th>
-                                    <th>Materia</th>
-                                    <th>Turno</th>
-                                    <th>Estado</th>
-                                    <th>Acciones</th>
+                                    <th>{% trans "Código" %}</th>
+                                    <th>{% trans "Año" %}</th>
+                                    <th>{% trans "Materia" %}</th>
+                                    <th>{% trans "Turno" %}</th>
+                                    <th>{% trans "Estado" %}</th>
+                                    <th>{% trans "Acciones" %}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -202,21 +203,21 @@
                                     <td>{{ comision.get_turno_display }}</td>
                                     <td>
                                         <span class="badge bg-secondary">
-                                            <i class="bi bi-archive"></i> Finalizada
+                                            <i class="bi bi-archive"></i> {% trans "Finalizada" %}
                                         </span>
                                     </td>
                                     <td>
                                         <a href="{% url 'calificaciones_curso' comision.codigo %}"
                                            class="btn btn-sm btn-outline-info"
-                                           title="Ver Historial de Notas">
-                                            <i class="bi bi-eye"></i> Ver Notas
+                                           title="{% trans 'Ver Historial de Notas' %}">
+                                            <i class="bi bi-eye"></i> {% trans "Ver Notas" %}
                                         </a>
                                     </td>
                                 </tr>
                                 {% empty %}
                                 <tr>
                                     <td colspan="6" class="text-center py-4 text-muted">
-                                        No hay comisiones finalizadas en el historial.
+                                        {% trans "No hay comisiones finalizadas en el historial." %}
                                     </td>
                                 </tr>
                                 {% endfor %}
@@ -233,7 +234,7 @@
         <div class="col-md-6">
             <div class="card">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0"><i class="bi bi-calendar-event"></i> Clases de Hoy</h6>
+                    <h6 class="mb-0"><i class="bi bi-calendar-event"></i> {% trans "Clases de Hoy" %}</h6>
                     <span class="badge bg-info">{{ comisiones_hoy|length }}</span>
                 </div>
                 <div class="card-body">
@@ -244,7 +245,7 @@
                             <br>
                             <small class="text-muted">
                                 <i class="bi bi-clock"></i> {{ comision.horario_inicio|time:"H:i" }} - {{ comision.horario_fin|time:"H:i" }}
-                                | <i class="bi bi-door-open"></i> {{ comision.aula|default:"Sin aula" }}
+                                | <i class="bi bi-door-open"></i> {{ comision.aula|default:_("Sin aula") }}
                             </small>
                             <br>
                             <span class="badge bg-secondary mt-1">{{ comision.codigo }}</span>
@@ -253,13 +254,13 @@
                             <a href="{% url 'asistencia_curso' comision.codigo %}"
                                class="btn btn-primary"
                                data-bs-toggle="tooltip"
-                               title="Tomar Asistencia">
+                               title="{% trans 'Tomar Asistencia' %}">
                                 <i class="bi bi-clipboard-check"></i>
                             </a>
                             <a href="{% url 'calificaciones_curso' comision.codigo %}"
                                class="btn btn-success"
                                data-bs-toggle="tooltip"
-                               title="Ver Notas">
+                               title="{% trans 'Ver Notas' %}">
                                 <i class="bi bi-journal-check"></i>
                             </a>
                         </div>
@@ -267,7 +268,7 @@
                     {% empty %}
                     <div class="text-center text-muted py-3">
                         <i class="bi bi-calendar-x display-4"></i>
-                        <p class="mt-2 mb-0">No hay clases programadas para hoy</p>
+                        <p class="mt-2 mb-0">{% trans "No hay clases programadas para hoy" %}</p>
                     </div>
                     {% endfor %}
                 </div>
@@ -277,7 +278,7 @@
         <div class="col-md-6">
             <div class="card">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h6 class="mb-0"><i class="bi bi-exclamation-circle"></i> Tareas Pendientes</h6>
+                    <h6 class="mb-0"><i class="bi bi-exclamation-circle"></i> {% trans "Tareas Pendientes" %}</h6>
                     {% with total_pendientes=comisiones_con_stats|length %}
                     <span class="badge {% if total_pendientes > 0 %}bg-warning text-dark{% else %}bg-success{% endif %}">
                         {% for item in comisiones_con_stats %}
@@ -294,11 +295,13 @@
                                 <strong>{{ item.comision.materia.nombre }}</strong>
                                 <br>
                                 <small class="text-muted">
-                                    {{ item.calificaciones_pendientes }} alumno{{ item.calificaciones_pendientes|pluralize }} sin calificaciones completas
+                                    {{ item.calificaciones_pendientes }} {% trans "alumno" %}{{ item.calificaciones_pendientes|pluralize }} {% trans "sin calificaciones completas" %}
                                 </small>
                             </div>
-                            <a href="{% url 'calificaciones_curso' item.comision.codigo %}"
-                               class="btn btn-sm btn-warning">
+                            <a href="{% url 'crear_calificacion' codigo=item.comision.codigo %}"
+                               class="btn btn-sm btn-warning"
+                               data-bs-toggle="tooltip"
+                               title="{% trans 'Completar Calificaciones' %}">
                                 <i class="bi bi-pencil-square"></i>
                             </a>
                         </div>
@@ -306,7 +309,7 @@
                     {% empty %}
                         <div class="text-center text-success py-3">
                             <i class="bi bi-check-circle display-4"></i>
-                            <p class="mt-2 mb-0">¡Todo al día! No hay tareas pendientes</p>
+                            <p class="mt-2 mb-0">{% trans "¡Todo al día! No hay tareas pendientes" %}</p>
                         </div>
                     {% endfor %}
                 </div>

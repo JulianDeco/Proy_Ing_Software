@@ -17,7 +17,7 @@ from main.services import ActionFlag, LogAction
 from main.utils import group_required
 from .models import (
     CalendarioAcademico, Calificacion, Materia, Comision, InscripcionAlumnoComision,
-    Asistencia, Alumno, MesaExamen, InscripcionMesaExamen
+    Asistencia, Alumno, MesaExamen, InscripcionMesaExamen, TipoCalificacion
 )
 from institucional.models import Empleado, Persona
 from .exceptions import (
@@ -202,7 +202,11 @@ class CalificacionesCursoView(DocenteRequiredMixin, View):
                 'alumno': inscripcion.alumno,
                 'calificaciones': {},
                 'promedio': 0,
-                'total_calificaciones': 0
+                'total_calificaciones': 0,
+                'condicion': inscripcion.get_condicion_display(),
+                'asistencia': self.servicios_academico.obtener_porcentaje_asistencia(
+                    inscripcion, timezone.now().date()
+                )
             }
 
             # Obtener todas las calificaciones del alumno
@@ -377,18 +381,44 @@ class GestionClasesView(DocenteRequiredMixin, View):
             'comisiones_con_fechas': comisiones_con_fechas
         })
 
+import json # Importar json
+# ...
 class GestionCalificacionesView(DocenteRequiredMixin, View):
     servicios_academico = ServiciosAcademico()
 
     def get(self, request, codigo):
         comision = self.servicios_academico.obtener_comision_por_codigo(codigo)
-        # Optimizar con select_related para alumno
-        inscripciones = self.servicios_academico.obtener_alumnos_comision(codigo).select_related('alumno')
+        inscripciones = self.servicios_academico.obtener_alumnos_comision(comision).select_related('alumno')
+        
+        # Obtener todas las calificaciones de la comisión para precargar
+        calificaciones_existentes = Calificacion.objects.filter(
+            alumno_comision__comision=comision
+        ).values('alumno_comision__alumno__id', 'tipo', 'numero', 'nota')
+
+        # Convertir a un formato fácil de usar en JS:
+        # {alumno_id: {tipo_calificacion: {numero: nota}, ...}, ...}
+        notas_por_alumno = {}
+        for calif in calificaciones_existentes:
+            alumno_id = calif['alumno_comision__alumno__id']
+            tipo = calif['tipo']
+            numero = calif['numero']
+            nota = float(calif['nota'])
+            
+            if alumno_id not in notas_por_alumno:
+                notas_por_alumno[alumno_id] = {}
+            
+            if tipo not in notas_por_alumno[alumno_id]:
+                notas_por_alumno[alumno_id][tipo] = {}
+            
+            notas_por_alumno[alumno_id][tipo][numero] = nota
+
         contexto = {
-            'hoy':datetime.datetime.now(),
+            'hoy':timezone.now().date(), # Usar date() para compatibilidad con input type="date"
             'comision': comision,
             'materia': comision.materia,
-            'inscripciones': inscripciones
+            'inscripciones': inscripciones,
+            'tipos_calificacion': TipoCalificacion.choices, # Pasar los choices para el select
+            'notas_por_alumno_json': json.dumps(notas_por_alumno) # Para usar en JS
         }
         return render(request, 'academico/carga_calificacion.html', context=contexto)
 
@@ -406,8 +436,13 @@ class GestionCalificacionesView(DocenteRequiredMixin, View):
             datos = request.POST
             fecha = form.cleaned_data['fecha']
             tipo_calificacion = form.cleaned_data['tipo']
+            try:
+                numero_instancia = int(request.POST.get('numero', 1))
+            except (ValueError, TypeError):
+                numero_instancia = 1
 
-            alumnos_comision = self.servicios_academico.obtener_alumnos_comision(codigo)
+            comision = self.servicios_academico.obtener_comision_por_codigo(codigo)
+            alumnos_comision = self.servicios_academico.obtener_alumnos_comision(comision)
             calificaciones_creadas = 0
 
             for dato in datos:
@@ -425,7 +460,7 @@ class GestionCalificacionesView(DocenteRequiredMixin, View):
                     alumno = alumnos_comision.get(alumno__id=alumno_id)
 
                     calificacion_nuevo = self.servicios_academico.crear_calificacion(
-                        alumno, fecha, tipo_calificacion, calificacion
+                        alumno, fecha, tipo_calificacion, calificacion, numero=numero_instancia
                     )
 
                     LogAction(

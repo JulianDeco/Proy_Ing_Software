@@ -1,18 +1,19 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load academico_filters %}
+{% load i18n %}
 
-{% block title %}Calificaciones - {{ comision.materia.nombre }}{% endblock %}
+{% block title %}{% trans "Calificaciones" %} - {{ comision.materia.nombre }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid py-4">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h1><i class="bi bi-journal-check"></i> Calificaciones</h1>
+            <h1><i class="bi bi-journal-check"></i> {% trans "Calificaciones" %}</h1>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'docentes' %}">Panel del Profesor</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'docentes' %}">{% trans "Panel del Profesor" %}</a></li>
                     <li class="breadcrumb-item active">{{ comision.materia.nombre }} - {{ comision.codigo }}</li>
                 </ol>
             </nav>
@@ -26,31 +27,31 @@
                 <div class="col-md-6">
                     <h5 class="card-title">{{ comision.materia.nombre }}</h5>
                     <p class="card-text mb-1">
-                        <strong>Código:</strong> {{ comision.codigo }}
+                        <strong>{% trans "Código" %}:</strong> {{ comision.codigo }}
                     </p>
                     <p class="card-text mb-1">
-                        <strong>Horario:</strong> {{ comision.horario_inicio|time:"H:i" }} - {{ comision.horario_fin|time:"H:i" }}
+                        <strong>{% trans "Horario" %}:</strong> {{ comision.horario_inicio|time:"H:i" }} - {{ comision.horario_fin|time:"H:i" }}
                     </p>
                     <p class="card-text">
-                        <strong>Turno:</strong> {{ comision.get_turno_display }} | <strong>Día:</strong> {{ comision.get_dia_cursado_display }}
+                        <strong>{% trans "Turno" %}:</strong> {{ comision.get_turno_display }} | <strong>{% trans "Día" %}:</strong> {{ comision.get_dia_cursado_display }}
                     </p>
                 </div>
                 <div class="col-md-6 text-md-end">
                     <div class="d-flex flex-column align-items-md-end gap-2">
-                        <span class="badge bg-primary">{{ total_alumnos }} alumnos</span>
-                        <span class="badge bg-info">Promedio del curso: {{ promedio_general }}</span>
+                        <span class="badge bg-primary">{{ total_alumnos }} {% trans "alumnos" %}</span>
+                        <span class="badge bg-info">{% trans "Promedio del curso" %}: {{ promedio_general }}</span>
                         <div class="btn-group">
                             <a href="{% url 'crear_calificacion' codigo=comision.codigo %}"
                                class="btn btn-success">
-                                <i class="bi bi-plus-circle"></i> Nueva Calificación
+                                <i class="bi bi-plus-circle"></i> {% trans "Nueva Calificación" %}
                             </a>
                             <a href="{% url 'asistencia_curso' comision.codigo %}"
                                class="btn btn-outline-primary">
-                                <i class="bi bi-clipboard-check"></i> Asistencia
+                                <i class="bi bi-clipboard-check"></i> {% trans "Asistencia" %}
                             </a>
                             <a href="{% url 'docentes' %}"
                                class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left"></i> Volver
+                                <i class="bi bi-arrow-left"></i> {% trans "Volver" %}
                             </a>
                         </div>
                     </div>
@@ -62,9 +63,9 @@
     <!-- Tabla Matricial de Calificaciones -->
     <div class="card">
         <div class="card-header bg-white d-flex justify-content-between align-items-center">
-            <h5 class="mb-0"><i class="bi bi-table"></i> Registro de Calificaciones</h5>
+            <h5 class="mb-0"><i class="bi bi-table"></i> {% trans "Registro de Calificaciones" %}</h5>
             <button class="btn btn-sm btn-outline-secondary" onclick="window.print()">
-                <i class="bi bi-printer"></i> Imprimir
+                <i class="bi bi-printer"></i> {% trans "Imprimir" %}
             </button>
         </div>
         <div class="card-body p-0">
@@ -74,14 +75,16 @@
                     <thead class="table-light">
                         <tr>
                             <th class="text-center" style="width: 50px;">#</th>
-                            <th style="min-width: 200px;">Alumno</th>
-                            <th class="text-center" style="width: 120px;">DNI</th>
+                            <th style="min-width: 200px;">{% trans "Alumno" %}</th>
+                            <th class="text-center" style="width: 120px;">{% trans "DNI" %}</th>
                             {% for tipo in tipos_calificacion %}
                             <th class="text-center bg-primary text-white" style="min-width: 100px;">
                                 {{ tipo.tipo }}
                             </th>
                             {% endfor %}
-                            <th class="text-center bg-success text-white" style="width: 100px;">Promedio</th>
+                            <th class="text-center" style="width: 100px;">{% trans "Asistencia" %}</th>
+                            <th class="text-center" style="width: 120px;">{% trans "Condición" %}</th>
+                            <th class="text-center bg-success text-white" style="width: 100px;">{% trans "Promedio" %}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -116,6 +119,19 @@
                             </td>
                             {% endfor %}
                             <td class="text-center">
+                                <span class="badge {% if fila.asistencia >= 75 %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ fila.asistencia }}%
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge 
+                                    {% if 'REGULAR' in fila.condicion %}bg-success
+                                    {% elif 'LIBRE' in fila.condicion %}bg-danger
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ fila.condicion }}
+                                </span>
+                            </td>
+                            <td class="text-center">
                                 {% if fila.promedio > 0 %}
                                     <strong class="
                                         {% if fila.promedio >= 6 %}text-success
@@ -133,12 +149,13 @@
                     </tbody>
                     <tfoot class="table-light">
                         <tr>
-                            <th colspan="3" class="text-end">Promedio por evaluación:</th>
+                            <th colspan="3" class="text-end">{% trans "Promedio por evaluación" %}:</th>
                             {% for tipo in tipos_calificacion %}
                             <th class="text-center">
                                 {{ promedios_por_tipo|get_item:tipo.tipo|default:"-" }}
                             </th>
                             {% endfor %}
+                            <th colspan="2"></th> <!-- Espacio para asistencia y condición -->
                             <th class="text-center bg-success text-white">
                                 {{ promedio_general }}
                             </th>
@@ -149,11 +166,11 @@
             {% else %}
             <div class="text-center py-5 text-muted">
                 <i class="bi bi-journal-x display-1 d-block mb-3"></i>
-                <h5>No hay calificaciones registradas</h5>
-                <p>Comience agregando calificaciones para los alumnos de este curso.</p>
+                <h5>{% trans "No hay calificaciones registradas" %}</h5>
+                <p>{% trans "Comience agregando calificaciones para los alumnos de este curso." %}</p>
                 <a href="{% url 'crear_calificacion' codigo=comision.codigo %}"
                    class="btn btn-primary">
-                    <i class="bi bi-plus-circle"></i> Agregar Primera Calificación
+                    <i class="bi bi-plus-circle"></i> {% trans "Agregar Primera Calificación" %}
                 </a>
             </div>
             {% endif %}
@@ -165,10 +182,10 @@
     <div class="card mt-3">
         <div class="card-body">
             <small class="text-muted">
-                <strong>Leyenda:</strong>
-                <span class="badge bg-success ms-2">6-10: Aprobado</span>
-                <span class="badge bg-warning text-dark ms-2">4-5.99: Regular</span>
-                <span class="badge bg-danger ms-2">0-3.99: Desaprobado</span>
+                <strong>{% trans "Leyenda" %}:</strong>
+                <span class="badge bg-success ms-2">6-10: {% trans "Aprobado" %}</span>
+                <span class="badge bg-warning text-dark ms-2">4-5.99: {% trans "Regular" %}</span>
+                <span class="badge bg-danger ms-2">0-3.99: {% trans "Desaprobado" %}</span>
             </small>
         </div>
     </div>

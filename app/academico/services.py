@@ -99,7 +99,7 @@ class ServiciosAcademico:
         return asistencia, fecha_asistencia
     
     @staticmethod
-    def crear_calificacion(alumno, fecha, tipo_calificacion, calificacion):
+    def crear_calificacion(alumno, fecha, tipo_calificacion, calificacion, numero=1):
         from django.db import IntegrityError
 
         valores_calificacion = [choice[0] for choice in TipoCalificacion.choices]
@@ -116,10 +116,11 @@ class ServiciosAcademico:
                 f"La calificación debe estar entre 0 y 10. Valor recibido: {calificacion}"
             )
 
-        # Verificar si ya existe una calificación del mismo tipo
+        # Verificar si ya existe una calificación del mismo tipo y número
         calificacion_existente = Calificacion.objects.filter(
             alumno_comision=alumno,
-            tipo=tipo_calificacion
+            tipo=tipo_calificacion,
+            numero=numero
         ).first()
 
         if calificacion_existente:
@@ -133,6 +134,7 @@ class ServiciosAcademico:
             calificacion_nuevo = Calificacion.objects.create(
                 alumno_comision= alumno,
                 tipo =  tipo_calificacion,
+                numero = numero,
                 nota = calificacion,
                 fecha_creacion= fecha
             )
@@ -141,7 +143,8 @@ class ServiciosAcademico:
             # Si por alguna razón se intenta crear duplicado, obtenemos y actualizamos
             calificacion_existente = Calificacion.objects.get(
                 alumno_comision=alumno,
-                tipo=tipo_calificacion
+                tipo=tipo_calificacion,
+                numero=numero
             )
             calificacion_existente.nota = calificacion
             calificacion_existente.fecha_creacion = fecha

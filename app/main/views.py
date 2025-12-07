@@ -32,7 +32,9 @@ def redirect_based_group(request):
     elif 'Administrativo' in groups:
         return redirect('dashboard_admin')   
     elif 'Alumno' in groups:
-        return redirect('dashboard_alumno')  
+        logout(request)
+        messages.error(request, "El acceso de alumnos no está habilitado en este sistema.")
+        return redirect('login')
     else:
         return redirect('home')
     

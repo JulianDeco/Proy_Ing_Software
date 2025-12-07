@@ -1,0 +1,449 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-12-07 19:48-0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=n == 1 ? 0 : n != 0 && n % 1000000 == 0 ? "
+"1 : 2;\n"
+#: app/templates/academico/calificaciones_curso.html:6
+#: app/templates/academico/calificaciones_curso.html:13
+#: app/templates/includes/navbar_profesores.html:24
+msgid "Calificaciones"
+msgstr ""
+
+#: app/templates/academico/calificaciones_curso.html:16
+#: app/templates/academico/docentes.html:5
+#: app/templates/academico/docentes.html:11
+#: app/templates/includes/navbar_profesores.html:5
+msgid "Panel del Profesor"
+msgstr ""
+
+#: app/templates/academico/calificaciones_curso.html:30
+#: app/templates/academico/docentes.html:94
+#: app/templates/academico/docentes.html:189
+msgid "Código"
+msgstr ""
+
+#: app/templates/academico/calificaciones_curso.html:33
+#: app/templates/academico/docentes.html:96
+msgid "Horario"
+msgstr ""
+
+#: app/templates/academico/calificaciones_curso.html:36
+#: app/templates/academico/docentes.html:192
+msgid "Turno"
+msgstr ""
+
+#: app/templates/academico/calificaciones_curso.html:36
+msgid "Día"
+msgstr ""
+
+#: app/templates/academico/calificaciones_curso.html:41
+msgid "alumnos"
+msgstr ""
+
+#: app/templates/academico/calificaciones_curso.html:42
+msgid "Promedio del curso"
+msgstr ""
+
+#: app/templates/academico/calificaciones_curso.html:46
+msgid "Nueva Calificación"
+msgstr ""
+
+#: app/templates/academico/calificaciones_curso.html:50
+#: app/templates/academico/calificaciones_curso.html:85
+#: app/templates/academico/docentes.html:140
+msgid "Asistencia"
+msgstr ""
+
+#: app/templates/academico/calificaciones_curso.html:54
+msgid "Volver"
+msgstr ""
+
+#: app/templates/academico/calificaciones_curso.html:66
+msgid "Registro de Calificaciones"
+msgstr ""
+
+#: app/templates/academico/calificaciones_curso.html:68
+msgid "Imprimir"
+msgstr ""
+
+#: app/templates/academico/calificaciones_curso.html:78
+msgid "Alumno"
+msgstr ""
+
+#: app/templates/academico/calificaciones_curso.html:79
+msgid "DNI"
+msgstr ""
+
+#: app/templates/academico/calificaciones_curso.html:86
+msgid "Condición"
+msgstr ""
+
+#: app/templates/academico/calificaciones_curso.html:87
+msgid "Promedio"
+msgstr ""
+
+#: app/templates/academico/calificaciones_curso.html:152
+msgid "Promedio por evaluación"
+msgstr ""
+
+#: app/templates/academico/calificaciones_curso.html:169
+msgid "No hay calificaciones registradas"
+msgstr ""
+
+#: app/templates/academico/calificaciones_curso.html:170
+msgid "Comience agregando calificaciones para los alumnos de este curso."
+msgstr ""
+
+#: app/templates/academico/calificaciones_curso.html:173
+msgid "Agregar Primera Calificación"
+msgstr ""
+
+#: app/templates/academico/calificaciones_curso.html:185
+msgid "Leyenda"
+msgstr ""
+
+#: app/templates/academico/calificaciones_curso.html:186
+msgid "Aprobado"
+msgstr ""
+
+#: app/templates/academico/calificaciones_curso.html:187
+msgid "Regular"
+msgstr ""
+
+#: app/templates/academico/calificaciones_curso.html:188
+msgid "Desaprobado"
+msgstr ""
+
+#: app/templates/academico/docentes.html:26
+msgid "Comisiones activas"
+msgstr ""
+
+#: app/templates/academico/docentes.html:38
+msgid "Total de alumnos"
+msgstr ""
+
+#: app/templates/academico/docentes.html:50
+msgid "Clases hoy"
+msgstr ""
+
+#: app/templates/academico/docentes.html:64
+msgid "Carga del día"
+msgstr ""
+
+#: app/templates/academico/docentes.html:76
+msgid "Mis Cursos Activos"
+msgstr ""
+
+#: app/templates/academico/docentes.html:81
+msgid "Historial / Finalizados"
+msgstr ""
+
+#: app/templates/academico/docentes.html:95
+#: app/templates/academico/docentes.html:191
+msgid "Materia"
+msgstr ""
+
+#: app/templates/academico/docentes.html:97
+msgid "Aula"
+msgstr ""
+
+#: app/templates/academico/docentes.html:98
+msgid "Alumnos"
+msgstr ""
+
+#: app/templates/academico/docentes.html:99
+#: app/templates/academico/docentes.html:193
+msgid "Estado"
+msgstr ""
+
+#: app/templates/academico/docentes.html:100
+#: app/templates/academico/docentes.html:194
+msgid "Acciones"
+msgstr ""
+
+#: app/templates/academico/docentes.html:118
+msgid "Sin asignar"
+msgstr ""
+
+#: app/templates/academico/docentes.html:124
+msgid "Calificaciones pendientes"
+msgstr ""
+
+#: app/templates/academico/docentes.html:125
+msgid "pendiente"
+msgstr ""
+
+#: app/templates/academico/docentes.html:128
+msgid "Todas las calificaciones cargadas"
+msgstr ""
+
+#: app/templates/academico/docentes.html:129
+msgid "Al día"
+msgstr ""
+
+#: app/templates/academico/docentes.html:138
+msgid "Registrar Asistencia"
+msgstr ""
+
+#: app/templates/academico/docentes.html:145
+msgid "Gestionar Calificaciones"
+msgstr ""
+
+#: app/templates/academico/docentes.html:147
+msgid "Notas"
+msgstr ""
+
+#: app/templates/academico/docentes.html:153
+msgid "Cerrar Cursada / Regularizar"
+msgstr ""
+
+#: app/templates/academico/docentes.html:155
+#: app/templates/academico/docentes.html:164
+msgid "Cerrar"
+msgstr ""
+
+#: app/templates/academico/docentes.html:162
+msgid "El cierre de cursada aún no está habilitado por Administración"
+msgstr ""
+
+#: app/templates/academico/docentes.html:174
+msgid "No tiene comisiones activas."
+msgstr ""
+
+#: app/templates/academico/docentes.html:190
+msgid "Año"
+msgstr ""
+
+#: app/templates/academico/docentes.html:206
+msgid "Finalizada"
+msgstr ""
+
+#: app/templates/academico/docentes.html:212
+msgid "Ver Historial de Notas"
+msgstr ""
+
+#: app/templates/academico/docentes.html:213
+#: app/templates/academico/docentes.html:263
+msgid "Ver Notas"
+msgstr ""
+
+#: app/templates/academico/docentes.html:220
+msgid "No hay comisiones finalizadas en el historial."
+msgstr ""
+
+#: app/templates/academico/docentes.html:237
+msgid "Clases de Hoy"
+msgstr ""
+
+#: app/templates/academico/docentes.html:248
+msgid "Sin aula"
+msgstr ""
+
+#: app/templates/academico/docentes.html:257
+msgid "Tomar Asistencia"
+msgstr ""
+
+#: app/templates/academico/docentes.html:271
+msgid "No hay clases programadas para hoy"
+msgstr ""
+
+#: app/templates/academico/docentes.html:281
+msgid "Tareas Pendientes"
+msgstr ""
+
+#: app/templates/academico/docentes.html:298
+msgid "alumno"
+msgstr ""
+
+#: app/templates/academico/docentes.html:298
+msgid "sin calificaciones completas"
+msgstr ""
+
+#: app/templates/academico/docentes.html:310
+msgid "¡Todo al día! No hay tareas pendientes"
+msgstr ""
+
+#: app/templates/includes/footer.html:6
+msgid "Sistema de Administración Educativa"
+msgstr ""
+
+#: app/templates/includes/footer.html:8
+msgid "Plataforma integral para la gestión de instituciones educativas."
+msgstr ""
+
+#: app/templates/includes/footer.html:12
+msgid "Enlaces rápidos"
+msgstr ""
+
+#: app/templates/includes/footer.html:16 app/templates/main/help.html:4
+msgid "Ayuda"
+msgstr ""
+
+#: app/templates/includes/footer.html:22
+msgid "Contacto"
+msgstr ""
+
+#: app/templates/includes/footer.html:32
+msgid "Sistema Educativo. Todos los derechos reservados."
+msgstr ""
+
+#: app/templates/includes/navbar.html:5 app/templates/main/help.html:4
+msgid "Sistema Educativo"
+msgstr ""
+
+#: app/templates/includes/navbar.html:14
+msgid "INSTITUCIÓN"
+msgstr ""
+
+#: app/templates/includes/navbar.html:17
+msgid "Información"
+msgstr ""
+
+#: app/templates/includes/navbar.html:18
+msgid "Personal"
+msgstr ""
+
+#: app/templates/includes/navbar.html:19
+msgid "Eventos"
+msgstr ""
+
+#: app/templates/includes/navbar.html:24
+msgid "ADMINISTRACIÓN"
+msgstr ""
+
+#: app/templates/includes/navbar.html:27
+msgid "Finanzas"
+msgstr ""
+
+#: app/templates/includes/navbar.html:28
+msgid "Documentación"
+msgstr ""
+
+#: app/templates/includes/navbar.html:29
+msgid "Reportes"
+msgstr ""
+
+#: app/templates/includes/navbar.html:34
+msgid "ACADÉMICO"
+msgstr ""
+
+#: app/templates/includes/navbar.html:37
+msgid "Estudiantes"
+msgstr ""
+
+#: app/templates/includes/navbar.html:38
+msgid "Profesores"
+msgstr ""
+
+#: app/templates/includes/navbar.html:39
+msgid "Cursos"
+msgstr ""
+
+#: app/templates/includes/navbar.html:40
+msgid "Calendario"
+msgstr ""
+
+#: app/templates/includes/navbar.html:46
+msgid "Hola"
+msgstr ""
+
+#: app/templates/includes/navbar.html:54
+msgid "Salir"
+msgstr ""
+
+#: app/templates/includes/navbar_profesores.html:14
+msgid "Inicio"
+msgstr ""
+
+#: app/templates/includes/navbar_profesores.html:19
+msgid "Asistencias"
+msgstr ""
+
+#: app/templates/includes/navbar_profesores.html:29
+msgid "Mesas de Examen"
+msgstr ""
+
+#: app/templates/includes/navbar_profesores.html:55
+msgid "Sesión activa"
+msgstr ""
+
+#: app/templates/includes/navbar_profesores.html:56
+msgid "Mi Perfil"
+msgstr ""
+
+#: app/templates/includes/navbar_profesores.html:57
+msgid "Configuración"
+msgstr ""
+
+#: app/templates/includes/navbar_profesores.html:59
+msgid "Cerrar Sesión"
+msgstr ""
+
+#: app/templates/main/help.html:9
+msgid "Ayuda y Soporte"
+msgstr ""
+
+#: app/templates/main/help.html:13
+msgid "Recursos Disponibles"
+msgstr ""
+
+#: app/templates/main/help.html:22
+msgid "Manual de Usuario"
+msgstr ""
+
+#: app/templates/main/help.html:25
+msgid "Descargar PDF"
+msgstr ""
+
+#: app/templates/main/help.html:27
+msgid "No disponible"
+msgstr ""
+
+#: app/templates/main/help.html:30
+msgid "Guía completa para el uso del sistema."
+msgstr ""
+
+#: app/templates/main/help.html:34
+msgid "Preguntas Frecuentes (FAQ)"
+msgstr ""
+
+#: app/templates/main/help.html:51
+msgid "No hay preguntas frecuentes registradas en este momento."
+msgstr ""
+
+#: app/templates/main/help.html:60
+msgid "Contacto de Soporte"
+msgstr ""
+
+#: app/templates/main/help.html:63
+msgid ""
+"Si no encuentra solución a su problema, por favor contacte al equipo de "
+"soporte:"
+msgstr ""
+
+#: app/templates/main/help.html:66
+msgid "Teléfono"
+msgstr ""
+
+#: app/templates/main/help.html:67
+msgid "Horario de Atención"
+msgstr ""
+
+#: app/templates/main/help.html:67
+msgid "Lunes a Viernes de 9:00 a 18:00 hs"
+msgstr ""
