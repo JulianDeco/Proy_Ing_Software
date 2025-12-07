@@ -4,9 +4,17 @@ from django.contrib.auth.models import AbstractUser
 class Institucion(models.Model):
     nombre = models.CharField(max_length=200)
     direccion = models.CharField(max_length=200)
-    nro_telefono = models.CharField(max_length=200)
-    nro_celular = models.CharField(max_length=200)
-    logo = models.FileField(upload_to='app/static/img/')
+    nro_telefono = models.CharField(max_length=200, verbose_name="Número de Teléfono")
+    nro_celular = models.CharField(max_length=200, blank=True, null=True, verbose_name="Número de Celular")
+    email_contacto = models.EmailField(verbose_name="Email de Contacto", blank=True, null=True)
+    logo = models.FileField(upload_to='app/static/img/', blank=True, null=True)
+    
+    class Meta:
+        verbose_name = "Institución"
+        verbose_name_plural = "Institución" # Singleton conceptual
+
+    def __str__(self):
+        return self.nombre
 
 class Usuario(AbstractUser):
     username = None

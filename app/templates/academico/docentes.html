@@ -116,23 +116,38 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <div class="btn-group btn-group-sm">
+                                <div class="btn-group btn-group-sm" role="group">
                                     <a href="{% url 'asistencia_curso' item.comision.codigo %}"
-                                       class="btn btn-outline-primary"
-                                       title="Registrar asistencia">
+                                       class="btn btn-primary"
+                                       data-bs-toggle="tooltip"
+                                       title="Registrar Asistencia">
                                         <i class="bi bi-clipboard-check"></i>
+                                        <span class="d-none d-xl-inline ms-1">Asistencia</span>
                                     </a>
                                     <a href="{% url 'calificaciones_curso' item.comision.codigo %}"
-                                       class="btn btn-outline-success"
-                                       title="Ver y gestionar calificaciones">
+                                       class="btn btn-success"
+                                       data-bs-toggle="tooltip"
+                                       title="Gestionar Calificaciones">
                                         <i class="bi bi-journal-check"></i>
+                                        <span class="d-none d-xl-inline ms-1">Notas</span>
                                     </a>
                                     {% if item.comision.anio_academico.cierre_cursada_habilitado %}
                                     <a href="{% url 'cerrar_cursada' item.comision.codigo %}"
-                                       class="btn btn-outline-danger"
+                                       class="btn btn-danger"
+                                       data-bs-toggle="tooltip"
                                        title="Cerrar Cursada / Regularizar">
-                                        <i class="bi bi-clipboard-x"></i>
+                                        <i class="bi bi-file-earmark-lock"></i>
+                                        <span class="d-none d-xl-inline ms-1">Cerrar</span>
                                     </a>
+                                    {% else %}
+                                    <button type="button" 
+                                            class="btn btn-secondary" 
+                                            disabled
+                                            data-bs-toggle="tooltip" 
+                                            title="El cierre de cursada aún no está habilitado por Administración">
+                                        <i class="bi bi-file-earmark-lock"></i>
+                                        <span class="d-none d-xl-inline ms-1">Cerrar</span>
+                                    </button>
                                     {% endif %}
                                 </div>
                             </td>
@@ -172,10 +187,20 @@
                             <br>
                             <span class="badge bg-secondary mt-1">{{ comision.codigo }}</span>
                         </div>
-                        <a href="{% url 'asistencia_curso' comision.codigo %}"
-                           class="btn btn-sm btn-primary">
-                            <i class="bi bi-clipboard-check"></i>
-                        </a>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'asistencia_curso' comision.codigo %}"
+                               class="btn btn-primary"
+                               data-bs-toggle="tooltip"
+                               title="Tomar Asistencia">
+                                <i class="bi bi-clipboard-check"></i>
+                            </a>
+                            <a href="{% url 'calificaciones_curso' comision.codigo %}"
+                               class="btn btn-success"
+                               data-bs-toggle="tooltip"
+                               title="Ver Notas">
+                                <i class="bi bi-journal-check"></i>
+                            </a>
+                        </div>
                     </div>
                     {% empty %}
                     <div class="text-center text-muted py-3">
@@ -247,4 +272,15 @@
     margin-right: 0.25rem;
 }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+    });
+</script>
 {% endblock %}

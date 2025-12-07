@@ -11,17 +11,19 @@
             <div class="col-md-3">
                 <h5>{% trans "Enlaces rápidos" %}</h5>
                 <ul class="list-unstyled">
-                    <li><a href="{% url 'help' %}" class="text-decoration-none">{% trans "Ayuda" %}</a></li>
-                    <li><a href="#" class="text-decoration-none">{% trans "Documentación" %}</a></li>
-                    <li><a href="#" class="text-decoration-none">{% trans "Soporte" %}</a></li>
+                    <li>
+                        <a href="{% url 'help' %}" class="text-decoration-none">
+                            {% trans "Ayuda" %}
+                        </a>
+                    </li>
                 </ul>
             </div>
             <div class="col-md-3">
                 <h5>{% trans "Contacto" %}</h5>
                 <ul class="list-unstyled">
-                    <li><i class="bi bi-envelope"></i> contacto@institucion.edu</li>
-                    <li><i class="bi bi-telephone"></i> +123 456 7890</li>
-                    <li><i class="bi bi-geo-alt"></i> Dirección 123, Ciudad</li>
+                    <li><i class="bi bi-envelope"></i> {{ institucion.email_contacto|default:"contacto@institucion.edu" }}</li>
+                    <li><i class="bi bi-telephone"></i> {{ institucion.nro_telefono|default:"+123 456 7890" }}</li>
+                    <li><i class="bi bi-geo-alt"></i> {{ institucion.direccion|default:"Dirección 123, Ciudad" }}</li>
                 </ul>
             </div>
         </div>

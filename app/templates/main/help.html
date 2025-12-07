@@ -38,8 +38,8 @@
             <div class="card-body">
                 <p>{% trans "Si no encuentra solución a su problema, por favor contacte al equipo de soporte:" %}</p>
                 <ul>
-                    <li><strong>Email:</strong> soporte@institucion.edu</li>
-                    <li><strong>{% trans "Teléfono" %}:</strong> +123 456 7890</li>
+                    <li><strong>Email:</strong> {{ institucion.email_contacto|default:"soporte@institucion.edu" }}</li>
+                    <li><strong>{% trans "Teléfono" %}:</strong> {{ institucion.nro_telefono|default:"+123 456 7890" }}</li>
                     <li><strong>{% trans "Horario de Atención" %}:</strong> {% trans "Lunes a Viernes de 9:00 a 18:00 hs" %}</li>
                 </ul>
             </div>
