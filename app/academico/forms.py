@@ -159,11 +159,20 @@ class InscripcionAlumnoComisionAdminForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        
+        alumno = cleaned_data.get('alumno')
+        comision = cleaned_data.get('comision')
+
+        # Si faltan campos requeridos, no validar lógica de negocio aún
+        if not alumno or not comision:
+            return cleaned_data
+
         # Crear instancia temporal para validar
         instance = InscripcionAlumnoComision(
-            alumno=cleaned_data.get('alumno'),
-            comision=cleaned_data.get('comision'),
-            estado_inscripcion=cleaned_data.get('estado_inscripcion', 'REGULAR')
+            alumno=alumno,
+            comision=comision,
+            estado_inscripcion=cleaned_data.get('estado_inscripcion', 'REGULAR'),
+            condicion=cleaned_data.get('condicion', 'CURSANDO')
         )
         if self.instance.pk:
             instance.pk = self.instance.pk

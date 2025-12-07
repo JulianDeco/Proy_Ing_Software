@@ -1,6 +1,6 @@
 import datetime
 from django.db import models, transaction
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.conf import settings
@@ -225,21 +225,27 @@ class InscripcionAlumnoComision(models.Model):
         """Validar reglas de negocio antes de guardar"""
         super().clean()
 
+        # Verificar si la comisión está asignada antes de acceder a ella
+        try:
+            comision = self.comision
+        except ObjectDoesNotExist:
+            return  # No se puede validar si falta la comisión
+
         # Validar capacidad máxima de la comisión
-        if self.comision.cupo_maximo:
+        if comision.cupo_maximo:
             inscriptos_actuales = InscripcionAlumnoComision.objects.filter(
-                comision=self.comision
+                comision=comision
             ).count()
 
             # Si es una nueva inscripción (no tiene pk)
-            if not self.pk and inscriptos_actuales >= self.comision.cupo_maximo:
+            if not self.pk and inscriptos_actuales >= comision.cupo_maximo:
                 raise ValidationError(
-                    f'La comisión {self.comision.codigo} ha alcanzado su capacidad máxima '
-                    f'de {self.comision.cupo_maximo} estudiantes.'
+                    f'La comisión {comision.codigo} ha alcanzado su capacidad máxima '
+                    f'de {comision.cupo_maximo} estudiantes.'
                 )
 
         # Validar que el alumno haya aprobado las materias correlativas
-        materia = self.comision.materia
+        materia = comision.materia
         correlativas = materia.correlativas.all()
 
         if correlativas.exists():
