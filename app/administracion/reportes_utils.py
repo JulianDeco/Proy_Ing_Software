@@ -70,11 +70,11 @@ def grafico_distribucion_notas(calificaciones_data, titulo="Distribución de Not
     return generar_grafico_base64(fig)
 
 
-def grafico_aprobados_desaprobados(aprobados, desaprobados, regulares):
+def grafico_aprobados_desaprobados(aprobados, desaprobados, regulares, en_curso=0):
     """
     Genera un gráfico circular con distribución de estados académicos
     """
-    if aprobados == 0 and desaprobados == 0 and regulares == 0:
+    if aprobados == 0 and desaprobados == 0 and regulares == 0 and en_curso == 0:
         return None
 
     fig, ax = plt.subplots(figsize=(8, 8))
@@ -94,9 +94,14 @@ def grafico_aprobados_desaprobados(aprobados, desaprobados, regulares):
         colors.append('#e74c3c')
 
     if regulares > 0:
-        labels.append(f'Regulares ({regulares})')
+        labels.append(f'Regular (Final Pendiente) ({regulares})')
         sizes.append(regulares)
         colors.append('#f39c12')
+        
+    if en_curso > 0:
+        labels.append(f'En Curso ({en_curso})')
+        sizes.append(en_curso)
+        colors.append('#3498db')
 
     wedges, texts, autotexts = ax.pie(
         sizes,
@@ -262,42 +267,27 @@ def obtener_datos_reporte_academico(filtros=None):
         nombre_comision = ""
 
     # 3. ESTADOS ACADÉMICOS (OPTIMIZADO con agregación)
-    # Calcular estados basándose en:
-    # 1. Si tiene nota FINAL: usar esa nota
-    # 2. Si NO tiene nota FINAL pero tiene otras notas: calcular promedio
-    # 3. Si NO tiene notas: considerarlo "Regular/En Curso"
+    # Calcular estados basándose en el campo estado_inscripcion y condicion
+    from academico.models import EstadoMateria, CondicionInscripcion
 
-    # Inscripciones con nota FINAL
-    inscripciones_con_final = Calificacion.objects.filter(
-        alumno_comision__in=inscripciones,
-        tipo=TipoCalificacion.FINAL
-    ).values('alumno_comision_id').annotate(
-        nota_final=Avg('nota')
-    )
+    # Aprobados: estado_inscripcion = APROBADA
+    aprobados = inscripciones.filter(estado_inscripcion=EstadoMateria.APROBADA).count()
 
-    ids_con_final = [item['alumno_comision_id'] for item in inscripciones_con_final]
-    aprobados_final = sum(1 for item in inscripciones_con_final if item['nota_final'] >= 6)
-    desaprobados_final = sum(1 for item in inscripciones_con_final if item['nota_final'] < 6)
+    # Desaprobados: estado_inscripcion = DESAPROBADA o LIBRE (materia finalizada mal)
+    # O condicion = LIBRE (perdió la cursada)
+    desaprobados = inscripciones.filter(
+        Q(estado_inscripcion=EstadoMateria.DESAPROBADA) | 
+        Q(estado_inscripcion=EstadoMateria.LIBRE) |
+        Q(condicion=CondicionInscripcion.LIBRE)
+    ).distinct().count()
 
-    # Inscripciones SIN nota final pero CON otras notas (usar promedio)
-    inscripciones_sin_final = Calificacion.objects.filter(
-        alumno_comision__in=inscripciones
-    ).exclude(
-        alumno_comision_id__in=ids_con_final
-    ).values('alumno_comision_id').annotate(
-        promedio=Avg('nota')
-    )
+    # Regulares (Final Pendiente): condicion = REGULAR y estado_inscripcion != APROBADA
+    regulares = inscripciones.filter(
+        condicion=CondicionInscripcion.REGULAR
+    ).exclude(estado_inscripcion=EstadoMateria.APROBADA).count()
 
-    aprobados_promedio = sum(1 for item in inscripciones_sin_final if item['promedio'] >= 6)
-    desaprobados_promedio = sum(1 for item in inscripciones_sin_final if item['promedio'] < 6)
-
-    # Total de aprobados y desaprobados
-    aprobados = aprobados_final + aprobados_promedio
-    desaprobados = desaprobados_final + desaprobados_promedio
-
-    # Regulares/En curso: inscripciones sin ninguna calificación
-    ids_con_calificaciones = set(ids_con_final + [item['alumno_comision_id'] for item in inscripciones_sin_final])
-    regulares = inscripciones.exclude(id__in=ids_con_calificaciones).count()
+    # En Curso: condicion = CURSANDO
+    en_curso = inscripciones.filter(condicion=CondicionInscripcion.CURSANDO).count()
 
     # 4. ASISTENCIAS POR MES (OPTIMIZADO con agregación)
     asistencias_query = Asistencia.objects.filter(
@@ -416,11 +406,12 @@ def obtener_datos_reporte_academico(filtros=None):
             'aprobados': aprobados,
             'desaprobados': desaprobados,
             'regulares': regulares,
+            'en_curso': en_curso,
         },
 
         # Datos para gráficos
         'promedios_materias': promedios_materias,
-        'estados_academicos': (aprobados, desaprobados, regulares),
+        'estados_academicos': (aprobados, desaprobados, regulares, en_curso),
         'asistencias_por_mes': dict(porcentajes_por_mes),
         'alumnos_top_promedio': alumnos_promedios[:10],
         'alumnos_top_asistencia': alumnos_asistencias[:10],

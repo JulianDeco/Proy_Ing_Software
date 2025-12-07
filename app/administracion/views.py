@@ -50,20 +50,16 @@ def reporte_academico(request):
     # Obtener datos procesados
     datos_reporte = obtener_datos_reporte_academico(filtros)
 
-    # Generar gráficos en base64 para preview (opcional)
-    graficos = {}
-
-    if datos_reporte['promedios_materias']:
         titulo = f"Promedios por Alumno - {datos_reporte.get('nombre_comision', '')}" if datos_reporte.get('vista_detalle') else "Promedios por Materia"
         graficos['distribucion_notas'] = grafico_distribucion_notas(
             datos_reporte['promedios_materias'],
             titulo=titulo
         )
 
-    aprobados, desaprobados, regulares = datos_reporte['estados_academicos']
-    if aprobados > 0 or desaprobados > 0 or regulares > 0:
+    aprobados, desaprobados, regulares, en_curso = datos_reporte['estados_academicos']
+    if aprobados > 0 or desaprobados > 0 or regulares > 0 or en_curso > 0:
         graficos['estados'] = grafico_aprobados_desaprobados(
-            aprobados, desaprobados, regulares
+            aprobados, desaprobados, regulares, en_curso
         )
 
     if datos_reporte['asistencias_por_mes']:
@@ -126,10 +122,10 @@ def exportar_reporte_pdf(request):
             titulo=titulo
         )
 
-    aprobados, desaprobados, regulares = datos_reporte['estados_academicos']
-    if aprobados > 0 or desaprobados > 0 or regulares > 0:
+    aprobados, desaprobados, regulares, en_curso = datos_reporte['estados_academicos']
+    if aprobados > 0 or desaprobados > 0 or regulares > 0 or en_curso > 0:
         graficos['estados'] = grafico_aprobados_desaprobados(
-            aprobados, desaprobados, regulares
+            aprobados, desaprobados, regulares, en_curso
         )
 
     if datos_reporte['asistencias_por_mes']:
