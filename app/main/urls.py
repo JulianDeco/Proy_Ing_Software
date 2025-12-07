@@ -2,13 +2,14 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import include, path
 
-from main.views import LoginEmailView, home, logout_view, redirect_based_group, download_backup, upload_restore_backup
+from main.views import LoginEmailView, home, logout_view, redirect_based_group, download_backup, upload_restore_backup, help_view
 
 admin.site.site_title = "Sitio de administración - Sistema de administración"
 admin.site.site_header = "Administración de sistema educativo"
 admin.site.index_title = "Sitio de administración"
 
 urlpatterns = [
+    path('i18n/', include('django.conf.urls.i18n')),
     path("admin/backup/descargar/", download_backup, name='admin_backup'),
     path("admin/backup/restaurar/", upload_restore_backup, name='admin_restore_backup'),
     path("admin/", admin.site.urls),
@@ -16,6 +17,7 @@ urlpatterns = [
     path('redirect', redirect_based_group, name='redirect_login'),
     path('logout', logout_view, name='logout'),
     path('login', LoginEmailView.as_view(), name='login'),
+    path('ayuda/', help_view, name='help'),
 
     path('', redirect_based_group, name='home'),
 

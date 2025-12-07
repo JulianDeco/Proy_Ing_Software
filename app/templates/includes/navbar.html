@@ -1,7 +1,8 @@
+{% load i18n %}
 <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
     <div class="container">
         <a class="navbar-brand" href="{% url 'home' %}">
-            <i class="bi bi-building"></i> Sistema Educativo
+            <i class="bi bi-building"></i> {% trans "Sistema Educativo" %}
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
@@ -10,39 +11,53 @@
             <ul class="navbar-nav me-auto">
                 <li class="nav-item dropdown nav-module">
                     <a class="nav-link dropdown-toggle" href="#" id="institucionDropdown" role="button" data-bs-toggle="dropdown">
-                        <i class="bi bi-building"></i> INSTITUCIÓN
+                        <i class="bi bi-building"></i> {% trans "INSTITUCIÓN" %}
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-info-circle"></i> Información</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-people"></i> Personal</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-calendar-event"></i> Eventos</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-info-circle"></i> {% trans "Información" %}</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-people"></i> {% trans "Personal" %}</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-calendar-event"></i> {% trans "Eventos" %}</a></li>
                     </ul>
                 </li>
                 <li class="nav-item dropdown nav-module">
                     <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown">
-                        <i class="bi bi-gear"></i> ADMINISTRACIÓN
+                        <i class="bi bi-gear"></i> {% trans "ADMINISTRACIÓN" %}
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-cash-coin"></i> Finanzas</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-file-earmark-text"></i> Documentación</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-clipboard-data"></i> Reportes</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-cash-coin"></i> {% trans "Finanzas" %}</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-file-earmark-text"></i> {% trans "Documentación" %}</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-clipboard-data"></i> {% trans "Reportes" %}</a></li>
                     </ul>
                 </li>
                 <li class="nav-item dropdown nav-module">
                     <a class="nav-link dropdown-toggle" href="#" id="academicoDropdown" role="button" data-bs-toggle="dropdown">
-                        <i class="bi bi-book"></i> ACADÉMICO
+                        <i class="bi bi-book"></i> {% trans "ACADÉMICO" %}
                     </a>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-mortarboard"></i> Estudiantes</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-person-video3"></i> Profesores</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-journal-bookmark"></i> Cursos</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="bi bi-calendar-check"></i> Calendario</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-mortarboard"></i> {% trans "Estudiantes" %}</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-person-video3"></i> {% trans "Profesores" %}</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-journal-bookmark"></i> {% trans "Cursos" %}</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-calendar-check"></i> {% trans "Calendario" %}</a></li>
                     </ul>
                 </li>
             </ul>
-            <div class="d-flex">
+            <div class="d-flex align-items-center">
+                <form action="{% url 'set_language' %}" method="post" class="me-3">
+                    {% csrf_token %}
+                    <input name="next" type="hidden" value="{{ request.path }}">
+                    <select name="language" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto; background-color: transparent; color: white; border-color: rgba(255,255,255,0.5);">
+                        {% get_current_language as LANGUAGE_CODE %}
+                        {% get_available_languages as LANGUAGES %}
+                        {% get_language_info_list for LANGUAGES as languages %}
+                        {% for language in languages %}
+                            <option value="{{ language.code }}"{% if language.code == LANGUAGE_CODE %} selected{% endif %} style="color: black;">
+                                {{ language.code|upper }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </form>
                 <span class="navbar-text me-3">
-                    <i class="bi bi-person-circle"></i> Hola, <b>
+                    <i class="bi bi-person-circle"></i> {% trans "Hola" %}, <b>
                         {% if request.user.email == None %}
                         {% else %}
                             {{request.user.email}}
@@ -50,7 +65,7 @@
                         </b> 
                 </span>
                 <a href="{% url 'logout' %}" class="btn btn-outline-light">
-                    <i class="bi bi-box-arrow-right"></i> Salir
+                    <i class="bi bi-box-arrow-right"></i> {% trans "Salir" %}
                 </a>
             </div>
         </div>
