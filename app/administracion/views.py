@@ -192,3 +192,28 @@ def exportar_reporte_excel(request):
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
 
     return response
+
+@login_required
+@group_required('Administrativo')
+def descargar_backup(request):
+    """
+    Descarga una copia de seguridad de la base de datos (SQLite).
+    """
+    import os
+    from django.conf import settings
+    from django.http import FileResponse
+
+    db_path = settings.DATABASES['default']['NAME']
+    
+    if not os.path.exists(db_path):
+        return HttpResponse("No se encontró la base de datos.", status=404)
+
+    # Generar nombre con fecha
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename = f"backup_db_{timestamp}.sqlite3"
+
+    response = FileResponse(open(db_path, 'rb'))
+    response['Content-Type'] = 'application/x-sqlite3'
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    return response

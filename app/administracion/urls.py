@@ -6,4 +6,5 @@ urlpatterns = [
     path('reportes/academico/', views.reporte_academico, name='reporte_academico'),
     path('reportes/academico/pdf/', views.exportar_reporte_pdf, name='exportar_reporte_pdf'),
     path('reportes/academico/excel/', views.exportar_reporte_excel, name='exportar_reporte_excel'),
+    path('backup/descargar/', views.descargar_backup, name='descargar_backup'),
 ]
