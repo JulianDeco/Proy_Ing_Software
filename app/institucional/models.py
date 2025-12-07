@@ -8,6 +8,12 @@ class Institucion(models.Model):
     nro_celular = models.CharField(max_length=200, blank=True, null=True, verbose_name="Número de Celular")
     email_contacto = models.EmailField(verbose_name="Email de Contacto", blank=True, null=True)
     logo = models.FileField(upload_to='app/static/img/', blank=True, null=True)
+    archivo_manual = models.FileField(
+        upload_to='docs/',
+        blank=True,
+        null=True,
+        verbose_name="Manual de Usuario (PDF)"
+    )
     
     class Meta:
         verbose_name = "Institución"
@@ -15,6 +21,20 @@ class Institucion(models.Model):
 
     def __str__(self):
         return self.nombre
+
+class PreguntaFrecuente(models.Model):
+    pregunta = models.CharField(max_length=255)
+    respuesta = models.TextField()
+    orden = models.PositiveIntegerField(default=0)
+    publicada = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = "Pregunta Frecuente"
+        verbose_name_plural = "Preguntas Frecuentes"
+        ordering = ['orden']
+
+    def __str__(self):
+        return self.pregunta
 
 class Usuario(AbstractUser):
     username = None

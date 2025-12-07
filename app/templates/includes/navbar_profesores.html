@@ -30,6 +30,21 @@
                 </li>
             </ul>
             <div class="d-flex align-items-center">
+                <form action="{% url 'set_language' %}" method="post" class="me-3">
+                    {% csrf_token %}
+                    <input name="next" type="hidden" value="{{ request.path }}">
+                    <select name="language" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto; background-color: transparent; color: white; border-color: rgba(255,255,255,0.5);">
+                        {% load i18n %}
+                        {% get_current_language as LANGUAGE_CODE %}
+                        {% get_available_languages as LANGUAGES %}
+                        {% get_language_info_list for LANGUAGES as languages %}
+                        {% for language in languages %}
+                            <option value="{{ language.code }}"{% if language.code == LANGUAGE_CODE %} selected{% endif %} style="color: black;">
+                                {{ language.name_local|capfirst }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </form>
                 <div class="dropdown ms-3">
                     <a href="#" class="nav-link dropdown-toggle text-white" id="userDropdown" 
                        data-bs-toggle="dropdown">

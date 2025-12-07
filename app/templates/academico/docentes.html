@@ -66,102 +66,164 @@
         </div>
     </div>
 
-    <!-- Lista de Cursos -->
+    <!-- Lista de Cursos con Pestañas -->
     <div class="card">
-        <div class="card-header bg-white">
-            <h5 class="mb-0"><i class="bi bi-journal-bookmark"></i> Mis Cursos</h5>
+        <div class="card-header bg-white p-0 pt-3 px-3">
+            <ul class="nav nav-tabs card-header-tabs" id="cursosTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="activos-tab" data-bs-toggle="tab" data-bs-target="#activos" type="button" role="tab" aria-controls="activos" aria-selected="true">
+                        <i class="bi bi-journal-bookmark"></i> Mis Cursos Activos
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="historial-tab" data-bs-toggle="tab" data-bs-target="#historial" type="button" role="tab" aria-controls="historial" aria-selected="false">
+                        <i class="bi bi-clock-history"></i> Historial / Finalizados
+                    </button>
+                </li>
+            </ul>
         </div>
         <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Código</th>
-                            <th>Materia</th>
-                            <th>Horario</th>
-                            <th>Aula</th>
-                            <th class="text-center">Alumnos</th>
-                            <th class="text-center">Estado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in comisiones_con_stats %}
-                        <tr>
-                            <td><strong>{{ item.comision.codigo }}</strong></td>
-                            <td>
-                                <div>
-                                    <strong>{{ item.comision.materia.nombre }}</strong>
-                                    <br>
-                                    <small class="text-muted">{{ item.comision.get_turno_display }}</small>
-                                </div>
-                            </td>
-                            <td>
-                                {{ item.comision.get_dia_cursado_display }}<br>
-                                <small>{{ item.comision.horario_inicio|time:"H:i" }} - {{ item.comision.horario_fin|time:"H:i" }}</small>
-                            </td>
-                            <td>{{ item.comision.aula|default:"Sin asignar" }}</td>
-                            <td class="text-center">
-                                <span class="badge bg-secondary">{{ item.total_alumnos }}</span>
-                            </td>
-                            <td class="text-center">
-                                {% if item.tiene_pendientes %}
-                                    <span class="badge bg-warning text-dark" title="Calificaciones pendientes">
-                                        <i class="bi bi-exclamation-circle"></i> {{ item.calificaciones_pendientes }} pendiente{{ item.calificaciones_pendientes|pluralize }}
-                                    </span>
-                                {% else %}
-                                    <span class="badge bg-success" title="Todas las calificaciones cargadas">
-                                        <i class="bi bi-check-circle"></i> Al día
-                                    </span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <div class="btn-group btn-group-sm" role="group">
-                                    <a href="{% url 'asistencia_curso' item.comision.codigo %}"
-                                       class="btn btn-primary"
-                                       data-bs-toggle="tooltip"
-                                       title="Registrar Asistencia">
-                                        <i class="bi bi-clipboard-check"></i>
-                                        <span class="d-none d-xl-inline ms-1">Asistencia</span>
-                                    </a>
-                                    <a href="{% url 'calificaciones_curso' item.comision.codigo %}"
-                                       class="btn btn-success"
-                                       data-bs-toggle="tooltip"
-                                       title="Gestionar Calificaciones">
-                                        <i class="bi bi-journal-check"></i>
-                                        <span class="d-none d-xl-inline ms-1">Notas</span>
-                                    </a>
-                                    {% if item.comision.anio_academico.cierre_cursada_habilitado %}
-                                    <a href="{% url 'cerrar_cursada' item.comision.codigo %}"
-                                       class="btn btn-danger"
-                                       data-bs-toggle="tooltip"
-                                       title="Cerrar Cursada / Regularizar">
-                                        <i class="bi bi-file-earmark-lock"></i>
-                                        <span class="d-none d-xl-inline ms-1">Cerrar</span>
-                                    </a>
-                                    {% else %}
-                                    <button type="button" 
-                                            class="btn btn-secondary" 
-                                            disabled
-                                            data-bs-toggle="tooltip" 
-                                            title="El cierre de cursada aún no está habilitado por Administración">
-                                        <i class="bi bi-file-earmark-lock"></i>
-                                        <span class="d-none d-xl-inline ms-1">Cerrar</span>
-                                    </button>
-                                    {% endif %}
-                                </div>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="7" class="text-center py-4 text-muted">
-                                <i class="bi bi-journal-x display-4 d-block mb-2"></i>
-                                No tiene comisiones asignadas.
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="tab-content" id="cursosTabsContent">
+                <!-- Pestaña Activos -->
+                <div class="tab-pane fade show active" id="activos" role="tabpanel" aria-labelledby="activos-tab">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Materia</th>
+                                    <th>Horario</th>
+                                    <th>Aula</th>
+                                    <th class="text-center">Alumnos</th>
+                                    <th class="text-center">Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in comisiones_con_stats %}
+                                <tr>
+                                    <td><strong>{{ item.comision.codigo }}</strong></td>
+                                    <td>
+                                        <div>
+                                            <strong>{{ item.comision.materia.nombre }}</strong>
+                                            <br>
+                                            <small class="text-muted">{{ item.comision.get_turno_display }}</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {{ item.comision.get_dia_cursado_display }}<br>
+                                        <small>{{ item.comision.horario_inicio|time:"H:i" }} - {{ item.comision.horario_fin|time:"H:i" }}</small>
+                                    </td>
+                                    <td>{{ item.comision.aula|default:"Sin asignar" }}</td>
+                                    <td class="text-center">
+                                        <span class="badge bg-secondary">{{ item.total_alumnos }}</span>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if item.tiene_pendientes %}
+                                            <span class="badge bg-warning text-dark" title="Calificaciones pendientes">
+                                                <i class="bi bi-exclamation-circle"></i> {{ item.calificaciones_pendientes }} pendiente{{ item.calificaciones_pendientes|pluralize }}
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-success" title="Todas las calificaciones cargadas">
+                                                <i class="bi bi-check-circle"></i> Al día
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm" role="group">
+                                            <a href="{% url 'asistencia_curso' item.comision.codigo %}"
+                                               class="btn btn-primary"
+                                               data-bs-toggle="tooltip"
+                                               title="Registrar Asistencia">
+                                                <i class="bi bi-clipboard-check"></i>
+                                                <span class="d-none d-xl-inline ms-1">Asistencia</span>
+                                            </a>
+                                            <a href="{% url 'calificaciones_curso' item.comision.codigo %}"
+                                               class="btn btn-success"
+                                               data-bs-toggle="tooltip"
+                                               title="Gestionar Calificaciones">
+                                                <i class="bi bi-journal-check"></i>
+                                                <span class="d-none d-xl-inline ms-1">Notas</span>
+                                            </a>
+                                            {% if item.comision.anio_academico.cierre_cursada_habilitado %}
+                                            <a href="{% url 'cerrar_cursada' item.comision.codigo %}"
+                                               class="btn btn-danger"
+                                               data-bs-toggle="tooltip"
+                                               title="Cerrar Cursada / Regularizar">
+                                                <i class="bi bi-file-earmark-lock"></i>
+                                                <span class="d-none d-xl-inline ms-1">Cerrar</span>
+                                            </a>
+                                            {% else %}
+                                            <button type="button" 
+                                                    class="btn btn-secondary" 
+                                                    disabled
+                                                    data-bs-toggle="tooltip" 
+                                                    title="El cierre de cursada aún no está habilitado por Administración">
+                                                <i class="bi bi-file-earmark-lock"></i>
+                                                <span class="d-none d-xl-inline ms-1">Cerrar</span>
+                                            </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-4 text-muted">
+                                        <i class="bi bi-journal-x display-4 d-block mb-2"></i>
+                                        No tiene comisiones activas.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Pestaña Historial -->
+                <div class="tab-pane fade" id="historial" role="tabpanel" aria-labelledby="historial-tab">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Año</th>
+                                    <th>Materia</th>
+                                    <th>Turno</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for comision in comisiones_finalizadas %}
+                                <tr>
+                                    <td>{{ comision.codigo }}</td>
+                                    <td>{{ comision.anio_academico.nombre }}</td>
+                                    <td><strong>{{ comision.materia.nombre }}</strong></td>
+                                    <td>{{ comision.get_turno_display }}</td>
+                                    <td>
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-archive"></i> Finalizada
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'calificaciones_curso' comision.codigo %}"
+                                           class="btn btn-sm btn-outline-info"
+                                           title="Ver Historial de Notas">
+                                            <i class="bi bi-eye"></i> Ver Notas
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4 text-muted">
+                                        No hay comisiones finalizadas en el historial.
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

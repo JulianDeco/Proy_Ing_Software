@@ -13,20 +13,44 @@
                 <h5>{% trans "Recursos Disponibles" %}</h5>
             </div>
             <div class="card-body">
-                <div class="list-group">
-                    <a href="#" class="list-group-item list-group-item-action">
+                <div class="list-group mb-4">
+                    <a href="{% if institucion.archivo_manual %}{{ institucion.archivo_manual.url }}{% else %}#{% endif %}" 
+                       class="list-group-item list-group-item-action {% if not institucion.archivo_manual %}disabled{% endif %}"
+                       {% if institucion.archivo_manual %}target="_blank"{% endif %}>
                         <div class="d-flex w-100 justify-content-between">
-                            <h5 class="mb-1">{% trans "Manual de Usuario" %}</h5>
-                            <small class="text-muted">PDF</small>
+                            <h5 class="mb-1">
+                                <i class="bi bi-file-earmark-pdf text-danger"></i> {% trans "Manual de Usuario" %}
+                            </h5>
+                            {% if institucion.archivo_manual %}
+                            <small class="text-muted">{% trans "Descargar PDF" %}</small>
+                            {% else %}
+                            <small class="text-muted">{% trans "No disponible" %}</small>
+                            {% endif %}
                         </div>
                         <p class="mb-1">{% trans "Guía completa para el uso del sistema." %}</p>
                     </a>
-                    <a href="#" class="list-group-item list-group-item-action">
-                        <div class="d-flex w-100 justify-content-between">
-                            <h5 class="mb-1">{% trans "Preguntas Frecuentes (FAQ)" %}</h5>
+                </div>
+
+                <h5 class="mb-3">{% trans "Preguntas Frecuentes (FAQ)" %}</h5>
+                <div class="accordion" id="accordionFaq">
+                    {% for faq in faqs %}
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="heading{{ faq.id }}">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ faq.id }}" aria-expanded="false" aria-controls="collapse{{ faq.id }}">
+                                {{ faq.pregunta }}
+                            </button>
+                        </h2>
+                        <div id="collapse{{ faq.id }}" class="accordion-collapse collapse" aria-labelledby="heading{{ faq.id }}" data-bs-parent="#accordionFaq">
+                            <div class="accordion-body">
+                                {{ faq.respuesta|linebreaks }}
+                            </div>
                         </div>
-                        <p class="mb-1">{% trans "Respuestas a las preguntas más comunes." %}</p>
-                    </a>
+                    </div>
+                    {% empty %}
+                    <div class="alert alert-light text-center" role="alert">
+                        {% trans "No hay preguntas frecuentes registradas en este momento." %}
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>

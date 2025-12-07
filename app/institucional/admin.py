@@ -5,12 +5,18 @@ from django.utils.html import format_html
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
-from institucional.models import Institucion, Usuario, Persona, Empleado, AuditoriaAcceso, AuditoriaDatos
+from institucional.models import Institucion, Usuario, Persona, Empleado, AuditoriaAcceso, AuditoriaDatos, PreguntaFrecuente
 from institucional.auditoria import AuditoriaMixin
 
 @admin.register(Institucion)
 class InstitucionAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'direccion','nro_telefono','nro_celular','logo')
+    list_display = ('nombre', 'direccion','nro_telefono','email_contacto')
+
+@admin.register(PreguntaFrecuente)
+class PreguntaFrecuenteAdmin(admin.ModelAdmin):
+    list_display = ('pregunta', 'orden', 'publicada')
+    list_editable = ('orden', 'publicada')
+    search_fields = ('pregunta', 'respuesta')
 
 @admin.register(Usuario)
 class UsuarioAdmin(BaseUserAdmin):

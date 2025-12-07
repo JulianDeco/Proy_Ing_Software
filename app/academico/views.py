@@ -46,7 +46,7 @@ class CierreCursadaView(DocenteRequiredMixin, View):
         docente = get_object_or_404(Empleado, usuario=request.user)
         
         # Validar que el docente sea el titular
-        if comision.docente != docente:
+        if comision.docente_id != docente.id:
             messages.error(request, "No tiene permiso para cerrar esta comisión.")
             return redirect('docentes')
 
@@ -94,7 +94,7 @@ class CierreCursadaView(DocenteRequiredMixin, View):
         comision = get_object_or_404(Comision, codigo=codigo)
         docente = get_object_or_404(Empleado, usuario=request.user)
 
-        if comision.docente != docente:
+        if comision.docente_id != docente.id:
             messages.error(request, "No tiene permiso para cerrar esta comisión.")
             return redirect('docentes')
 
@@ -130,17 +130,20 @@ class DashboardProfesoresView(DocenteRequiredMixin, View):
         empleado = self.servicios_academico.obtener_docente_actual(request.user)
         estadisticas = self.servicios_academico.obtener_estadisticas_docente(empleado)
         # Optimizar query con select_related para evitar N+1
-        comisiones = self.servicios_academico.obtener_comisiones_docente(empleado).select_related(
+        comisiones_queryset = self.servicios_academico.obtener_comisiones_docente(empleado).select_related(
             'materia', 'anio_academico'
-        ).filter(estado='EN_CURSO')
+        )
+        
+        comisiones_activas = comisiones_queryset.filter(estado='EN_CURSO')
+        comisiones_finalizadas = comisiones_queryset.filter(estado='FINALIZADA').order_by('-anio_academico__nombre', '-materia__nombre')
 
-        # Obtener comisiones con clases hoy
+        # Obtener comisiones con clases hoy (solo de las activas)
         dia_hoy = timezone.now().weekday() + 1
-        comisiones_hoy = comisiones.filter(dia_cursado=dia_hoy).order_by('horario_inicio')
+        comisiones_hoy = comisiones_activas.filter(dia_cursado=dia_hoy).order_by('horario_inicio')
 
-        # Calcular estadísticas adicionales por comisión
+        # Calcular estadísticas adicionales por comisión (solo activas)
         comisiones_con_stats = []
-        for comision in comisiones:
+        for comision in comisiones_activas:
             inscripciones = InscripcionAlumnoComision.objects.filter(comision=comision)
             total_alumnos = inscripciones.count()
 
@@ -168,10 +171,11 @@ class DashboardProfesoresView(DocenteRequiredMixin, View):
         return render(request, 'academico/docentes.html', {
             'docente': empleado,
             'comisiones_con_stats': comisiones_con_stats,
+            'comisiones_finalizadas': comisiones_finalizadas,
             'comisiones_hoy': comisiones_hoy,
             'clases_hoy': estadisticas['clases_hoy'],
             'total_alumnos': estadisticas['total_alumnos'],
-            'total_comisiones': comisiones.count()
+            'total_comisiones': comisiones_activas.count()
         })
 
 class CalificacionesCursoView(DocenteRequiredMixin, View):

@@ -100,4 +100,10 @@ def upload_restore_backup(request):
 
 @login_required
 def help_view(request):
-    return render(request, 'main/help.html')
+    from institucional.models import PreguntaFrecuente
+    
+    faqs = PreguntaFrecuente.objects.filter(publicada=True).order_by('orden')
+    
+    return render(request, 'main/help.html', {
+        'faqs': faqs
+    })

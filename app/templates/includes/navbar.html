@@ -42,20 +42,6 @@
                 </li>
             </ul>
             <div class="d-flex align-items-center">
-                <form action="{% url 'set_language' %}" method="post" class="me-3">
-                    {% csrf_token %}
-                    <input name="next" type="hidden" value="{{ request.path }}">
-                    <select name="language" class="form-select form-select-sm" onchange="this.form.submit()" style="width: auto; background-color: transparent; color: white; border-color: rgba(255,255,255,0.5);">
-                        {% get_current_language as LANGUAGE_CODE %}
-                        {% get_available_languages as LANGUAGES %}
-                        {% get_language_info_list for LANGUAGES as languages %}
-                        {% for language in languages %}
-                            <option value="{{ language.code }}"{% if language.code == LANGUAGE_CODE %} selected{% endif %} style="color: black;">
-                                {{ language.code|upper }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </form>
                 <span class="navbar-text me-3">
                     <i class="bi bi-person-circle"></i> {% trans "Hola" %}, <b>
                         {% if request.user.email == None %}
