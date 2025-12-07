@@ -162,3 +162,21 @@ class AuditoriaAcceso(models.Model):
 
     def __str__(self):
         return f"{self.email} - {self.get_tipo_accion_display()} - {self.fecha_hora.strftime('%d/%m/%Y %H:%M:%S')}"
+
+
+class DigitoVerificadorVertical(models.Model):
+    """
+    Almacena el Dígito Verificador Vertical (DVV) para cada tabla crítica.
+    El DVV es la suma (o combinación) de los DVH de todos los registros activos.
+    """
+    tabla = models.CharField(max_length=100, unique=True)
+    dvv = models.CharField(max_length=255)  # Hash resultante
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'institucional_dvv'
+        verbose_name = 'Dígito Verificador Vertical'
+        verbose_name_plural = 'Dígitos Verificadores Verticales'
+
+    def __str__(self):
+        return f"{self.tabla}: {self.dvv}"

@@ -50,6 +50,10 @@ def reporte_academico(request):
     # Obtener datos procesados
     datos_reporte = obtener_datos_reporte_academico(filtros)
 
+    # Generar gráficos en base64 para preview (opcional)
+    graficos = {}
+
+    if datos_reporte['promedios_materias']:
         titulo = f"Promedios por Alumno - {datos_reporte.get('nombre_comision', '')}" if datos_reporte.get('vista_detalle') else "Promedios por Materia"
         graficos['distribucion_notas'] = grafico_distribucion_notas(
             datos_reporte['promedios_materias'],

@@ -293,6 +293,7 @@ class Calificacion(models.Model):
     tipo = models.CharField(max_length=20, choices=TipoCalificacion.choices, db_index=True)
     nota = models.DecimalField(max_digits=4, decimal_places=2)
     fecha_creacion = models.DateTimeField(db_index=True)
+    dvh = models.CharField(max_length=255, blank=True, null=True, editable=False)
 
     class Meta:
         unique_together = ('alumno_comision', 'tipo')
@@ -324,6 +325,19 @@ class Calificacion(models.Model):
                     raise ValidationError(
                         'No se pueden agregar calificaciones a una comisión finalizada.'
                     )
+
+@receiver(models.signals.pre_save, sender=Calificacion)
+def calcular_dvh_calificacion(sender, instance, **kwargs):
+    """Calcula el DVH antes de guardar"""
+    from institucional.digitos_verificadores import GestorDigitosVerificadores
+    campos_criticos = ['nota', 'tipo', 'fecha_creacion']
+    instance.dvh = GestorDigitosVerificadores.calcular_dvh(instance, campos_criticos)
+
+@receiver(models.signals.post_save, sender=Calificacion)
+def actualizar_dvv_calificacion(sender, instance, **kwargs):
+    """Actualiza el DVV de la tabla después de guardar"""
+    from institucional.digitos_verificadores import GestorDigitosVerificadores
+    GestorDigitosVerificadores.actualizar_dvv('Calificacion', 'academico')
     
 class Asistencia(models.Model):
     alumno_comision = models.ForeignKey(InscripcionAlumnoComision, on_delete=models.CASCADE, related_name='asistencias')
@@ -480,6 +494,7 @@ class InscripcionMesaExamen(models.Model):
     )
     fecha_inscripcion = models.DateTimeField(auto_now_add=True)
     observaciones = models.TextField(blank=True, null=True)
+    dvh = models.CharField(max_length=255, blank=True, null=True, editable=False)
 
     class Meta:
         db_table = 'academico_inscripciones_mesa_examen'
@@ -537,6 +552,19 @@ class InscripcionMesaExamen(models.Model):
                 self.condicion = CondicionAlumnoMesa.REGULAR
             else: # Condicion CURSANDO o LIBRE para la cursada
                 self.condicion = CondicionAlumnoMesa.LIBRE
+
+@receiver(models.signals.pre_save, sender=InscripcionMesaExamen)
+def calcular_dvh_inscripcion_mesa(sender, instance, **kwargs):
+    """Calcula el DVH antes de guardar"""
+    from institucional.digitos_verificadores import GestorDigitosVerificadores
+    campos_criticos = ['nota_examen', 'condicion', 'estado_inscripcion']
+    instance.dvh = GestorDigitosVerificadores.calcular_dvh(instance, campos_criticos)
+
+@receiver(models.signals.post_save, sender=InscripcionMesaExamen)
+def actualizar_dvv_inscripcion_mesa(sender, instance, **kwargs):
+    """Actualiza el DVV de la tabla después de guardar"""
+    from institucional.digitos_verificadores import GestorDigitosVerificadores
+    GestorDigitosVerificadores.actualizar_dvv('InscripcionMesaExamen', 'academico')
 
 
 
