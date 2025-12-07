@@ -1,22 +1,23 @@
+{% load i18n %}
 <footer class="footer mt-auto py-3 bg-light">
     <div class="container">
         <div class="row">
             <div class="col-md-6">
-                <h5 class="mb-3">Sistema de Administración Educativa</h5>
+                <h5 class="mb-3">{% trans "Sistema de Administración Educativa" %}</h5>
                 <p class="text-muted">
-                    Plataforma integral para la gestión de instituciones educativas.
+                    {% trans "Plataforma integral para la gestión de instituciones educativas." %}
                 </p>
             </div>
             <div class="col-md-3">
-                <h5>Enlaces rápidos</h5>
+                <h5>{% trans "Enlaces rápidos" %}</h5>
                 <ul class="list-unstyled">
-                    <li><a href="#" class="text-decoration-none">Ayuda</a></li>
-                    <li><a href="#" class="text-decoration-none">Documentación</a></li>
-                    <li><a href="#" class="text-decoration-none">Soporte</a></li>
+                    <li><a href="{% url 'help' %}" class="text-decoration-none">{% trans "Ayuda" %}</a></li>
+                    <li><a href="#" class="text-decoration-none">{% trans "Documentación" %}</a></li>
+                    <li><a href="#" class="text-decoration-none">{% trans "Soporte" %}</a></li>
                 </ul>
             </div>
             <div class="col-md-3">
-                <h5>Contacto</h5>
+                <h5>{% trans "Contacto" %}</h5>
                 <ul class="list-unstyled">
                     <li><i class="bi bi-envelope"></i> contacto@institucion.edu</li>
                     <li><i class="bi bi-telephone"></i> +123 456 7890</li>
@@ -26,7 +27,7 @@
         </div>
         <hr>
         <div class="text-center text-muted">
-            &copy; {% now "Y" %} Sistema Educativo. Todos los derechos reservados.
+            &copy; {% now "Y" %} {% trans "Sistema Educativo. Todos los derechos reservados." %}
         </div>
     </div>
 </footer>

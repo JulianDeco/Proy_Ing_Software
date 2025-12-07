@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Ayuda" %} - {% trans "Sistema Educativo" %}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="mb-4">{% trans "Ayuda y Soporte" %}</h1>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>{% trans "Recursos Disponibles" %}</h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">{% trans "Manual de Usuario" %}</h5>
+                            <small class="text-muted">PDF</small>
+                        </div>
+                        <p class="mb-1">{% trans "Guía completa para el uso del sistema." %}</p>
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h5 class="mb-1">{% trans "Preguntas Frecuentes (FAQ)" %}</h5>
+                        </div>
+                        <p class="mb-1">{% trans "Respuestas a las preguntas más comunes." %}</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h5>{% trans "Contacto de Soporte" %}</h5>
+            </div>
+            <div class="card-body">
+                <p>{% trans "Si no encuentra solución a su problema, por favor contacte al equipo de soporte:" %}</p>
+                <ul>
+                    <li><strong>Email:</strong> soporte@institucion.edu</li>
+                    <li><strong>{% trans "Teléfono" %}:</strong> +123 456 7890</li>
+                    <li><strong>{% trans "Horario de Atención" %}:</strong> {% trans "Lunes a Viernes de 9:00 a 18:00 hs" %}</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

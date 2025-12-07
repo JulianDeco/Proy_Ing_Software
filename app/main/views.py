@@ -97,3 +97,7 @@ def upload_restore_backup(request):
         return redirect('/admin/')
 
     return redirect('/admin/')
+
+@login_required
+def help_view(request):
+    return render(request, 'main/help.html')
