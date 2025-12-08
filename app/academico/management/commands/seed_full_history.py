@@ -103,7 +103,7 @@ class Command(BaseCommand):
         
         # Administrativo Empleado
         if not Usuario.objects.filter(email='secretaria@instituto.edu').exists():
-            adm_user = Usuario.objects.create_user('secretaria@instituto.edu', 'admin123')
+            adm_user = Usuario.objects.create_user('secretaria@instituto.edu', 'admin123', is_staff=True)
             adm_user.groups.add(Group.objects.get(name='Administrativo'))
             Empleado.objects.create(dni="10000000", nombre="Admin", apellido="General", usuario=adm_user)
 
@@ -121,14 +121,14 @@ class Command(BaseCommand):
         materia_prog1.correlativas.add(materia_algoritmos)
 
         materia_bdd1 = Materia.objects.create(nombre="Base de Datos I", codigo="BDD1", plan_estudio=plan, descripcion="Modelado de datos")
-        materia_bdd1.correlativas.add(materia_icomp)
+        materia_bdd1.correlativas.add(materia_intro_comp)
 
         # Materias con múltiples correlativas
         materia_prog2 = Materia.objects.create(nombre="Programación II", codigo="PROG2", plan_estudio=plan, descripcion="Programación orientada a objetos")
         materia_prog2.correlativas.add(materia_prog1)
 
         materia_arq = Materia.objects.create(nombre="Arquitectura de Computadoras", codigo="ARQCOMP", plan_estudio=plan, descripcion="Hardware y software")
-        materia_arq.correlativas.add(materia_icomp)
+        materia_arq.correlativas.add(materia_intro_comp)
 
         materia_ing_soft = Materia.objects.create(nombre="Ingeniería de Software I", codigo="ISOF1", plan_estudio=plan, descripcion="Ciclo de vida del software")
         materia_ing_soft.correlativas.add(materia_prog1, materia_bdd1) # Requiere Prog1 y BDD1
@@ -143,9 +143,16 @@ class Command(BaseCommand):
         
         for i in range(len(nombres)):
             email = f"docente{i+1}@instituto.edu"
-            user, created = Usuario.objects.get_or_create(email=email, defaults={'password': 'docente123'})
+            user, created = Usuario.objects.get_or_create(email=email)
             if created:
+                user.set_password('docente123')
+                user.save()
                 user.groups.add(Group.objects.get(name='Docente'))
+            else: # Si el usuario ya existe, asegurarse de que tenga la contraseña correcta y el grupo
+                user.set_password('docente123')
+                user.save()
+                if not user.groups.filter(name='Docente').exists():
+                    user.groups.add(Group.objects.get(name='Docente'))
             docente, created = Empleado.objects.get_or_create(
                 dni=f"2000000{i}", defaults={
                     'nombre': nombres[i], 'apellido': apellidos[i], 'usuario': user
@@ -200,49 +207,75 @@ class Command(BaseCommand):
         num_nuevos = 5 if year == 2023 else random.randint(2, 4)
         for i in range(num_nuevos):
             idx = (year * 100 + i) % len(nombres) # Asegurar nombres variados
-            email = f"alumno{year}-{i+1}@instituto.edu"
-            user, created = Usuario.objects.get_or_create(email=email, defaults={'password': 'alumno123'})
-            if created:
-                user.groups.add(Group.objects.get(name='Alumno'))
+            email = f"alumno{year}-{i+1}@instituto.edu" # Definir email aquí
             
             alumno, created = Alumno.objects.get_or_create(
                 legajo=f"{year}-{i+1:04d}", defaults={
                     'dni': f"40{year}{i:04d}", 'nombre': nombres[idx], 'apellido': f"Apellido{year}{i}",
                     'email': email, 'estado': estado_activo, 'fecha_nacimiento': date(year - 20, 1, 1),
-                    'usuario': user
                 })
             alumnos_este_anio.append(alumno)
         
         return alumnos_este_anio
 
     def crear_comisiones_para_anio(self, anio_academico, plan, docentes):
-        self.stdout.write(f"Creando comisiones para {anio_academico.nombre}...")
+        self.stdout.write(f"Creando comisiones para {anio_academico.nombre} (distribución equitativa a docentes)...")
         comisiones_creadas = []
-        materias = Materia.objects.filter(plan_estudio=plan)
-        
-        for i, materia in enumerate(materias):
-            docente = random.choice(docentes)
-            turno = random.choice([Turno.MANANA, Turno.TARDE, Turno.NOCHE])
-            dia = random.choice([Dia.LUNES, Dia.MARTES, Dia.MIERCOLES, Dia.JUEVES, Dia.VIERNES])
-            
-            estado = EstadoComision.EN_CURSO
-            if anio_academico.nombre == "Ciclo Lectivo 2023" or anio_academico.nombre == "Ciclo Lectivo 2024":
-                estado = EstadoComision.FINALIZADA
+        materias = list(Materia.objects.filter(plan_estudio=plan))
+        random.shuffle(materias) # Aleatorizar materias para una distribución más variada
 
-            comision = Comision.objects.create(
-                codigo=f"{materia.codigo}-{anio_academico.nombre[-4:]}-C{i+1}",
-                horario_inicio=time(8,0) if turno == Turno.MANANA else (time(14,0) if turno == Turno.TARDE else time(19,0)),
-                horario_fin=time(12,0) if turno == Turno.MANANA else (time(18,0) if turno == Turno.TARDE else time(22,0)),
-                dia_cursado=dia,
-                turno=turno,
-                docente=docente,
-                materia=materia,
-                aula=f"Aula {100+i}",
-                cupo_maximo=random.randint(20, 30),
-                estado=estado,
-                anio_academico=anio_academico
-            )
-            comisiones_creadas.append(comision)
+        # Determinar el estado de las comisiones (Finalizada para años anteriores, En curso para el actual)
+        estado_comision_defecto = EstadoComision.EN_CURSO
+        if anio_academico.nombre == "Ciclo Lectivo 2023" or anio_academico.nombre == "Ciclo Lectivo 2024":
+            estado_comision_defecto = EstadoComision.FINALIZADA
+
+        # Asignar a cada docente un número inicial de comisiones (4-5)
+        docentes_con_materias = {docente: [] for docente in docentes}
+        
+        materias_disponibles = list(materias)
+        random.shuffle(materias_disponibles)
+
+        # Primera ronda: garantizar un mínimo de comisiones por docente
+        for docente in docentes:
+            num_comisiones_a_asignar = random.randint(4, 5)
+            # Asegurarse de no asignar más materias de las disponibles
+            num_comisiones_a_asignar = min(num_comisiones_a_asignar, len(materias_disponibles))
+
+            for _ in range(num_comisiones_a_asignar):
+                if materias_disponibles:
+                    materia = materias_disponibles.pop(0) # Tomar la primera materia disponible
+                    docentes_con_materias[docente].append(materia)
+
+        # Segunda ronda: asignar las materias restantes (si las hay) de forma equitativa
+        docente_idx = 0
+        while materias_disponibles:
+            materia = materias_disponibles.pop(0)
+            docente = docentes[docente_idx % len(docentes)]
+            docentes_con_materias[docente].append(materia)
+            docente_idx += 1
+
+        # Crear las comisiones basadas en la asignación
+        comision_counter = 1
+        for docente, materias_asignadas in docentes_con_materias.items():
+            for materia in materias_asignadas:
+                turno = random.choice([Turno.MANANA, Turno.TARDE, Turno.NOCHE])
+                dia = random.choice([Dia.LUNES, Dia.MARTES, Dia.MIERCOLES, Dia.JUEVES, Dia.VIERNES])
+                
+                comision = Comision.objects.create(
+                    codigo=f"{materia.codigo}-{anio_academico.nombre[-4:]}-{comision_counter:02d}",
+                    horario_inicio=time(8,0) if turno == Turno.MANANA else (time(14,0) if turno == Turno.TARDE else time(19,0)),
+                    horario_fin=time(12,0) if turno == Turno.MANANA else (time(18,0) if turno == Turno.TARDE else time(22,0)),
+                    dia_cursado=dia,
+                    turno=turno,
+                    docente=docente,
+                    materia=materia,
+                    aula=f"Aula {100 + comision_counter}",
+                    cupo_maximo=random.randint(20, 30),
+                    estado=estado_comision_defecto,
+                    anio_academico=anio_academico
+                )
+                comisiones_creadas.append(comision)
+                comision_counter += 1
         return comisiones_creadas
 
     def simular_cursada_y_resultados(self, anio_academico, alumnos, comisiones):
@@ -318,16 +351,30 @@ class Command(BaseCommand):
                                 defaults={'esta_presente': random.choice([True, True, True, False])} # 75% presente
                             )
                     
-                    # Generar Calificaciones (si la comisión no ha finalizado o si ya se generaron)
+                    # Generar Calificaciones
                     if (comision.estado == EstadoComision.FINALIZADA and (condicion_final == 'APROBADO' or condicion_final == 'DESAPROBADO')) or (comision.estado == EstadoComision.EN_CURSO and random.random() < 0.5):
-                        num_calificaciones = random.randint(1, 3)
-                        for _ in range(num_calificaciones):
+                        
+                        # Generar 1-2 calificaciones parciales/TP
+                        num_parciales_o_tps = random.randint(0, 2)
+                        for n in range(1, num_parciales_o_tps + 1):
                             nota = random.randint(4, 10) if condicion_final == 'APROBADO' else random.randint(1, 5)
                             Calificacion.objects.create(
                                 alumno_comision=inscripcion,
-                                tipo=random.choice([TipoCalificacion.PARCIAL, TipoCalificacion.TRABAJO_PRACTICO, TipoCalificacion.FINAL]),
+                                tipo=random.choice([TipoCalificacion.PARCIAL, TipoCalificacion.TRABAJO_PRACTICO]),
+                                numero=n, # Usar número incremental para la restricción única
                                 nota=nota,
                                 fecha_creacion=anio_academico.fecha_inicio + timedelta(days=random.randint(30, (anio_academico.fecha_fin - anio_academico.fecha_inicio).days - 30))
+                            )
+
+                        # Generar una calificación final si aplica
+                        if condicion_final == 'APROBADO' or condicion_final == 'DESAPROBADO':
+                            nota = random.randint(6, 10) if condicion_final == 'APROBADO' else random.randint(1, 5)
+                            Calificacion.objects.create(
+                                alumno_comision=inscripcion,
+                                tipo=TipoCalificacion.FINAL,
+                                numero=1, # Solo una calificación final, así que número 1 está bien
+                                nota=nota,
+                                fecha_creacion=anio_academico.fecha_inicio + timedelta(days=random.randint( (anio_academico.fecha_fin - anio_academico.fecha_inicio).days - 60, (anio_academico.fecha_fin - anio_academico.fecha_inicio).days - 10))
                             )
 
     def crear_casos_especificos(self, anios, docentes, plan):
@@ -368,12 +415,10 @@ class Command(BaseCommand):
             })[0]
 
         # --- CASO 1: Alumno con correlativa NO aprobada para PROG1 (debe fallar inscripción manual a PROG2) ---
-        user_no_aprobado = Usuario.objects.create_user('alumno_corr_fail@test.com', 'alumno123')
-        user_no_aprobado.groups.add(Group.objects.get(name='Alumno'))
+        email_no_aprobado = 'alumno_corr_fail@test.com'
         alumno_no_aprobado = Alumno.objects.create(
             dni="45000000", nombre="Correlativa", apellido="Fallida", legajo="2025-FAIL",
-            email='alumno_corr_fail@test.com', estado=estado_activo, fecha_nacimiento=date(2000,1,1),
-            usuario=user_no_aprobado
+            email=email_no_aprobado, estado=estado_activo, fecha_nacimiento=date(2000,1,1)
         )
         # Inscribirlo en Algoritmos y "aprobarlo" (simular aprobación en 2024)
         anio_2024 = anios[2024]
@@ -399,12 +444,10 @@ class Command(BaseCommand):
         # La prueba para esto se haría intentando inscribirlo via la lógica de la app.
 
         # --- CASO 2: Alumno que cumple todas las correlativas (para ING. SOFTWARE I) ---
-        user_full_ok = Usuario.objects.create_user('alumno_corr_ok@test.com', 'alumno123')
-        user_full_ok.groups.add(Group.objects.get(name='Alumno'))
+        email_full_ok = 'alumno_corr_ok@test.com'
         alumno_full_ok = Alumno.objects.create(
             dni="46000000", nombre="Correlativa", apellido="Exitosa", legajo="2025-OK",
-            email='alumno_corr_ok@test.com', estado=estado_activo, fecha_nacimiento=date(1999,5,10),
-            usuario=user_full_ok
+            email=email_full_ok, estado=estado_activo, fecha_nacimiento=date(1999,5,10)
         )
         # Simular aprobación de PROG1 y BDD1 en 2024
         anio_2024 = anios[2024]
@@ -426,12 +469,10 @@ class Command(BaseCommand):
         )
 
         # --- CASO 3: Alumno con múltiples inscripciones en el mismo año (una aprobada, otra en curso) ---
-        user_multi = Usuario.objects.create_user('alumno_multi@test.com', 'alumno123')
-        user_multi.groups.add(Group.objects.get(name='Alumno'))
+        email_multi = 'alumno_multi@test.com'
         alumno_multi = Alumno.objects.create(
             dni="47000000", nombre="Multi", apellido="Inscripcion", legajo="2025-MULTI",
-            email='alumno_multi@test.com', estado=estado_activo, fecha_nacimiento=date(2001,8,20),
-            usuario=user_multi
+            email=email_multi, estado=estado_activo, fecha_nacimiento=date(2001,8,20)
         )
         # En 2025: Inscribir en Algoritmos (APROBADO)
         comision_aed_2025 = Comision.objects.filter(materia=materia_algoritmos, anio_academico=anio_2025).first()

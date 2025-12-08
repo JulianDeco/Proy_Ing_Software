@@ -30,7 +30,7 @@
                                 <select class="form-select" id="id_tipo" name="tipo" required>
                                     <option value="">{% trans "Seleccionar tipo" %}</option>
                                     {% for tipo_value, tipo_label in tipos_calificacion %}
-                                    <option value="{{ tipo_value }}">{{ tipo_label }}</option>
+                                    <option value="{{ tipo_value }}" {% if tipo_value == pre_selected_tipo %}selected{% endif %}>{{ tipo_label }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
@@ -63,7 +63,7 @@
                                 </thead>
                                 <tbody>
                                     {% for inscripcion in inscripciones %}
-                                    <tr>
+                                    <tr data-alumno-id="{{ inscripcion.alumno.id }}">
                                         <td>{{ inscripcion.alumno.nombre }} {{ inscripcion.alumno.apellido }}</td>
                                         <td>{{ inscripcion.alumno.dni }}</td>
                                         <td>{{ inscripcion.alumno.legajo|default:"-" }}</td>
@@ -112,6 +112,10 @@
     display: inline-block;
     text-align: center;
 }
+.highlight-row {
+    background-color: #fff3cd; /* Color amarillo claro */
+    transition: background-color 0.5s ease;
+}
 </style>
 {% endblock %}
 
@@ -123,6 +127,13 @@
         const inputNumero = document.getElementById('id_numero');
         const notaInputs = document.querySelectorAll('.nota-input');
         const btnLimpiar = document.getElementById('btn-limpiar');
+        const preSelectedTipo = "{{ pre_selected_tipo|escapejs }}";
+        const preSelectedAlumnoId = "{{ pre_selected_alumno_id|escapejs }}";
+
+        // Pre-seleccionar tipo si viene en la URL
+        if (preSelectedTipo) {
+            selectTipo.value = preSelectedTipo;
+        }
 
         function cargarNotas() {
             const tipoSeleccionado = selectTipo.value;
@@ -152,6 +163,18 @@
         });
 
         cargarNotas(); 
+
+        // Resaltar alumno si viene en la URL
+        if (preSelectedAlumnoId) {
+            const alumnoRow = document.querySelector(`tr[data-alumno-id="${preSelectedAlumnoId}"]`);
+            if (alumnoRow) {
+                alumnoRow.classList.add('highlight-row');
+                alumnoRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Quitar el resaltado después de un tiempo
+                setTimeout(() => {
+                    alumnoRow.classList.remove('highlight-row');
+                }, 3000); 
+            }
+        }
     });
 </script>
-{% endblock %}

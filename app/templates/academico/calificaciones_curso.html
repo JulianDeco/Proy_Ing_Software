@@ -112,10 +112,10 @@
                                                 {{ nota.nota }} {% if nota.numero > 1 %}({{ nota.numero }}){% endif %}
                                             </span>
                                         </a>
-                                        <br>
-                                    {% endfor %}
                                 {% else %}
-                                    <span class="text-muted">-</span>
+                                    <a href="{% url 'crear_calificacion' codigo=comision.codigo %}?tipo={{ tipo.tipo }}&alumno_id={{ fila.alumno.id }}" class="btn btn-sm btn-outline-primary" title="{% trans 'Agregar Calificación' %}">
+                                        <i class="bi bi-plus-circle"></i>
+                                    </a>
                                 {% endif %}
                             </td>
                             {% endfor %}

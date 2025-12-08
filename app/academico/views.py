@@ -397,6 +397,10 @@ class GestionCalificacionesView(DocenteRequiredMixin, View):
         comision = self.servicios_academico.obtener_comision_por_codigo(codigo)
         inscripciones = self.servicios_academico.obtener_alumnos_comision(comision).select_related('alumno')
         
+        # Obtener parámetros de la URL para precargar
+        pre_selected_tipo = request.GET.get('tipo')
+        pre_selected_alumno_id = request.GET.get('alumno_id')
+
         # Obtener todas las calificaciones de la comisión para precargar
         calificaciones_existentes = Calificacion.objects.filter(
             alumno_comision__comision=comision
@@ -406,7 +410,7 @@ class GestionCalificacionesView(DocenteRequiredMixin, View):
         # {alumno_id: {tipo_calificacion: {numero: nota}, ...}, ...}
         notas_por_alumno = {}
         for calif in calificaciones_existentes:
-            alumno_id = calif['alumno_comision__alumno__id']
+            alumno_id = str(calif['alumno_comision__alumno__id']) # Convertir a str para coincidir con JS
             tipo = calif['tipo']
             numero = calif['numero']
             nota = float(calif['nota'])
@@ -425,7 +429,9 @@ class GestionCalificacionesView(DocenteRequiredMixin, View):
             'materia': comision.materia,
             'inscripciones': inscripciones,
             'tipos_calificacion': TipoCalificacion.choices, # Pasar los choices para el select
-            'notas_por_alumno_json': json.dumps(notas_por_alumno) # Para usar en JS
+            'notas_por_alumno_json': json.dumps(notas_por_alumno), # Para usar en JS
+            'pre_selected_tipo': pre_selected_tipo,
+            'pre_selected_alumno_id': pre_selected_alumno_id,
         }
         return render(request, 'academico/carga_calificacion.html', context=contexto)
 
