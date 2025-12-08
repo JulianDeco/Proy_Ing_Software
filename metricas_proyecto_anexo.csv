@@ -1,0 +1,15 @@
+Métrica,Descripción,Valor,Unidad,Herramienta/Observación,Objetivo
+"UUCP - Actores (Complejo)","Administrativo, Docente",6,"UUCP (Actores)",,
+"UUCP - Casos de Uso (Simple)","Consultar Historial Académico",5,"UUCP (Casos de Uso)",,
+"UUCP - Casos de Uso (Medio)","Registrar Asistencia, Emitir Certificado",20,"UUCP (Casos de Uso)",,
+"UUCP - Casos de Uso (Complejo)","Gestionar Inscripción",15,"UUCP (Casos de Uso)",,
+"UUCP Total",,46,"UUCP",,
+"TCF",,0.89,,,"Impacto medio de sistema distribuido, alta facilidad de uso"
+"EF",,1.33,,,"Equipo con experiencia media en el dominio, alta motivación"
+"UCP Final",,54.45,"UCP",,
+"Productividad Estimada",,20,"horas/UCP",,
+"Esfuerzo Total Estimado",,1089,"horas hombre",,
+"Complejidad Ciclomática - InscripcionAlumnoComision.clean()",,8,"Valor","radon","Riesgo Moderado (Objetivo: <10)"
+"Cobertura de Pruebas - academico",,95,"%","pytest-cov",">80%"
+"Métrica de Negocio","Tasa de Retención",,,"Calculado automáticamente por el sistema",
+"Métrica de Negocio","Eficiencia de Cursada",,,"Calculado automáticamente por el sistema",
