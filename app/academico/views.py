@@ -232,6 +232,9 @@ class CalificacionesCursoView(DocenteRequiredMixin, View):
                 suma_notas += float(calif.nota)
                 cantidad_notas += 1
 
+            # DEBUG: Print the calificaciones for this student
+            print(f"DEBUG: Alumno {inscripcion.alumno.nombre} {inscripcion.alumno.apellido} - Calificaciones: {fila['calificaciones']}")
+
             if cantidad_notas > 0:
                 fila['promedio'] = round(suma_notas / cantidad_notas, 2)
                 fila['total_calificaciones'] = cantidad_notas
