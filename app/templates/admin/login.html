@@ -1,0 +1,9 @@
+{% extends "admin/login.html" %}
+{% load i18n %}
+
+{% block content %}
+{{ block.super }}
+<div class="submit-row" style="text-align: center; margin-top: 1em;">
+    <a href="{% url 'password_reset' %}">{% translate '¿Olvidaste tu contraseña?' %}</a>
+</div>
+{% endblock %}
