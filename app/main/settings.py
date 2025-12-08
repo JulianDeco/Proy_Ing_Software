@@ -16,9 +16,10 @@ from logging.handlers import TimedRotatingFileHandler
 
 from dotenv import load_dotenv
 
-load_dotenv(dotenv_path="./app/.env.dev") 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+load_dotenv(dotenv_path=BASE_DIR / ".env.dev")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -48,6 +49,7 @@ INSTALLED_APPS = [
     'institucional',
     'academico',
     'administracion',
+    'main.apps.MainConfig',
 ]
 
 MIDDLEWARE = [
