@@ -132,6 +132,8 @@ class TestInscripcionCajaNegra:
     # CASOS VÁLIDOS
     # ============================================
 
+    def test_cv01_inscripcion_basica(self):
+        """CV01: Inscripción básica válida"""
         data = {
             'alumno': self.alumnos['40123456'].pk,
             'comision': self.comision_alg.pk,
