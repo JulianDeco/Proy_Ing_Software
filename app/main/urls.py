@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import include, path
 
-from main.views import LoginEmailView, home, logout_view, redirect_based_group, download_backup, upload_restore_backup, help_view
+from main.views import LoginEmailView, logout_view, redirect_based_group, download_backup, upload_restore_backup, help_view
 
 admin.site.site_title = "Sitio de administración - Sistema de administración"
 admin.site.site_header = "Administración de sistema educativo"
@@ -21,7 +21,7 @@ urlpatterns = [
 
     path('', redirect_based_group, name='home'),
 
-    path('institucional/', include('institucional.urls')),
+
     path('academico/', include('academico.urls')),
     path('administracion/', include('administracion.urls')),
 

@@ -10,10 +10,7 @@ from .utils import group_required
 from .forms import LoginEmailForm
 from administracion.utils import crear_backup_completo, restaurar_backup
 
-@login_required
-@group_required('Administrativo')
-def home(request):
-    return render(request, 'main/index.html')
+
 
 class LoginEmailView(LoginView):
     template_name = 'security/login.html'
@@ -27,10 +24,10 @@ def redirect_based_group(request):
     user = request.user
     groups = user.groups.values_list('name', flat=True)  
 
-    if 'Docente' in groups:
+    if 'Administrativo' in groups:
+        return redirect('/admin/')
+    elif 'Docente' in groups:
         return redirect('docentes')  
-    elif 'Administrativo' in groups:
-        return redirect('dashboard_admin')   
     elif 'Alumno' in groups:
         logout(request)
         messages.error(request, "El acceso de alumnos no está habilitado en este sistema.")
