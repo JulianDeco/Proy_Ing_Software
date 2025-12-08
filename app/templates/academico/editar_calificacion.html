@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Editar Calificación" %}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-pencil-square"></i> {% trans "Editar Calificación" %}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h6>{% trans "Detalles" %}</h6>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">
+                                <strong>{% trans "Alumno" %}:</strong> {{ calificacion.alumno_comision.alumno.get_full_name }}
+                            </li>
+                            <li class="list-group-item">
+                                <strong>{% trans "Materia" %}:</strong> {{ calificacion.alumno_comision.comision.materia.nombre }}
+                            </li>
+                            <li class="list-group-item">
+                                <strong>{% trans "Evaluación" %}:</strong> {{ calificacion.get_tipo_display }} 
+                                {% if calificacion.numero > 1 %}({% trans "Instancia" %} {{ calificacion.numero }}){% endif %}
+                            </li>
+                            <li class="list-group-item">
+                                <strong>{% trans "Fecha" %}:</strong> {{ calificacion.fecha_creacion|date:"d/m/Y" }}
+                            </li>
+                        </ul>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="nota" class="form-label"><strong>{% trans "Nota" %}</strong></label>
+                            <input type="number" class="form-control form-control-lg text-center" id="nota" name="nota" 
+                                   value="{{ calificacion.nota }}" min="0" max="10" step="0.01" required>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">{% trans "Guardar Cambios" %}</button>
+                            <a href="{% url 'calificaciones_curso' calificacion.alumno_comision.comision.codigo %}" class="btn btn-outline-secondary">
+                                {% trans "Cancelar" %}
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

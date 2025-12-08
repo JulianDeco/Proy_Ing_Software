@@ -102,17 +102,18 @@
                             {% for tipo in tipos_calificacion %}
                             <td class="text-center">
                                 {% if tipo.tipo in fila.calificaciones %}
-                                    <span class="badge
-                                        {% if fila.calificaciones|get_item:tipo.tipo|get_item:'nota' >= 6 %}bg-success
-                                        {% elif fila.calificaciones|get_item:tipo.tipo|get_item:'nota' >= 4 %}bg-warning text-dark
-                                        {% else %}bg-danger
-                                        {% endif %}">
-                                        {{ fila.calificaciones|get_item:tipo.tipo|get_item:'nota' }}
-                                    </span>
-                                    <br>
-                                    <small class="text-muted">
-                                        {{ fila.calificaciones|get_item:tipo.tipo|get_item:'fecha'|date:"d/m/Y" }}
-                                    </small>
+                                    {% for nota in fila.calificaciones|get_item:tipo.tipo %}
+                                        <a href="{% url 'editar_calificacion' nota.id %}" class="text-decoration-none" title="{% trans 'Editar Instancia' %} {{ nota.numero }}">
+                                            <span class="badge mb-1
+                                                {% if nota.nota >= 6 %}bg-success
+                                                {% elif nota.nota >= 4 %}bg-warning text-dark
+                                                {% else %}bg-danger
+                                                {% endif %}">
+                                                {{ nota.nota }} {% if nota.numero > 1 %}({{ nota.numero }}){% endif %}
+                                            </span>
+                                        </a>
+                                        <br>
+                                    {% endfor %}
                                 {% else %}
                                     <span class="text-muted">-</span>
                                 {% endif %}

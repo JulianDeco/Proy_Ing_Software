@@ -34,7 +34,8 @@ class DocenteRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
         return self.request.user.groups.filter(name='Docente').exists()
 
     def handle_no_permission(self):
-        return redirect('acceso-denegado')
+        messages.error(self.request, "No tiene permisos para acceder a esta sección.")
+        return redirect('home')
 
 
 class CierreCursadaView(DocenteRequiredMixin, View):
@@ -120,7 +121,8 @@ class DocenteRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
         return self.request.user.groups.filter(name='Docente').exists()
 
     def handle_no_permission(self):
-        return redirect('acceso-denegado')
+        messages.error(self.request, "No tiene permisos para acceder a esta sección.")
+        return redirect('home')
 
 
 class DashboardProfesoresView(DocenteRequiredMixin, View):
@@ -218,10 +220,15 @@ class CalificacionesCursoView(DocenteRequiredMixin, View):
             cantidad_notas = 0
 
             for calif in calificaciones_alumno:
-                fila['calificaciones'][calif.tipo] = {
+                if calif.tipo not in fila['calificaciones']:
+                    fila['calificaciones'][calif.tipo] = []
+                
+                fila['calificaciones'][calif.tipo].append({
+                    'id': calif.id,
                     'nota': calif.nota,
-                    'fecha': calif.fecha_creacion
-                }
+                    'fecha': calif.fecha_creacion,
+                    'numero': calif.numero
+                })
                 suma_notas += float(calif.nota)
                 cantidad_notas += 1
 
@@ -491,6 +498,51 @@ class GestionCalificacionesView(DocenteRequiredMixin, View):
             messages.error(request, f'Error inesperado al crear calificaciones: {str(e)}')
             return redirect('crear_calificacion', codigo=codigo)
 
+
+class EditarCalificacionView(DocenteRequiredMixin, View):
+    def get(self, request, id):
+        calificacion = get_object_or_404(Calificacion, id=id)
+        
+        # Verificar que el docente sea el titular de la comisión
+        docente = get_object_or_404(Empleado, usuario=request.user)
+        if calificacion.alumno_comision.comision.docente_id != docente.id:
+            messages.error(request, "No tiene permiso para editar esta calificación.")
+            return redirect('docentes')
+
+        return render(request, 'academico/editar_calificacion.html', {
+            'calificacion': calificacion
+        })
+
+    def post(self, request, id):
+        calificacion = get_object_or_404(Calificacion, id=id)
+        docente = get_object_or_404(Empleado, usuario=request.user)
+        
+        if calificacion.alumno_comision.comision.docente_id != docente.id:
+            messages.error(request, "No tiene permiso para editar esta calificación.")
+            return redirect('docentes')
+
+        try:
+            nueva_nota = float(request.POST.get('nota'))
+            if nueva_nota < 0 or nueva_nota > 10:
+                messages.error(request, "La nota debe estar entre 0 y 10.")
+                return render(request, 'academico/editar_calificacion.html', {'calificacion': calificacion})
+            
+            calificacion.nota = nueva_nota
+            calificacion.save()
+            
+            LogAction(
+                user=request.user,
+                model_instance_or_queryset=calificacion,
+                action=ActionFlag.CHANGE,
+                change_message=f"Nota modificada a {nueva_nota}"
+            ).log()
+
+            messages.success(request, "Calificación actualizada correctamente.")
+            return redirect('calificaciones_curso', codigo=calificacion.alumno_comision.comision.codigo)
+
+        except ValueError:
+            messages.error(request, "Formato de nota inválido.")
+            return render(request, 'academico/editar_calificacion.html', {'calificacion': calificacion})
 
 class MesasExamenDocenteView(DocenteRequiredMixin, View):
     """Vista para que docentes vean las mesas donde son parte del tribunal"""
