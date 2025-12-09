@@ -9,12 +9,10 @@ from django.db import transaction
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
-from django.template.loader import render_to_string
-from weasyprint import HTML
 
 from academico.services import ServiciosAcademico
 from main.services import ActionFlag, LogAction
-from main.utils import group_required
+from main.utils import group_required, generar_certificado_pdf
 from .models import (
     CalendarioAcademico, Calificacion, Materia, Comision, InscripcionAlumnoComision,
     Asistencia, Alumno, MesaExamen, InscripcionMesaExamen, TipoCalificacion
@@ -717,12 +715,8 @@ class ActaExamenPDFView(DocenteRequiredMixin, View):
             'fecha_generacion': timezone.now(),
         }
 
-        # Renderizar HTML
-        html_string = render_to_string('academico/acta_examen_pdf.html', context)
-
-        # Generar PDF
-        html = HTML(string=html_string)
-        pdf = html.write_pdf()
+        # Generar PDF usando utilidad centralizada
+        pdf = generar_certificado_pdf(context, template_name='academico/acta_examen_pdf.html')
 
         # Crear respuesta HTTP
         response = HttpResponse(pdf, content_type='application/pdf')
