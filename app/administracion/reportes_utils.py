@@ -25,6 +25,7 @@ from academico.models import (
     Alumno, Materia, Comision, InscripcionAlumnoComision,
     Calificacion, Asistencia, TipoCalificacion, AnioAcademico
 )
+from administracion.services.report_factory import ReportFactory
 
 
 def generar_grafico_base64(fig):
@@ -189,19 +190,7 @@ def grafico_comparativo_alumnos(alumnos_data, metrica='promedio'):
 def obtener_datos_reporte_academico(filtros=None):
     """
     Obtiene y procesa datos para el reporte académico completo (OPTIMIZADO)
-
-    filtros: dict con opciones {
-        'comision_id': int,
-        'anio_academico': int,
-        'fecha_inicio': date,
-        'fecha_fin': date
-    }
-
-    Retorna: dict con todos los datos procesados y listos para gráficos
-
-    NOTA: Los gráficos se adaptan según el contexto:
-    - Solo Año: Vista institucional (promedios por materia, comparativo general)
-    - Año + Comisión: Vista de comisión (promedios por alumno, detalle de la comisión)
+    Refactorizado para usar el patrón Factory Method.
     """
     filtros = filtros or {}
 
@@ -212,212 +201,42 @@ def obtener_datos_reporte_academico(filtros=None):
         if anio_activo:
             filtros['anio_academico'] = anio_activo.id
 
-    # Determinar si es vista de comisión específica o institucional
-    es_vista_comision = bool(filtros.get('comision_id'))
+    # Generar componentes del reporte usando la Factory
+    reporte_inscripciones = ReportFactory.crear_reporte('inscripciones')
+    datos_inscripciones = reporte_inscripciones.generar_datos(filtros)
 
-    # Base queryset de inscripciones
-    inscripciones = InscripcionAlumnoComision.objects.select_related(
-        'alumno', 'comision', 'comision__materia', 'comision__anio_academico'
-    )
+    reporte_notas = ReportFactory.crear_reporte('notas')
+    datos_notas = reporte_notas.generar_datos(filtros)
 
-    # Aplicar filtros
-    if filtros.get('comision_id'):
-        inscripciones = inscripciones.filter(comision_id=filtros['comision_id'])
+    reporte_asistencia = ReportFactory.crear_reporte('asistencia')
+    datos_asistencia = reporte_asistencia.generar_datos(filtros)
 
-    if filtros.get('anio_academico'):
-        inscripciones = inscripciones.filter(comision__anio_academico=filtros['anio_academico'])
-
-    # 1. DATOS DE ALUMNOS (con límite)
-    total_alumnos = inscripciones.values('alumno').distinct().count()
-
-    # 2. DATOS PARA GRÁFICOS (según contexto)
-    if es_vista_comision:
-        # VISTA COMISIÓN: Mostrar promedios por alumno de esa comisión
-        promedios_query = Calificacion.objects.filter(
-            alumno_comision__in=inscripciones
-        ).values(
-            'alumno_comision__alumno__apellido',
-            'alumno_comision__alumno__nombre'
-        ).annotate(
-            promedio=Avg('nota')
-        ).order_by('-promedio')[:15]
-
-        promedios_materias = [
-            (f"{item['alumno_comision__alumno__apellido']} {item['alumno_comision__alumno__nombre']}",
-             item['promedio'])
-            for item in promedios_query
-        ]
-        # Obtener nombre de la comisión para el título
-        comision_obj = Comision.objects.filter(id=filtros['comision_id']).select_related('materia').first()
-        nombre_comision = f"{comision_obj.materia.nombre} - {comision_obj.codigo}" if comision_obj else ""
-    else:
-        # VISTA INSTITUCIONAL: Mostrar promedios por materia
-        promedios_materias_query = Calificacion.objects.filter(
-            alumno_comision__in=inscripciones
-        ).values(
-            'alumno_comision__comision__materia__nombre'
-        ).annotate(
-            promedio=Avg('nota')
-        ).order_by('-promedio')[:15]
-
-        promedios_materias = [
-            (item['alumno_comision__comision__materia__nombre'], item['promedio'])
-            for item in promedios_materias_query
-        ]
-        nombre_comision = ""
-
-    # 3. ESTADOS ACADÉMICOS (OPTIMIZADO con agregación)
-    # Calcular estados basándose en el campo estado_inscripcion y condicion
-    from academico.models import EstadoMateria, CondicionInscripcion
-
-    # Aprobados: estado_inscripcion = APROBADA
-    aprobados = inscripciones.filter(estado_inscripcion=EstadoMateria.APROBADA).count()
-
-    # Desaprobados: estado_inscripcion = DESAPROBADA o LIBRE (materia finalizada mal)
-    # O condicion = LIBRE (perdió la cursada)
-    desaprobados = inscripciones.filter(
-        Q(estado_inscripcion=EstadoMateria.DESAPROBADA) | 
-        Q(estado_inscripcion=EstadoMateria.LIBRE) |
-        Q(condicion=CondicionInscripcion.LIBRE)
-    ).distinct().count()
-
-    # Regulares (Final Pendiente): condicion = REGULAR y estado_inscripcion != APROBADA
-    regulares = inscripciones.filter(
-        condicion=CondicionInscripcion.REGULAR
-    ).exclude(estado_inscripcion=EstadoMateria.APROBADA).count()
-
-    # En Curso: condicion = CURSANDO
-    en_curso = inscripciones.filter(condicion=CondicionInscripcion.CURSANDO).count()
-
-    # 4. ASISTENCIAS POR MES (OPTIMIZADO con agregación)
-    asistencias_query = Asistencia.objects.filter(
-        alumno_comision__in=inscripciones
-    )
-
-    if filtros.get('fecha_inicio'):
-        asistencias_query = asistencias_query.filter(fecha_asistencia__gte=filtros['fecha_inicio'])
-    if filtros.get('fecha_fin'):
-        asistencias_query = asistencias_query.filter(fecha_asistencia__lte=filtros['fecha_fin'])
-
-    # Usar SQL agregado en lugar de iterar
-    from django.db.models.functions import TruncMonth, ExtractMonth
-    from django.db.models import Case, When, IntegerField
-
-    asistencias_mes = asistencias_query.annotate(
-        mes=ExtractMonth('fecha_asistencia')
-    ).values('mes').annotate(
-        total=Count('id'),
-        presentes=Count(Case(When(esta_presente=True, then=1), output_field=IntegerField()))
-    ).order_by('mes')
-
-    # Mapeo de números de mes a nombres
-    meses_nombres = {1: 'Ene', 2: 'Feb', 3: 'Mar', 4: 'Abr', 5: 'May', 6: 'Jun',
-                     7: 'Jul', 8: 'Ago', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dic'}
-
-    porcentajes_por_mes = {
-        meses_nombres[item['mes']]: (item['presentes'] / item['total'] * 100) if item['total'] > 0 else 0
-        for item in asistencias_mes
-    }
-
-    # 5. TOP ALUMNOS (OPTIMIZADO con una sola query por métrica)
-    # Top 10 alumnos por promedio
-    alumnos_promedios_query = Calificacion.objects.filter(
-        alumno_comision__in=inscripciones
-    ).values(
-        'alumno_comision__alumno__apellido',
-        'alumno_comision__alumno__nombre'
-    ).annotate(
-        promedio=Avg('nota')
-    ).order_by('-promedio')[:10]
-
-    alumnos_promedios = [
-        (f"{item['alumno_comision__alumno__apellido']} {item['alumno_comision__alumno__nombre']}",
-         item['promedio'])
-        for item in alumnos_promedios_query
-    ]
-
-    # Top 10 alumnos por asistencia
-    alumnos_asistencias_query = Asistencia.objects.filter(
-        alumno_comision__in=inscripciones
-    ).values(
-        'alumno_comision__alumno__apellido',
-        'alumno_comision__alumno__nombre'
-    ).annotate(
-        total=Count('id'),
-        presentes=Count(Case(When(esta_presente=True, then=1), output_field=IntegerField()))
-    ).annotate(
-        porcentaje=Case(
-            When(total__gt=0, then=100.0 * models.F('presentes') / models.F('total')),
-            default=0,
-            output_field=models.FloatField()
-        )
-    ).order_by('-porcentaje')[:10]
-
-    alumnos_asistencias = [
-        (f"{item['alumno_comision__alumno__apellido']} {item['alumno_comision__alumno__nombre']}",
-         item['porcentaje'])
-        for item in alumnos_asistencias_query
-    ]
-
-    # Top 10 alumnos por materias aprobadas
-    alumnos_materias_query = Calificacion.objects.filter(
-        alumno_comision__in=inscripciones,
-        tipo=TipoCalificacion.FINAL,
-        nota__gte=6
-    ).values(
-        'alumno_comision__alumno__apellido',
-        'alumno_comision__alumno__nombre'
-    ).annotate(
-        aprobadas=Count('id')
-    ).order_by('-aprobadas')[:10]
-
-    alumnos_materias_aprobadas = [
-        (f"{item['alumno_comision__alumno__apellido']} {item['alumno_comision__alumno__nombre']}",
-         item['aprobadas'])
-        for item in alumnos_materias_query
-    ]
-
-    # 6. ESTADÍSTICAS GENERALES (OPTIMIZADO)
-    total_materias = inscripciones.values('comision__materia').distinct().count()
-    total_comisiones = inscripciones.values('comision').distinct().count()
-
-    promedio_general = Calificacion.objects.filter(
-        alumno_comision__in=inscripciones
-    ).aggregate(Avg('nota'))['nota__avg'] or 0
-
-    # Asistencia general
-    asist_stats = asistencias_query.aggregate(
-        total=Count('id'),
-        presentes=Count(Case(When(esta_presente=True, then=1), output_field=IntegerField()))
-    )
-    porcentaje_asistencia_general = (asist_stats['presentes'] / asist_stats['total'] * 100) if asist_stats['total'] > 0 else 0
+    # Unificar estadísticas
+    estadisticas = {}
+    estadisticas.update(datos_inscripciones.get('estadisticas', {}))
+    estadisticas.update(datos_notas.get('estadisticas', {}))
+    estadisticas.update(datos_asistencia.get('estadisticas', {}))
 
     return {
         'filtros_aplicados': filtros,
         'fecha_generacion': datetime.now(),
 
-        # Estadísticas
-        'estadisticas': {
-            'total_alumnos': total_alumnos,
-            'total_materias': total_materias,
-            'total_comisiones': total_comisiones,
-            'promedio_general': round(promedio_general, 2) if promedio_general else 0,
-            'porcentaje_asistencia_general': round(porcentaje_asistencia_general, 2),
-            'aprobados': aprobados,
-            'desaprobados': desaprobados,
-            'regulares': regulares,
-            'en_curso': en_curso,
-        },
+        # Estadísticas Unificadas
+        'estadisticas': estadisticas,
 
-        # Datos para gráficos
-        'promedios_materias': promedios_materias,
-        'estados_academicos': (aprobados, desaprobados, regulares, en_curso),
-        'asistencias_por_mes': dict(porcentajes_por_mes),
-        'alumnos_top_promedio': alumnos_promedios[:10],
-        'alumnos_top_asistencia': alumnos_asistencias[:10],
-        'alumnos_materias_aprobadas': alumnos_materias_aprobadas[:10],
-        'vista_detalle': es_vista_comision,
-        'nombre_comision': nombre_comision,
+        # Datos de Notas
+        'promedios_materias': datos_notas.get('promedios_materias'),
+        'alumnos_top_promedio': datos_notas.get('alumnos_top_promedio'),
+        'alumnos_materias_aprobadas': datos_notas.get('alumnos_materias_aprobadas'),
+
+        # Datos de Inscripciones / Estados
+        'estados_academicos': datos_inscripciones.get('estados_academicos'),
+        'vista_detalle': datos_inscripciones.get('vista_detalle'),
+        'nombre_comision': datos_inscripciones.get('nombre_comision'),
+
+        # Datos de Asistencia
+        'asistencias_por_mes': datos_asistencia.get('asistencias_por_mes'),
+        'alumnos_top_asistencia': datos_asistencia.get('alumnos_top_asistencia'),
     }
 
 
