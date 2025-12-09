@@ -100,6 +100,7 @@ class Alumno(Persona):
     promedio = models.DecimalField(decimal_places=2, max_digits=4, null=True, blank=True)
     estado = models.ForeignKey(EstadosAlumno, on_delete=models.SET_NULL, null=True, blank=True)
     legajo = models.CharField(max_length=20, unique=True, null=True, blank=True)
+    plan_estudio = models.ForeignKey('administracion.PlanEstudio', on_delete=models.SET_NULL, null=True, blank=True, related_name='alumnos')
     fecha_nacimiento = models.DateField(null=True, blank=True)
     email = models.EmailField(null=True, blank=True)
     telefono = models.CharField(max_length=20, null=True, blank=True)
