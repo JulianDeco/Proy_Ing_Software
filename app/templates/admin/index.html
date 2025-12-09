@@ -13,13 +13,21 @@
         <tbody>
             <tr>
                 <td style="padding: 15px;">
-                    <a href="{% url 'reporte_academico' %}" class="button" style="background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block; margin-right: 10px;">
-                        <strong>📈 Ver Reporte Académico con Gráficos</strong>
-                    </a>
+                    <div style="margin-bottom: 10px;">
+                        <a href="{% url 'reporte_academico' %}" class="button" style="background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block; margin-right: 10px;">
+                            <strong>📊 Ver Reporte Online</strong>
+                        </a>
+                        <a href="{% url 'exportar_reporte_pdf' %}" class="button" style="background-color: #dc3545; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block; margin-right: 10px;">
+                            <strong>📄 PDF</strong>
+                        </a>
+                        <a href="{% url 'exportar_reporte_excel' %}" class="button" style="background-color: #198754; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; display: inline-block;">
+                            <strong>📗 Excel</strong>
+                        </a>
+                    </div>
                     <p style="margin-top: 10px; color: #666; font-size: 13px;">
-                        Visualiza reportes académicos completos con gráficos interactivos: promedios por materia, asistencias, top alumnos y más.
+                        Accede al reporte académico integral generado con el nuevo <strong>Motor de Reportes (Factory)</strong>.
                         <br>
-                        <em>Incluye opciones de filtrado y exportación a PDF/Excel.</em>
+                        <em>Visualiza gráficos interactivos o exporta los datos directamente.</em>
                     </p>
                 </td>
             </tr>
