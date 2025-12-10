@@ -17,7 +17,8 @@ class PlanEstudioAdmin(admin.ModelAdmin):
 
 @admin.register(Certificado)
 class CertificadoAdmin(admin.ModelAdmin):
-    list_display = ('codigo_verificacion', 'alumno', 'tipo', 'fecha_emision', 'generado_por', 'descargar_certificado')
+    list_display = ('codigo_verificacion', 'alumno', 'tipo_display', 'fecha_emision', 'generado_por', 'descargar_certificado')
+    list_display_links = ('codigo_verificacion', 'alumno')
     list_filter = ('tipo', 'fecha_emision')
     search_fields = ('alumno__nombre', 'alumno__apellido', 'alumno__dni', 'codigo_verificacion')
     ordering = ('-fecha_emision',)
@@ -26,6 +27,32 @@ class CertificadoAdmin(admin.ModelAdmin):
     list_select_related = ('alumno', 'generado_por')
     date_hierarchy = 'fecha_emision'
     list_per_page = 50
+    save_on_top = True
+    empty_value_display = '—'
+
+    fieldsets = (
+        ('Información del Certificado', {
+            'fields': ('codigo_verificacion', 'alumno', 'tipo')
+        }),
+        ('Generación', {
+            'fields': ('generado_por', 'fecha_emision')
+        }),
+    )
+
+    def tipo_display(self, obj):
+        colors = {
+            'ASISTENCIA': '#17a2b8',
+            'APROBACION': '#28a745',
+            'EXAMEN': '#ffc107',
+            'ALUMNO_REGULAR': '#007bff',
+            'BUEN_COMPORTAMIENTO': '#6f42c1'
+        }
+        color = colors.get(obj.tipo, '#6c757d')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 10px; border-radius: 3px; font-weight: bold;">{}</span>',
+            color, obj.get_tipo_display()
+        )
+    tipo_display.short_description = 'Tipo'
 
     def descargar_certificado(self, obj):
         return format_html(
