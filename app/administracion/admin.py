@@ -13,6 +13,7 @@ class PlanEstudioAdmin(admin.ModelAdmin):
     list_display = ('codigo', 'nombre')
     search_fields = ('nombre', 'codigo')
     ordering = ('codigo',)
+    list_per_page = 50
 
 @admin.register(Certificado)
 class CertificadoAdmin(admin.ModelAdmin):
@@ -21,7 +22,10 @@ class CertificadoAdmin(admin.ModelAdmin):
     search_fields = ('alumno__nombre', 'alumno__apellido', 'alumno__dni', 'codigo_verificacion')
     ordering = ('-fecha_emision',)
     readonly_fields = ('codigo_verificacion', 'fecha_emision')
-    autocomplete_fields = ['alumno']
+    autocomplete_fields = ['alumno', 'generado_por']
+    list_select_related = ('alumno', 'generado_por')
+    date_hierarchy = 'fecha_emision'
+    list_per_page = 50
 
     def descargar_certificado(self, obj):
         return format_html(

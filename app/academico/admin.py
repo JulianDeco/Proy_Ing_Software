@@ -22,7 +22,9 @@ class MateriaAdmin(admin.ModelAdmin):
     list_display = ('nombre', 'codigo', 'plan_estudio')
     list_filter = ('plan_estudio',)
     search_fields = ('nombre', 'codigo', 'plan_estudio__nombre')
-    filter_horizontal = ('correlativas',)
+    autocomplete_fields = ['correlativas']
+    list_select_related = ('plan_estudio',)
+    list_per_page = 50
     
 
 @admin.register(Comision)
@@ -30,6 +32,9 @@ class ComisionAdmin(admin.ModelAdmin):
     list_display = ('codigo', 'materia', 'horario_inicio', 'horario_fin', 'turno', 'estado')
     search_fields = ('codigo', 'materia__nombre', 'materia__codigo')
     list_filter = ('estado', 'turno')
+    autocomplete_fields = ['materia']
+    list_select_related = ('materia', 'materia__plan_estudio')
+    list_per_page = 50
     actions = ['cerrar_comision_action']
 
     def cerrar_comision_action(self, request, queryset):
@@ -66,21 +71,26 @@ class InscripcionesAlumnosComisionesAdmin(AuditoriaMixin, admin.ModelAdmin):
     form = InscripcionAlumnoComisionAdminForm
     list_display = ('alumno', 'comision', 'estado_inscripcion', 'nota_final', 'fecha_cierre')
     search_fields = ('alumno__nombre', 'alumno__apellido', 'alumno__dni', 'comision__codigo', 'comision__materia__nombre')
-    list_filter = ('estado_inscripcion', 'comision__materia')
+    list_filter = ('estado_inscripcion',)
     readonly_fields = ('nota_final', 'fecha_cierre', 'cerrada_por')
     autocomplete_fields = ['alumno', 'comision']
+    list_select_related = ('alumno', 'comision', 'comision__materia', 'cerrada_por')
+    list_per_page = 50
 
 @admin.register(Calificacion)
 class CalificacionAdmin(AuditoriaMixin, admin.ModelAdmin):
     form = CalificacionAdminForm
-    list_display = ('alumno_comision', 'tipo' ,'nota',)
+    list_display = ('alumno_comision', 'tipo', 'nota', 'fecha_creacion')
     search_fields = ('alumno_comision__alumno__nombre', 'alumno_comision__alumno__apellido', 'alumno_comision__alumno__dni', 'tipo')
+    list_filter = ('tipo',)
     autocomplete_fields = ['alumno_comision']
+    list_select_related = ('alumno_comision', 'alumno_comision__alumno', 'alumno_comision__comision')
+    list_per_page = 50
 
 @admin.register(Asistencia)
 class AsistenciaAdmin(admin.ModelAdmin):
     list_display = ('alumno_comision', 'esta_presente', 'fecha_asistencia',)
-    list_filter = ('esta_presente', 'fecha_asistencia', 'alumno_comision__comision',)
+    list_filter = ('esta_presente', 'fecha_asistencia')
     search_fields = (
         'alumno_comision__alumno__nombre',
         'alumno_comision__alumno__apellido',
@@ -89,23 +99,35 @@ class AsistenciaAdmin(admin.ModelAdmin):
     )
     date_hierarchy = 'fecha_asistencia'
     autocomplete_fields = ['alumno_comision']
+    list_select_related = ('alumno_comision', 'alumno_comision__alumno', 'alumno_comision__comision')
+    list_per_page = 50
     
 
 @admin.register(AnioAcademico)
 class AnioAcademicoAdmin(admin.ModelAdmin):
-    list_display =('nombre','fecha_inicio', 'fecha_fin' ,'activo') 
-    search_fields = ('nombre','fecha_inicio', 'fecha_fin' ,'activo') 
+    list_display = ('nombre', 'fecha_inicio', 'fecha_fin', 'activo')
+    search_fields = ('nombre',)
+    list_filter = ('activo',)
+    list_per_page = 25 
 
 @admin.register(CalendarioAcademico)
-class CalendarioAcademico(admin.ModelAdmin):
-    list_display = ('anio_academico','fecha','es_dia_clase','descripcion',)
-    search_fields= ('anio_academico','fecha','es_dia_clase','descripcion',)
+class CalendarioAcademicoAdmin(admin.ModelAdmin):
+    list_display = ('anio_academico', 'fecha', 'es_dia_clase', 'descripcion')
+    search_fields = ('descripcion',)
+    list_filter = ('es_dia_clase', 'anio_academico')
+    autocomplete_fields = ['anio_academico']
+    list_select_related = ('anio_academico',)
+    date_hierarchy = 'fecha'
+    list_per_page = 50
 
 @admin.register(Alumno)
 class AlumnoAdmin(AuditoriaMixin, admin.ModelAdmin):
     list_display = ('legajo', 'nombre_completo', 'dni', 'email', 'promedio', 'estado')
     search_fields = ('nombre', 'apellido', 'dni', 'legajo', 'email')
-    list_filter = ('estado',)
+    list_filter = ('estado', 'plan_estudio')
+    autocomplete_fields = ['plan_estudio']
+    list_select_related = ('plan_estudio', 'estado')
+    list_per_page = 50
     actions = [
         'generar_certificado_asistencia',
         'generar_certificado_aprobacion',
@@ -183,10 +205,12 @@ class AlumnoAdmin(AuditoriaMixin, admin.ModelAdmin):
 class MesaExamenAdmin(AuditoriaMixin, admin.ModelAdmin):
     form = MesaExamenAdminForm
     list_display = ('materia', 'fecha_examen', 'fecha_limite_inscripcion', 'estado', 'inscripciones_count', 'cupos_disponibles')
-    list_filter = ('estado', 'anio_academico', 'materia')
+    list_filter = ('estado', 'anio_academico')
     search_fields = ('materia__nombre', 'materia__codigo', 'fecha_examen', 'anio_academico__nombre')
-    filter_horizontal = ('tribunal',)
+    autocomplete_fields = ['materia', 'tribunal']
     readonly_fields = ('inscripciones_count', 'cupos_disponibles', 'creado_por', 'fecha_creacion')
+    list_select_related = ('materia', 'anio_academico', 'creado_por')
+    list_per_page = 50
     actions = ['cerrar_inscripciones', 'finalizar_mesa']
 
     fieldsets = (
@@ -260,10 +284,12 @@ class MesaExamenAdmin(AuditoriaMixin, admin.ModelAdmin):
 class InscripcionMesaExamenAdmin(AuditoriaMixin, admin.ModelAdmin):
     form = InscripcionMesaExamenAdminForm
     list_display = ('alumno', 'mesa_examen', 'condicion', 'estado_inscripcion', 'nota_examen', 'fecha_inscripcion')
-    list_filter = ('condicion', 'estado_inscripcion', 'mesa_examen__materia')
+    list_filter = ('condicion', 'estado_inscripcion')
     search_fields = ('alumno__nombre', 'alumno__apellido', 'alumno__dni', 'mesa_examen__materia__nombre')
     readonly_fields = ('condicion', 'fecha_inscripcion')
     autocomplete_fields = ['alumno', 'mesa_examen']
+    list_select_related = ('alumno', 'mesa_examen', 'mesa_examen__materia', 'mesa_examen__anio_academico')
+    list_per_page = 50
 
     fieldsets = (
         ('Información de Inscripción', {

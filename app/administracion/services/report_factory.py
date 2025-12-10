@@ -10,11 +10,6 @@ from academico.models import (
 )
 
 class ReporteGenerator(ABC):
-    """
-    Clase base abstracta para generadores de reportes.
-    Define la interfaz que deben implementar todos los reportes concretos.
-    """
-    
     @abstractmethod
     def generar_datos(self, filtros):
         """

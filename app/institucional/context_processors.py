@@ -6,7 +6,6 @@ def institucion_info(request):
     en todas las plantillas.
     """
     try:
-        # Asumimos que solo hay un registro de institución o tomamos el primero
         institucion = Institucion.objects.first()
     except Exception:
         institucion = None

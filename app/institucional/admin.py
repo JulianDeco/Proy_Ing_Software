@@ -11,18 +11,23 @@ from institucional.auditoria import AuditoriaMixin
 @admin.register(Institucion)
 class InstitucionAdmin(admin.ModelAdmin):
     list_display = ('nombre', 'direccion','nro_telefono','email_contacto')
+    search_fields = ('nombre', 'direccion', 'email_contacto')
 
 @admin.register(PreguntaFrecuente)
 class PreguntaFrecuenteAdmin(admin.ModelAdmin):
     list_display = ('pregunta', 'orden', 'publicada')
     list_editable = ('orden', 'publicada')
     search_fields = ('pregunta', 'respuesta')
+    list_filter = ('publicada',)
+    list_per_page = 25
 
 @admin.register(Usuario)
 class UsuarioAdmin(BaseUserAdmin):
-    list_display = ('email','empleado', 'habilitado', 'is_staff', 'is_superuser')
-    search_fields = ('email',)
+    list_display = ('email', 'empleado', 'habilitado', 'is_staff', 'is_superuser')
+    search_fields = ('email', 'empleado__nombre', 'empleado__apellido', 'empleado__dni')
+    list_filter = ('is_staff', 'is_superuser', 'habilitado')
     ordering = ('email',)
+    list_per_page = 50
     
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
@@ -40,6 +45,9 @@ class UsuarioAdmin(BaseUserAdmin):
 class EmpleadoAdmin(admin.ModelAdmin):
     list_display = ('nombre', 'apellido', 'dni', 'usuario_asociado')
     search_fields = ('nombre', 'apellido', 'dni', 'usuario__email')
+    autocomplete_fields = ['usuario']
+    list_select_related = ('usuario',)
+    list_per_page = 50
 
     def usuario_asociado(self, obj):
         return obj.usuario.email if obj.usuario else '—'
@@ -54,6 +62,8 @@ class AuditoriaAccesoAdmin(admin.ModelAdmin):
     readonly_fields = ('usuario', 'email', 'tipo_accion', 'fecha_hora', 'ip_address', 'user_agent', 'exitoso', 'detalles')
     date_hierarchy = 'fecha_hora'
     ordering = ('-fecha_hora',)
+    list_select_related = ('usuario',)
+    list_per_page = 100
 
     def usuario_display(self, obj):
         if obj.usuario:
@@ -85,6 +95,8 @@ class AuditoriaDatosAdmin(admin.ModelAdmin):
     )
     date_hierarchy = 'fecha_hora'
     ordering = ('-fecha_hora',)
+    list_select_related = ('usuario',)
+    list_per_page = 100
 
     fieldsets = (
         ('Información General', {
