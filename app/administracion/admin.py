@@ -5,7 +5,7 @@ from django.utils.html import format_html
 from django.contrib import messages
 from django.urls import path
 
-from administracion.models import Certificado, PlanEstudio, Reporte, TipoCertificado
+from administracion.models import Certificado, PlanEstudio, TipoCertificado
 from main.utils import crear_contexto_certificado, generar_certificado_pdf
 
 @admin.register(PlanEstudio)
@@ -14,13 +14,6 @@ class PlanEstudioAdmin(admin.ModelAdmin):
     search_fields = ('nombre', 'codigo')
     ordering = ('codigo',)
 
-@admin.register(Reporte)
-class ReporteAdmin(admin.ModelAdmin):
-    list_display = ('titulo', 'fecha_generacion', 'archivo')
-    list_filter = ('fecha_generacion',)
-    search_fields = ('titulo',)
-    ordering = ('-fecha_generacion',)
-
 @admin.register(Certificado)
 class CertificadoAdmin(admin.ModelAdmin):
     list_display = ('codigo_verificacion', 'alumno', 'tipo', 'fecha_emision', 'generado_por', 'descargar_certificado')
@@ -28,6 +21,7 @@ class CertificadoAdmin(admin.ModelAdmin):
     search_fields = ('alumno__nombre', 'alumno__apellido', 'alumno__dni', 'codigo_verificacion')
     ordering = ('-fecha_emision',)
     readonly_fields = ('codigo_verificacion', 'fecha_emision')
+    autocomplete_fields = ['alumno']
 
     def descargar_certificado(self, obj):
         return format_html(

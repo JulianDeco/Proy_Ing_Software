@@ -28,7 +28,7 @@ class MateriaAdmin(admin.ModelAdmin):
 @admin.register(Comision)
 class ComisionAdmin(admin.ModelAdmin):
     list_display = ('codigo', 'materia', 'horario_inicio', 'horario_fin', 'turno', 'estado')
-    search_fields = ('codigo', 'materia__nombre')
+    search_fields = ('codigo', 'materia__nombre', 'materia__codigo')
     list_filter = ('estado', 'turno')
     actions = ['cerrar_comision_action']
 
@@ -65,15 +65,17 @@ class EstadosAlumnoAdmin(admin.ModelAdmin):
 class InscripcionesAlumnosComisionesAdmin(AuditoriaMixin, admin.ModelAdmin):
     form = InscripcionAlumnoComisionAdminForm
     list_display = ('alumno', 'comision', 'estado_inscripcion', 'nota_final', 'fecha_cierre')
-    search_fields = ('alumno__nombre', 'alumno__apellido', 'comision__codigo')
+    search_fields = ('alumno__nombre', 'alumno__apellido', 'alumno__dni', 'comision__codigo', 'comision__materia__nombre')
     list_filter = ('estado_inscripcion', 'comision__materia')
     readonly_fields = ('nota_final', 'fecha_cierre', 'cerrada_por')
+    autocomplete_fields = ['alumno', 'comision']
 
 @admin.register(Calificacion)
 class CalificacionAdmin(AuditoriaMixin, admin.ModelAdmin):
     form = CalificacionAdminForm
     list_display = ('alumno_comision', 'tipo' ,'nota',)
-    search_fields = ('alumno_comision', 'tipo' ,'nota',)
+    search_fields = ('alumno_comision__alumno__nombre', 'alumno_comision__alumno__apellido', 'alumno_comision__alumno__dni', 'tipo')
+    autocomplete_fields = ['alumno_comision']
 
 @admin.register(Asistencia)
 class AsistenciaAdmin(admin.ModelAdmin):
@@ -81,11 +83,12 @@ class AsistenciaAdmin(admin.ModelAdmin):
     list_filter = ('esta_presente', 'fecha_asistencia', 'alumno_comision__comision',)
     search_fields = (
         'alumno_comision__alumno__nombre',
-        'alumno_comision__alumno__apellido', 
+        'alumno_comision__alumno__apellido',
         'alumno_comision__alumno__dni',
         'alumno_comision__comision__codigo'
     )
     date_hierarchy = 'fecha_asistencia'
+    autocomplete_fields = ['alumno_comision']
     
 
 @admin.register(AnioAcademico)
@@ -181,7 +184,7 @@ class MesaExamenAdmin(AuditoriaMixin, admin.ModelAdmin):
     form = MesaExamenAdminForm
     list_display = ('materia', 'fecha_examen', 'fecha_limite_inscripcion', 'estado', 'inscripciones_count', 'cupos_disponibles')
     list_filter = ('estado', 'anio_academico', 'materia')
-    search_fields = ('materia__nombre', 'materia__codigo')
+    search_fields = ('materia__nombre', 'materia__codigo', 'fecha_examen', 'anio_academico__nombre')
     filter_horizontal = ('tribunal',)
     readonly_fields = ('inscripciones_count', 'cupos_disponibles', 'creado_por', 'fecha_creacion')
     actions = ['cerrar_inscripciones', 'finalizar_mesa']
@@ -260,6 +263,7 @@ class InscripcionMesaExamenAdmin(AuditoriaMixin, admin.ModelAdmin):
     list_filter = ('condicion', 'estado_inscripcion', 'mesa_examen__materia')
     search_fields = ('alumno__nombre', 'alumno__apellido', 'alumno__dni', 'mesa_examen__materia__nombre')
     readonly_fields = ('condicion', 'fecha_inscripcion')
+    autocomplete_fields = ['alumno', 'mesa_examen']
 
     fieldsets = (
         ('Información de Inscripción', {
