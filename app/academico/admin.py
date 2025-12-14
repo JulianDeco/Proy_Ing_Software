@@ -40,27 +40,37 @@ class MateriaAdmin(admin.ModelAdmin):
 
 @admin.register(Comision)
 class ComisionAdmin(admin.ModelAdmin):
-    list_display = ('codigo', 'materia', 'horario_inicio', 'horario_fin', 'turno', 'estado_display')
+    list_display = ('codigo', 'materia', 'docente', 'anio_academico', 'horario_inicio', 'turno', 'ocupacion_display', 'estado_display')
     list_display_links = ('codigo', 'materia')
-    search_fields = ('codigo', 'materia__nombre', 'materia__codigo')
-    list_filter = ('estado', 'turno')
-    autocomplete_fields = ['materia']
-    list_select_related = ('materia', 'materia__plan_estudio')
+    search_fields = ('codigo', 'materia__nombre', 'materia__codigo', 'docente__apellido', 'docente__nombre')
+    list_filter = ('estado', 'turno', 'anio_academico', 'dia_cursado')
+    autocomplete_fields = ['materia', 'docente', 'anio_academico']
+    list_select_related = ('materia', 'materia__plan_estudio', 'docente', 'anio_academico')
     list_per_page = 50
     save_on_top = True
     actions = ['cerrar_comision_action']
 
     fieldsets = (
         ('Información Básica', {
-            'fields': ('codigo', 'materia', 'aula')
+            'fields': ('codigo', 'materia', 'docente', 'anio_academico')
+        }),
+        ('Ubicación y Cupos', {
+            'fields': ('aula', 'cupo_maximo')
         }),
         ('Horarios', {
-            'fields': ('horario_inicio', 'horario_fin', 'turno')
+            'fields': ('dia_cursado', 'horario_inicio', 'horario_fin', 'turno')
         }),
         ('Estado', {
             'fields': ('estado',)
         }),
     )
+
+    def ocupacion_display(self, obj):
+        # Nota: Esto puede generar N+1 queries si no se optimiza, pero para admin básico está bien.
+        # Una optimización sería usar annotate en get_queryset.
+        inscriptos = InscripcionAlumnoComision.objects.filter(comision=obj).count()
+        return f"{inscriptos} / {obj.cupo_maximo}"
+    ocupacion_display.short_description = 'Cupo (Ins/Max)'
 
     def estado_display(self, obj):
         colors = {
@@ -107,16 +117,29 @@ class EstadosAlumnoAdmin(admin.ModelAdmin):
 @admin.register(InscripcionAlumnoComision)
 class InscripcionesAlumnosComisionesAdmin(AuditoriaMixin, admin.ModelAdmin):
     form = InscripcionAlumnoComisionAdminForm
-    list_display = ('alumno', 'comision', 'estado_inscripcion_display', 'nota_final', 'fecha_cierre')
+    list_display = ('alumno', 'comision', 'condicion_display', 'nota_cursada', 'estado_inscripcion_display', 'nota_final')
     list_display_links = ('alumno', 'comision')
     search_fields = ('alumno__nombre', 'alumno__apellido', 'alumno__dni', 'comision__codigo', 'comision__materia__nombre')
-    list_filter = ('estado_inscripcion',)
-    readonly_fields = ('nota_final', 'fecha_cierre', 'cerrada_por')
+    list_filter = ('estado_inscripcion', 'condicion', 'comision__anio_academico')
+    readonly_fields = ('nota_final', 'fecha_cierre', 'cerrada_por', 'fecha_regularizacion')
     autocomplete_fields = ['alumno', 'comision']
     list_select_related = ('alumno', 'comision', 'comision__materia', 'cerrada_por')
     list_per_page = 50
     save_on_top = True
     empty_value_display = '—'
+
+    def condicion_display(self, obj):
+        colors = {
+            'REGULAR': '#007bff', # Azul
+            'LIBRE': '#ffc107',   # Amarillo
+            'CURSANDO': '#17a2b8' # Cyan
+        }
+        color = colors.get(obj.condicion, '#6c757d')
+        return format_html(
+            '<span style="background-color: {}; color: white; padding: 3px 10px; border-radius: 3px; font-weight: bold;">{}</span>',
+            color, obj.get_condicion_display()
+        )
+    condicion_display.short_description = 'Condición Cursada'
 
     def estado_inscripcion_display(self, obj):
         colors = {
@@ -135,9 +158,9 @@ class InscripcionesAlumnosComisionesAdmin(AuditoriaMixin, admin.ModelAdmin):
 @admin.register(Calificacion)
 class CalificacionAdmin(AuditoriaMixin, admin.ModelAdmin):
     form = CalificacionAdminForm
-    list_display = ('alumno_comision', 'tipo', 'nota', 'fecha_creacion')
+    list_display = ('alumno_comision', 'tipo', 'numero', 'nota', 'fecha_creacion')
     search_fields = ('alumno_comision__alumno__nombre', 'alumno_comision__alumno__apellido', 'alumno_comision__alumno__dni', 'tipo')
-    list_filter = ('tipo',)
+    list_filter = ('tipo', 'fecha_creacion')
     autocomplete_fields = ['alumno_comision']
     list_select_related = ('alumno_comision', 'alumno_comision__alumno', 'alumno_comision__comision')
     list_per_page = 50
@@ -166,9 +189,9 @@ class AsistenciaAdmin(admin.ModelAdmin):
 
 @admin.register(AnioAcademico)
 class AnioAcademicoAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'fecha_inicio', 'fecha_fin', 'activo_display')
+    list_display = ('nombre', 'fecha_inicio', 'fecha_fin', 'cierre_cursada_habilitado', 'activo_display')
     search_fields = ('nombre',)
-    list_filter = ('activo',)
+    list_filter = ('activo', 'cierre_cursada_habilitado')
     list_per_page = 25
 
     def activo_display(self, obj):
@@ -221,7 +244,7 @@ class AlumnoAdmin(AuditoriaMixin, admin.ModelAdmin):
             'fields': ('legajo', 'plan_estudio', 'estado', 'promedio')
         }),
         ('Contacto', {
-            'fields': ('email', 'telefono', 'direccion')
+            'fields': ('email', 'telefono', 'domicilio')
         }),
     )
 
@@ -290,10 +313,14 @@ class AlumnoAdmin(AuditoriaMixin, admin.ModelAdmin):
             )
 
 
+from django.urls import path, reverse
+from django.utils.safestring import mark_safe
+from academico.views import CargarNotasMesaAdminView
+
 @admin.register(MesaExamen)
 class MesaExamenAdmin(AuditoriaMixin, admin.ModelAdmin):
     form = MesaExamenAdminForm
-    list_display = ('materia', 'fecha_examen', 'fecha_limite_inscripcion', 'estado_display', 'inscripciones_count', 'cupos_disponibles')
+    list_display = ('materia', 'fecha_examen', 'fecha_limite_inscripcion', 'estado_display', 'inscripciones_count', 'cupos_disponibles', 'acciones_custom')
     list_display_links = ('materia', 'fecha_examen')
     list_filter = ('estado', 'anio_academico')
     search_fields = ('materia__nombre', 'materia__codigo', 'fecha_examen', 'anio_academico__nombre')
@@ -304,6 +331,25 @@ class MesaExamenAdmin(AuditoriaMixin, admin.ModelAdmin):
     save_on_top = True
     empty_value_display = '—'
     actions = ['cerrar_inscripciones', 'finalizar_mesa']
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                '<int:mesa_id>/cargar-notas/',
+                self.admin_site.admin_view(CargarNotasMesaAdminView.as_view()),
+                name='admin_cargar_notas_mesa',
+            ),
+        ]
+        return custom_urls + urls
+
+    def acciones_custom(self, obj):
+        if obj.estado != 'FINALIZADA':
+            url = reverse('admin:admin_cargar_notas_mesa', args=[obj.id])
+            return mark_safe(f'<a class="button" href="{url}" style="background-color: #28a745; color: white;">Cargar Notas</a>')
+        return "—"
+    acciones_custom.short_description = 'Acciones'
+    acciones_custom.allow_tags = True
 
     fieldsets = (
         ('Información Básica', {

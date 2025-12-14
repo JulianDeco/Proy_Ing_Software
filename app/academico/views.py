@@ -672,6 +672,83 @@ class DetalleInscriptosMesaView(DocenteRequiredMixin, View):
             return redirect('detalle_inscriptos_mesa', mesa_id=mesa_id)
 
 
+class CargarNotasMesaAdminView(UserPassesTestMixin, View):
+    """Vista para que administradores carguen notas de examen masivamente"""
+    
+    def test_func(self):
+        return self.request.user.is_staff
+
+    def get(self, request, mesa_id):
+        mesa = get_object_or_404(MesaExamen, id=mesa_id)
+        
+        # Obtener inscripciones ordenadas
+        inscripciones = InscripcionMesaExamen.objects.filter(
+            mesa_examen=mesa
+        ).select_related('alumno').order_by('alumno__apellido', 'alumno__nombre')
+
+        inscripciones_regulares = inscripciones.filter(condicion='REGULAR')
+        inscripciones_libres = inscripciones.filter(condicion='LIBRE')
+
+        return render(request, 'admin/academico/mesaexamen/cargar_notas.html', {
+            'mesa': mesa,
+            'inscripciones_regulares': inscripciones_regulares,
+            'inscripciones_libres': inscripciones_libres,
+            'total_inscriptos': inscripciones.count(),
+            'puede_editar': mesa.estado != 'FINALIZADA',
+            'is_admin': True # Flag para ajustar template
+        })
+
+    @transaction.atomic
+    def post(self, request, mesa_id):
+        mesa = get_object_or_404(MesaExamen, id=mesa_id)
+
+        if mesa.estado == 'FINALIZADA':
+            messages.error(request, 'Esta mesa ya está finalizada.')
+            return redirect('admin:academico_mesaexamen_change', mesa_id)
+
+        try:
+            notas_cargadas = 0
+            errores = []
+
+            for key, value in request.POST.items():
+                if key.startswith('nota_'):
+                    inscripcion_id = int(key.replace('nota_', ''))
+                    try:
+                        inscripcion = InscripcionMesaExamen.objects.get(id=inscripcion_id)
+                        if value and value.strip():
+                            nota = float(value)
+                            if nota < 0 or nota > 10:
+                                errores.append(f'{inscripcion.alumno}: La nota debe estar entre 0 y 10')
+                                continue
+                                
+                            # Usamos el servicio existente
+                            success, mensaje = ServiciosAcademico.cargar_nota_examen_final(
+                                inscripcion, nota, request.user
+                            )
+                            if success:
+                                notas_cargadas += 1
+                            else:
+                                errores.append(f'{inscripcion.alumno}: {mensaje}')
+                    except Exception as e:
+                        errores.append(f'Error en inscripción {inscripcion_id}: {str(e)}')
+
+            if notas_cargadas > 0:
+                messages.success(request, f'Se cargaron {notas_cargadas} notas correctamente.')
+            
+            if errores:
+                for error in errores:
+                    messages.warning(request, error)
+
+            # Redirigir de vuelta a la misma vista de carga o al change del admin
+            if 'save_continue' in request.POST:
+                 return redirect('admin_cargar_notas_mesa', mesa_id=mesa_id)
+            return redirect('admin:academico_mesaexamen_changelist')
+
+        except Exception as e:
+            messages.error(request, f'Error al procesar: {str(e)}')
+            return redirect('admin:academico_mesaexamen_change', mesa_id)
+
+
 class ActaExamenPDFView(DocenteRequiredMixin, View):
     """Vista para generar el acta de examen en PDF"""
 

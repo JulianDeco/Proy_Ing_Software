@@ -68,6 +68,14 @@ class UsuarioAdmin(BaseUserAdmin):
         return format_html('<span style="color: red; font-size: 16px;">✗</span>')
     is_superuser_display.short_description = 'Superusuario'
 
+@admin.register(Persona)
+class PersonaAdmin(admin.ModelAdmin):
+    list_display = ('nombre', 'apellido', 'dni')
+    list_display_links = ('nombre', 'apellido')
+    search_fields = ('nombre', 'apellido', 'dni')
+    list_per_page = 50
+    save_on_top = True
+
 @admin.register(Empleado)
 class EmpleadoAdmin(admin.ModelAdmin):
     list_display = ('nombre', 'apellido', 'dni', 'usuario_asociado')

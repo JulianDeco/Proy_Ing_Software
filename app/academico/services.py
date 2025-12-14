@@ -242,8 +242,15 @@ class ServiciosAcademico:
         inscripcion.condicion = condicion
         inscripcion.nota_cursada = promedio
         inscripcion.fecha_regularizacion = timezone.now()
-        # Nota: No cambiamos estado_inscripcion a APROBADA/DESAPROBADA aún.
-        # Eso sucede en el final.
+        
+        # Actualizar también el estado de la materia/inscripción para reflejar el fin de la cursada
+        if condicion == CondicionInscripcion.REGULAR:
+            inscripcion.estado_inscripcion = 'REGULAR'
+        elif condicion == CondicionInscripcion.LIBRE:
+            # Si queda LIBRE, generalmente se marca como LIBRE o DESAPROBADA dependiendo del reglamento.
+            # Asumiremos LIBRE para ser consistentes con la condición.
+            inscripcion.estado_inscripcion = 'LIBRE'
+
         inscripcion.save()
 
         return condicion, mensaje
@@ -366,12 +373,16 @@ class ServiciosAcademico:
             comision__materia=inscripcion_mesa.mesa_examen.materia
         ).first()
 
-        if cursada and aprobado:
-            cursada.nota_final = nota
-            cursada.estado_inscripcion = nuevo_estado_materia
-            cursada.fecha_cierre = timezone.now()
-            cursada.cerrada_por = usuario
-            cursada.save()
+        if cursada:
+            # La creación/actualización de la Calificación se maneja vía signal (post_save)
+            # en el modelo InscripcionMesaExamen para garantizar consistencia siempre.
+
+            if aprobado:
+                cursada.nota_final = nota
+                cursada.estado_inscripcion = nuevo_estado_materia
+                cursada.fecha_cierre = timezone.now()
+                cursada.cerrada_por = usuario
+                cursada.save()
 
         mensaje = (
             f"Nota cargada: {nota}. "

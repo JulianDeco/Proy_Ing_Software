@@ -169,6 +169,9 @@ def restaurar_backup(archivo, password: str = None):
     """
     Restaura un backup del sistema desde un archivo ZIP (puede estar encriptado)
 
+    Reemplaza directamente el archivo de base de datos SQLite y archivos media.
+    Esto evita problemas de FK constraints y transacciones.
+
     Args:
         archivo: Archivo uploadado con el backup (ZIP o ZIP encriptado)
         password: Contraseña si el backup está encriptado
@@ -177,9 +180,7 @@ def restaurar_backup(archivo, password: str = None):
         tuple: (success: bool, mensaje: str)
     """
     import tempfile
-    import json
-    from django.core.management import call_command
-    from django.db import connection
+    from django.db import connections
 
     try:
         # Leer el contenido del archivo
@@ -211,44 +212,60 @@ def restaurar_backup(archivo, password: str = None):
             except zipfile.BadZipFile:
                 return False, "El archivo no es un ZIP válido. Verifique que el archivo y la contraseña sean correctos."
 
-            # Buscar el archivo database_backup.json
-            json_file = None
-            db_file = None
+            # Buscar el archivo db.sqlite3 en el backup
+            db_backup_file = None
+            media_backup_dir = None
 
             for root, dirs, files in os.walk(temp_dir):
                 for file in files:
-                    if file == 'database_backup.json':
-                        json_file = os.path.join(root, file)
-                    elif file == 'db.sqlite3':
-                        db_file = os.path.join(root, file)
+                    if file == 'db.sqlite3':
+                        db_backup_file = os.path.join(root, file)
+                for dir_name in dirs:
+                    if dir_name == 'media':
+                        media_backup_dir = os.path.join(root, dir_name)
 
-            if not json_file:
-                return False, "No se encontró el archivo database_backup.json en el backup"
+            if not db_backup_file:
+                return False, "No se encontró el archivo db.sqlite3 en el backup"
 
-            # Validar que sea un JSON válido
+            # Cerrar todas las conexiones a la base de datos
+            connections.close_all()
+
+            # Obtener la ruta de la base de datos actual
+            db_path = str(settings.DATABASES['default']['NAME'])
+
+            # Crear backup de seguridad de la BD actual
+            backup_actual = f"{db_path}.before_restore"
+            if os.path.exists(db_path):
+                shutil.copy2(db_path, backup_actual)
+
             try:
-                with open(json_file, 'r') as f:
-                    json.load(f)
-            except json.JSONDecodeError:
-                return False, "El archivo de backup no es un JSON válido"
+                # Reemplazar el archivo de base de datos
+                shutil.copy2(db_backup_file, db_path)
 
-            # Limpiar la base de datos actual (excepto usuarios superadmin)
-            from django.contrib.auth import get_user_model
-            User = get_user_model()
-            superusers = list(User.objects.filter(is_superuser=True).values())
+                # Restaurar archivos media si existen
+                if media_backup_dir:
+                    media_root = getattr(settings, 'MEDIA_ROOT', None)
+                    if media_root:
+                        # Copiar archivos media
+                        if os.path.exists(media_root):
+                            # Hacer backup de media actual
+                            shutil.copytree(media_root, f"{media_root}_backup_before_restore", dirs_exist_ok=True)
 
-            # Ejecutar flush para limpiar la base de datos
-            call_command('flush', '--no-input', verbosity=0)
+                        # Copiar nuevos archivos media
+                        shutil.copytree(media_backup_dir, media_root, dirs_exist_ok=True)
 
-            # Restaurar los superusuarios
-            for su_data in superusers:
-                su_data.pop('id', None)
-                User.objects.create(**su_data)
+                # Eliminar el backup de seguridad si todo salió bien
+                if os.path.exists(backup_actual):
+                    os.remove(backup_actual)
 
-            # Cargar los datos del backup
-            call_command('loaddata', json_file, verbosity=0)
+                return True, "Backup restaurado exitosamente. La base de datos y archivos media han sido reemplazados."
 
-            return True, "Backup restaurado exitosamente. Se han recuperado todos los datos."
+            except Exception as e:
+                # Si algo falla, restaurar el backup de seguridad
+                if os.path.exists(backup_actual):
+                    shutil.copy2(backup_actual, db_path)
+                    os.remove(backup_actual)
+                raise Exception(f"Error al copiar archivos: {str(e)}")
 
     except Exception as e:
         return False, f"Error al restaurar el backup: {str(e)}"

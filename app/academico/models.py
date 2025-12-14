@@ -390,7 +390,8 @@ class MesaExamen(models.Model):
     tribunal = models.ManyToManyField(
         'institucional.Persona',
         related_name='tribunales_examen',
-        help_text='Docentes que conforman el tribunal'
+        help_text='Docentes que conforman el tribunal',
+        limit_choices_to={'empleado__usuario__groups__name': 'Docente'}
     )
     aula = models.CharField(max_length=50, blank=True, null=True)
     estado = models.CharField(
@@ -573,6 +574,66 @@ def actualizar_dvv_inscripcion_mesa(sender, instance, **kwargs):
     """Actualiza el DVV de la tabla después de guardar"""
     from institucional.digitos_verificadores import GestorDigitosVerificadores
     GestorDigitosVerificadores.actualizar_dvv('InscripcionMesaExamen', 'academico')
+
+
+@receiver(models.signals.post_save, sender=InscripcionMesaExamen)
+def sincronizar_nota_examen(sender, instance, **kwargs):
+    """
+    Sincroniza la nota del examen con el historial de Calificaciones 
+    y el estado de la materia (InscripcionAlumnoComision).
+    Se ejecuta siempre que se guarda una InscripcionMesaExamen.
+    """
+    from django.utils import timezone
+    
+    # Si no hay nota, no hay nada que sincronizar
+    if instance.nota_examen is None:
+        return
+
+    # 1. Buscar la cursada asociada
+    cursada = InscripcionAlumnoComision.objects.filter(
+        alumno=instance.alumno,
+        comision__materia=instance.mesa_examen.materia
+    ).first()
+
+    if not cursada:
+        return
+
+    # 2. Sincronizar (Crear o Actualizar) Calificación
+    Calificacion.objects.update_or_create(
+        alumno_comision=cursada,
+        tipo=TipoCalificacion.FINAL,
+        numero=1, # Asumimos 1 por ahora para finales
+        defaults={
+            'nota': instance.nota_examen,
+            'fecha_creacion': instance.mesa_examen.fecha_examen
+        }
+    )
+
+    # 3. Actualizar Estado de la Materia
+    nota_aprobacion = instance.mesa_examen.anio_academico.nota_aprobacion
+    aprobado = instance.nota_examen >= nota_aprobacion
+
+    if aprobado:
+        cursada.nota_final = instance.nota_examen
+        cursada.estado_inscripcion = EstadoMateria.APROBADA
+        cursada.fecha_cierre = timezone.now()
+        # Si se guarda desde admin, no tenemos el usuario fácil, 
+        # pero es mejor actualizar el estado que dejarlo inconsistente.
+        cursada.save()
+    else:
+        # Si la nota cambió a desaprobado, y antes estaba aprobada, deberíamos revertir?
+        # Por seguridad, si desaprueba, nos aseguramos que NO figure aprobada
+        # (pero mantenemos su condición de REGULAR/LIBRE original).
+        if cursada.estado_inscripcion == EstadoMateria.APROBADA:
+            # Revertir a la condición de cursada (Regular o Libre)
+            if cursada.condicion == CondicionInscripcion.REGULAR:
+                cursada.estado_inscripcion = EstadoMateria.REGULAR
+            else:
+                cursada.estado_inscripcion = EstadoMateria.LIBRE
+            
+            cursada.nota_final = None
+            cursada.fecha_cierre = None
+            cursada.save()
 
 
 

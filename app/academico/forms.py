@@ -212,12 +212,20 @@ class MesaExamenAdminForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        
+        # Verificar que los campos de fecha existan antes de validar lógica cruzada
+        fecha_examen = cleaned_data.get('fecha_examen')
+        fecha_limite = cleaned_data.get('fecha_limite_inscripcion')
+        
+        if not fecha_examen or not fecha_limite:
+            return cleaned_data
+
         # Crear instancia temporal para validar
         instance = MesaExamen(
             materia=cleaned_data.get('materia'),
             anio_academico=cleaned_data.get('anio_academico'),
-            fecha_examen=cleaned_data.get('fecha_examen'),
-            fecha_limite_inscripcion=cleaned_data.get('fecha_limite_inscripcion'),
+            fecha_examen=fecha_examen,
+            fecha_limite_inscripcion=fecha_limite,
             estado=cleaned_data.get('estado', 'ABIERTA'),
             cupo_maximo=cleaned_data.get('cupo_maximo', 50)
         )

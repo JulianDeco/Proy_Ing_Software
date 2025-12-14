@@ -1,0 +1,175 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static admin_urls %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <style>
+        .card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            margin-bottom: 20px;
+            padding: 20px;
+        }
+        .header-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            text-align: left;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        .nota-input {
+            width: 80px;
+            padding: 5px;
+            text-align: center;
+        }
+        .btn-save {
+            background: #417690;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-save:hover {
+            background: #205067;
+        }
+        .status-badge {
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            color: white;
+        }
+        .status-inscripto { background: #17a2b8; }
+        .status-aprobado { background: #28a745; }
+        .status-desaprobado { background: #dc3545; }
+        .status-ausente { background: #6c757d; }
+    </style>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <div class="header-info">
+        <div>
+            <h1>Carga de Notas: {{ mesa.materia.nombre }}</h1>
+            <p>Fecha: {{ mesa.fecha_examen|date:"d/m/Y H:i" }} | Aula: {{ mesa.aula|default:"-" }}</p>
+        </div>
+        <div>
+            <a href="{% url 'admin:academico_mesaexamen_changelist' %}" class="button" style="background: #79aec8;">Volver a Lista</a>
+        </div>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        
+        <!-- Regulares -->
+        <div class="card">
+            <h2>Alumnos Regulares ({{ inscripciones_regulares.count }})</h2>
+            {% if inscripciones_regulares %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Alumno</th>
+                        <th>Legajo</th>
+                        <th>DNI</th>
+                        <th>Estado Actual</th>
+                        <th>Nota</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inscripcion in inscripciones_regulares %}
+                    <tr>
+                        <td>{{ inscripcion.alumno.apellido }}, {{ inscripcion.alumno.nombre }}</td>
+                        <td>{{ inscripcion.alumno.legajo }}</td>
+                        <td>{{ inscripcion.alumno.dni }}</td>
+                        <td>
+                            <span class="status-badge status-{{ inscripcion.estado_inscripcion|lower }}">
+                                {{ inscripcion.get_estado_inscripcion_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if puede_editar and inscripcion.estado_inscripcion == 'INSCRIPTO' %}
+                                <input type="number" step="0.01" min="0" max="10" 
+                                       name="nota_{{ inscripcion.id }}" 
+                                       class="nota-input"
+                                       value="{{ inscripcion.nota_examen|default:'' }}">
+                            {% else %}
+                                <strong>{{ inscripcion.nota_examen|default:"-" }}</strong>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+                <p>No hay alumnos regulares.</p>
+            {% endif %}
+        </div>
+
+        <!-- Libres -->
+        <div class="card">
+            <h2>Alumnos Libres ({{ inscripciones_libres.count }})</h2>
+            {% if inscripciones_libres %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Alumno</th>
+                        <th>Legajo</th>
+                        <th>DNI</th>
+                        <th>Estado Actual</th>
+                        <th>Nota</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for inscripcion in inscripciones_libres %}
+                    <tr>
+                        <td>{{ inscripcion.alumno.apellido }}, {{ inscripcion.alumno.nombre }}</td>
+                        <td>{{ inscripcion.alumno.legajo }}</td>
+                        <td>{{ inscripcion.alumno.dni }}</td>
+                        <td>
+                            <span class="status-badge status-{{ inscripcion.estado_inscripcion|lower }}">
+                                {{ inscripcion.get_estado_inscripcion_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if puede_editar and inscripcion.estado_inscripcion == 'INSCRIPTO' %}
+                                <input type="number" step="0.01" min="0" max="10" 
+                                       name="nota_{{ inscripcion.id }}" 
+                                       class="nota-input"
+                                       value="{{ inscripcion.nota_examen|default:'' }}">
+                            {% else %}
+                                <strong>{{ inscripcion.nota_examen|default:"-" }}</strong>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+                <p>No hay alumnos libres.</p>
+            {% endif %}
+        </div>
+
+        {% if puede_editar %}
+        <div class="submit-row">
+            <input type="submit" value="Guardar Notas" class="default" name="_save">
+            <input type="submit" value="Guardar y Seguir Editando" name="save_continue">
+        </div>
+        {% endif %}
+    </form>
+</div>
+{% endblock %}
